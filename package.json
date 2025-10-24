@@ -1,0 +1,37 @@
+{
+  "name": "nuxt-net-monitoring",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.70",
+    "@iconify-json/simple-icons": "^1.2.55",
+    "@nuxt/ui": "^4.1.0",
+    "better-sqlite3": "^12.4.1",
+    "kysely": "^0.28.8",
+    "net-snmp": "^3.26.0",
+    "nuxt": "^4.1.3",
+    "speedtest-net": "^2.2.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.9.0",
+    "@types/net-snmp": "^3.23.0",
+    "@types/node": "latest",
+    "eslint": "^9.38.0",
+    "kysely-ctl": "^0.19.0",
+    "nuxt-echarts": "^1.0.1",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.1"
+  },
+  "resolutions": {
+    "unimport": "4.1.1"
+  },
+  "packageManager": "pnpm@10.18.3"
+}

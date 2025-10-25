@@ -24,6 +24,7 @@
     "@nuxt/eslint": "^1.9.0",
     "@types/net-snmp": "^3.23.0",
     "@types/node": "latest",
+    "@types/speedtest-net": "^2.1.5",
     "eslint": "^9.38.0",
     "kysely-ctl": "^0.19.0",
     "nuxt-echarts": "^1.0.1",

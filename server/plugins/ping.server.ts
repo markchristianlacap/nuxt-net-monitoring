@@ -2,13 +2,13 @@ import { db } from '../db'
 
 export default defineNitroPlugin(() => {
   const config = useRuntimeConfig()
-  setInterval(async () => {
-    const { host, status, latency } = await pingHost(config.PING_HOST)
+  runEverySecond(async () => {
+    const { host, status, latency, timestamp } = await pingHost(config.PING_HOST)
     await db.insertInto('pings').values({
       host,
-      status: status === 'online' ? 'online' : 'offline',
+      status: status as 'online' | 'offline',
       latency,
-      timestamp: new Date().toISOString()
+      timestamp
     }).execute()
-  }, 1000)
+  })
 })

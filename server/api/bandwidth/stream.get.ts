@@ -1,3 +1,5 @@
+import { db } from '~~/server/db'
+
 export default defineEventHandler(async (event) => {
   // Optional: disable in production if needed
   // if (!process.dev) return { disabled: true }
@@ -12,12 +14,13 @@ export default defineEventHandler(async (event) => {
 
   const sendEvent = async () => {
     try {
-      const { inMbps, outMbps } = await getBandwidth()
-      if (inMbps < 0 || outMbps < 0) return
+      const res = await db.selectFrom('bandwidths').selectAll().orderBy('timestamp', 'desc').limit(1).executeTakeFirst()
+      if (!res) return
+      if (res.inMbps < 0 || res.outMbps < 0) return
       const data = {
-        inMbps: parseFloat(inMbps.toFixed(2)),
-        outMbps: parseFloat(outMbps.toFixed(2)),
-        timestamp: new Date().toISOString()
+        inMbps: parseFloat(res.inMbps.toFixed(2)),
+        outMbps: parseFloat(res.outMbps.toFixed(2)),
+        timestamp: res.timestamp
       }
 
       event.node.res.write(`id: ${++counter}\n`)

@@ -12,7 +12,7 @@ let prevIn = 0
 let prevOut = 0
 let firstRun = true
 
-async function getData() {
+async function getData(): Promise<{ inBytes: number, outBytes: number }> {
   return new Promise<{ inBytes: number, outBytes: number }>((resolve, reject) => {
     session.get([inOid, outOid], (error, varbinds) => {
       if (error) return reject(error)
@@ -25,22 +25,23 @@ async function getData() {
   })
 }
 
-export async function getBandwidth() {
-  const { inBytes, outBytes } = await getData()
-  if (firstRun) {
-    prevIn = inBytes
-    prevOut = outBytes
-    firstRun = false
-    return { inMbps: 0, outMbps: 0 }
+export async function getBandwidth(): Promise<{ inMbps: number, outMbps: number, host: string, timestamp: string } | null> {
+  try {
+    const res = await getData()
+    if (firstRun) {
+      prevIn = res.inBytes
+      prevOut = res.outBytes
+      firstRun = false
+      return null
+    }
+    const diffIn = res.inBytes - prevIn
+    const diffOut = res.outBytes - prevOut
+    const inMbps = diffIn / 1048576
+    const outMbps = diffOut / 1048576
+    prevIn = res.inBytes
+    prevOut = res.outBytes
+    return { inMbps, outMbps, host, timestamp: new Date().toISOString() }
+  } catch {
+    return null
   }
-
-  const diffIn = inBytes - prevIn
-  const diffOut = outBytes - prevOut
-  prevIn = inBytes
-  prevOut = outBytes
-  if (diffIn < 0 || diffOut < 0) return { inMbps: 0, outMbps: 0 }
-  const inMbps = diffIn / 1048576
-  const outMbps = diffOut / 1048576
-
-  return { inMbps, outMbps }
 }

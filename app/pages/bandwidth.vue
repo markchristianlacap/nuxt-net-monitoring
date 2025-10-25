@@ -16,7 +16,6 @@ onMounted(() => {
     console.log(data)
     inMbps.value = data.inMbps
     outMbps.value = data.outMbps
-
     if (data.inMbps > maxInMbps.value) maxInMbps.value = data.inMbps
     if (data.outMbps > maxOutMbps.value) maxOutMbps.value = data.outMbps
     const timeLabel = new Date(data.timestamp).toLocaleTimeString('en-US', {

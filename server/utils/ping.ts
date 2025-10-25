@@ -3,7 +3,7 @@ import { promisify } from 'node:util'
 
 const execAsync = promisify(exec)
 
-export async function pingHost(host = '8.8.8.8') {
+export async function pingHost(host = '8.8.8.8'): Promise<{ host: string, status: string, latency: number | null, timestamp: string }> {
   try {
     const { stdout } = await execAsync(`ping -c 1 ${host}`)
     const match = stdout.match(/time=([\d.]+) ms/)
@@ -11,13 +11,15 @@ export async function pingHost(host = '8.8.8.8') {
     return {
       host,
       status: 'online',
-      latency
+      latency,
+      timestamp: new Date().toISOString()
     }
   } catch {
     return {
       host,
       status: 'offline',
-      latency: null
+      latency: null,
+      timestamp: new Date().toISOString()
     }
   }
 }

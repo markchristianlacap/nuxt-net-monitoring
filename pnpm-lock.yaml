@@ -45,6 +45,9 @@ importers:
       '@types/node':
         specifier: latest
         version: 24.9.1
+      '@types/speedtest-net':
+        specifier: ^2.1.5
+        version: 2.1.5
       eslint:
         specifier: ^9.38.0
         version: 9.38.0(jiti@2.6.1)
@@ -1450,6 +1453,9 @@ packages:
 
   '@types/responselike@1.0.3':
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
+
+  '@types/speedtest-net@2.1.5':
+    resolution: {integrity: sha512-0rm83JFe7KcBARp2N2Urjzew87aG9RyPJncPN1xJlPrNy3tFgojiaGOzqu2HCndDcQnTtC24doIyjV3M0etvig==}
 
   '@types/web-bluetooth@0.0.20':
     resolution: {integrity: sha512-g9gZnnXVq7gM7v3tJCWV/qw7w+KeOlSHAhgF9RytFyifW6AF61hdT2ucrYhPq9hLs5JIryeupHV3qGk95dH9ow==}
@@ -6951,6 +6957,8 @@ snapshots:
   '@types/responselike@1.0.3':
     dependencies:
       '@types/node': 24.9.1
+
+  '@types/speedtest-net@2.1.5': {}
 
   '@types/web-bluetooth@0.0.20': {}
 

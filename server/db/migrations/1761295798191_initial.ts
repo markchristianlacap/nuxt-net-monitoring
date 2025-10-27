@@ -1,28 +1,26 @@
-import { sql, type Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 import type { Database } from '../types'
+import { sql } from 'kysely'
 
 export async function up(db: Kysely<Database>): Promise<void> {
+  // Create `pings` table
   await db.schema
     .createTable('pings')
-    .addColumn('id', 'integer', col => col.primaryKey().autoIncrement())
-    .addColumn('host', 'text', col => col.notNull())
-    .addColumn('status', 'text', col => col.notNull()) // 'online' | 'offline'
-    .addColumn('latency', 'real')
-    .addColumn('timestamp', 'text', col =>
-      col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`)
-    )
+    .addColumn('id', 'serial', col => col.primaryKey())
+    .addColumn('host', 'varchar(255)', col => col.notNull())
+    .addColumn('status', 'varchar(10)', col => col.notNull()) // 'online' | 'offline'
+    .addColumn('latency', 'double precision')
+    .addColumn('timestamp', 'timestamptz', col => col.notNull().defaultTo(sql`now()`))
     .execute()
 
-  // Create "bandwidths" table
+  // Create `bandwidths` table
   await db.schema
     .createTable('bandwidths')
-    .addColumn('id', 'integer', col => col.primaryKey().autoIncrement())
-    .addColumn('host', 'text', col => col.notNull())
-    .addColumn('inMbps', 'real', col => col.notNull())
-    .addColumn('outMbps', 'real', col => col.notNull())
-    .addColumn('timestamp', 'text', col =>
-      col.notNull().defaultTo(sql`CURRENT_TIMESTAMP`)
-    )
+    .addColumn('id', 'serial', col => col.primaryKey())
+    .addColumn('host', 'varchar(255)', col => col.notNull())
+    .addColumn('inMbps', 'double precision', col => col.notNull())
+    .addColumn('outMbps', 'double precision', col => col.notNull())
+    .addColumn('timestamp', 'timestamptz', col => col.notNull().defaultTo(sql`now()`))
     .execute()
 }
 

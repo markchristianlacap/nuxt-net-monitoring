@@ -15,11 +15,17 @@ let firstRun = true
 async function getData(): Promise<{ inBytes: number, outBytes: number }> {
   return new Promise<{ inBytes: number, outBytes: number }>((resolve, reject) => {
     session.get([inOid, outOid], (error, varbinds) => {
-      if (error) return reject(error)
-      if (!varbinds) return reject(new Error('No varbinds'))
+      if (error)
+        return reject(error)
+      if (!varbinds)
+        return reject(new Error('No varbinds'))
+      const inBytes = Number(varbinds[0].value)
+      const outBytes = Number(varbinds[1].value)
+      if (inBytes < 0 || outBytes < 0)
+        return reject(new Error('Invalid varbinds'))
       resolve({
-        inBytes: Number(varbinds[0].value),
-        outBytes: Number(varbinds[1].value)
+        inBytes,
+        outBytes,
       })
     })
   })
@@ -41,7 +47,8 @@ export async function getBandwidth(): Promise<{ inMbps: number, outMbps: number,
     prevIn = res.inBytes
     prevOut = res.outBytes
     return { inMbps, outMbps, host, timestamp: new Date().toISOString() }
-  } catch {
+  }
+  catch {
     return null
   }
 }

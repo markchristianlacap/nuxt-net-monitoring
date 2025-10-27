@@ -23,3 +23,4 @@ export async function pingHost(host = '8.8.8.8'): Promise<{ host: string, status
     }
   }
 }
+

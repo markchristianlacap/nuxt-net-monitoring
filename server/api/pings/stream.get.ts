@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   let counter = 0
   const config = useRuntimeConfig()
   const host = config.PING_HOST
-
+  let lastId = 0
   async function pingHost() {
     try {
       const result = await db
@@ -19,27 +19,30 @@ export default defineEventHandler(async (event) => {
         .limit(1)
         .selectAll()
         .executeTakeFirst()
-
-      if (!result) throw new Error('No ping found')
       return result
-    } catch {
+    }
+    catch {
       return {
+        id: 0,
         host,
         status: 'offline' as const,
         latency: null,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
     }
   }
 
   runEverySecond(async () => {
     const data = await pingHost()
+    if (!data || data.id === lastId) {
+      return
+    }
+    lastId = data.id
     res.write(`id: ${++counter}\n`)
     res.write(`data: ${JSON.stringify(data)}\n\n`)
   })
 
   event.node.req.on('close', () => {
-    console.log('Client disconnected')
     res.end()
   })
 })

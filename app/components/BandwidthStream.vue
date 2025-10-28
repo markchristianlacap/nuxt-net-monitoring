@@ -159,53 +159,53 @@ onBeforeUnmount(() => source?.close())
 </script>
 
 <template>
-  <div class="p-6 bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700">
+  <div class="p-4 sm:p-6 bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700">
     <!-- Header -->
-    <div class="text-center mb-6">
-      <h2 class="text-slate-200 text-3xl font-bold tracking-wide mb-1">
+    <div class="text-center mb-4 sm:mb-6">
+      <h2 class="text-slate-200 text-2xl sm:text-3xl font-bold tracking-wide mb-1">
         Bandwidth Monitor
       </h2>
-      <p class="text-slate-400 text-sm">
+      <p class="text-slate-400 text-xs sm:text-sm">
         Live throughput monitoring
       </p>
     </div>
 
     <!-- Host -->
-    <div class="flex items-center justify-center gap-2 mb-6">
-      <span class="text-slate-400 font-medium">Host:</span>
-      <span class="text-2xl font-semibold text-blue-400">{{ host }}</span>
+    <div class="flex items-center justify-center gap-2 mb-4 sm:mb-6">
+      <span class="text-slate-400 font-medium text-sm sm:text-base">Host:</span>
+      <span class="text-xl sm:text-2xl font-semibold text-blue-400 break-all">{{ host }}</span>
     </div>
 
     <!-- Stats -->
-    <div class="flex flex-wrap justify-center md:justify-around gap-6 mb-8">
-      <div class="flex flex-col items-center bg-slate-800/60 px-6 py-4 rounded-2xl shadow-md border border-slate-700">
-        <span class="text-blue-400 text-3xl">📥</span>
-        <span class="text-slate-300 font-semibold mt-2">Current Download</span>
-        <span class="text-3xl font-bold text-blue-300">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
+      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
+        <span class="text-blue-400 text-2xl sm:text-3xl">📥</span>
+        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Current Download</span>
+        <span class="text-2xl sm:text-3xl font-bold text-blue-300">
           {{ currentDownload }}
-          <span class="text-slate-500 text-sm ml-1">MB/s</span>
+          <span class="text-slate-500 text-xs sm:text-sm ml-1">MB/s</span>
         </span>
       </div>
 
-      <div class="flex flex-col items-center bg-slate-800/60 px-6 py-4 rounded-2xl shadow-md border border-slate-700">
-        <span class="text-red-400 text-3xl">📤</span>
-        <span class="text-slate-300 font-semibold mt-2">Current Upload</span>
-        <span class="text-3xl font-bold text-red-300">
+      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
+        <span class="text-red-400 text-2xl sm:text-3xl">📤</span>
+        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Current Upload</span>
+        <span class="text-2xl sm:text-3xl font-bold text-red-300">
           {{ currentUpload }}
-          <span class="text-slate-500 text-sm ml-1">MB/s</span>
+          <span class="text-slate-500 text-xs sm:text-sm ml-1">MB/s</span>
         </span>
       </div>
 
-      <div class="flex flex-col items-center bg-slate-800/60 px-6 py-4 rounded-2xl shadow-md border border-slate-700">
-        <span class="text-amber-400 text-3xl">🚀</span>
-        <span class="text-slate-300 font-semibold mt-2">Max Speeds</span>
+      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700 col-span-2 lg:col-span-1">
+        <span class="text-amber-400 text-2xl sm:text-3xl">🚀</span>
+        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Max Speeds</span>
         <div class="flex items-center gap-4 mt-2">
           <div class="flex flex-col items-center">
-            <span class="text-blue-300 text-xl font-bold">{{ maxDownload.toFixed(2) }}</span>
+            <span class="text-blue-300 text-lg sm:text-xl font-bold">{{ maxDownload.toFixed(2) }}</span>
             <span class="text-slate-500 text-xs">MB/s</span>
           </div>
           <div class="flex flex-col items-center">
-            <span class="text-red-300 text-xl font-bold">{{ maxUpload.toFixed(2) }}</span>
+            <span class="text-red-300 text-lg sm:text-xl font-bold">{{ maxUpload.toFixed(2) }}</span>
             <span class="text-slate-500 text-xs">MB/s</span>
           </div>
         </div>
@@ -213,8 +213,8 @@ onBeforeUnmount(() => source?.close())
     </div>
 
     <!-- Chart -->
-    <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-inner">
-      <VChart :option="option" autoresize style="height: 420px; width: 100%;" />
+    <div class="bg-slate-800/50 rounded-xl sm:rounded-2xl p-2 sm:p-4 border border-slate-700 shadow-inner">
+      <VChart :option="option" autoresize style="height: 300px; width: 100%;" class="sm:h-[420px]" />
     </div>
   </div>
 </template>

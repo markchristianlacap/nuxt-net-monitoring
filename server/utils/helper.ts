@@ -23,7 +23,6 @@ export function runEverySecond(task: () => Promise<void>) {
     setTimeout(run, delay)
   }
 
-  // Align to next exact second
   const now = new Date()
   const next = new Date(now)
   next.setMilliseconds(0)
@@ -47,12 +46,11 @@ export function runEveryHour(task: () => Promise<void>) {
   function scheduleNext() {
     const now = new Date()
     const next = new Date(now)
-    next.setHours(now.getHours() + 1, 0, 0, 0) // next exact hour
+    next.setHours(now.getHours() + 1, 0, 0, 0)
     const delay = next.getTime() - now.getTime()
     setTimeout(run, delay)
   }
 
-  // align to next exact hour
   const now = new Date()
   const next = new Date(now)
   next.setHours(now.getHours() + 1, 0, 0, 0)

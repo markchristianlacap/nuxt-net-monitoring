@@ -7,7 +7,6 @@ import { debounce } from 'perfect-debounce'
 const df = new DateFormatter('en-US', { dateStyle: 'medium' })
 const UBadge = resolveComponent('UBadge')
 
-// --- Reactive Query ---
 const query = reactive({
   page: 1,
   limit: 10,
@@ -16,13 +15,11 @@ const query = reactive({
   status: null as 'online' | 'offline' | null,
 })
 
-// --- Date Range State ---
 const dateRange = ref<{ start: CalendarDate | null, end: CalendarDate | null }>({
   start: null,
   end: null,
 })
 
-// --- Debounced Fetch ---
 const { data: pingResponse, refresh } = await useFetch('/api/pings', {
   query,
   immediate: true,
@@ -30,14 +27,12 @@ const { data: pingResponse, refresh } = await useFetch('/api/pings', {
 
 const debouncedRefresh = debounce(() => refresh(), 300)
 
-// Watchers
 watch(query, debouncedRefresh, { deep: true })
 watch(dateRange, () => {
   query.start = dateRange.value.start?.toString() ?? null
   query.end = dateRange.value.end?.toString() ?? null
 }, { deep: true })
 
-// --- Columns ---
 const columns: TableColumn<any>[] = [
   { accessorKey: 'id', header: '#', cell: ({ row }) => `#${row.getValue('id')}` },
   {
@@ -81,14 +76,12 @@ function download() {
 <template>
   <u-page>
     <div class="container mx-auto mt-5 space-y-4 text-slate-100">
-      <!-- Header & Filters -->
       <div class="flex flex-wrap gap-3 justify-between items-center">
         <h2 class="text-2xl font-bold">
           Ping Results
         </h2>
 
         <div class="flex flex-wrap gap-3 items-center">
-          <!-- Status Filter -->
           <div class="flex items-center gap-2">
             <span class="font-semibold">Status:</span>
             <URadioGroup
@@ -132,14 +125,12 @@ function download() {
         </div>
       </div>
 
-      <!-- Table -->
       <u-table
         :data="pingResponse?.data"
         :columns="columns"
         class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50"
       />
 
-      <!-- Footer -->
       <div class="flex justify-between items-center mt-3 text-sm text-slate-400">
         <div>
           Total: {{ pingResponse?.total?.toLocaleString() ?? 0 }}

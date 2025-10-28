@@ -1,4 +1,3 @@
-// server/utils/pagination.ts
 import type { Kysely, SelectQueryBuilder } from 'kysely'
 
 export interface PaginationParams {
@@ -21,7 +20,6 @@ export async function paginate<T, DB>(
 ): Promise<PaginatedResult<T>> {
   const offset = (page - 1) * limit
 
-  // Clone query for count
   const countQuery = query.clearSelect().clearOrderBy().select(({ fn }) => fn.countAll().as('count'))
 
   const [{ count }] = await countQuery.execute()

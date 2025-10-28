@@ -3,17 +3,15 @@ import type { Database } from '../types'
 import { sql } from 'kysely'
 
 export async function up(db: Kysely<Database>): Promise<void> {
-  // Create `pings` table
   await db.schema
     .createTable('pings')
     .addColumn('id', 'serial', col => col.primaryKey())
     .addColumn('host', 'varchar(255)', col => col.notNull())
-    .addColumn('status', 'varchar(10)', col => col.notNull()) // 'online' | 'offline'
+    .addColumn('status', 'varchar(10)', col => col.notNull())
     .addColumn('latency', 'double precision')
     .addColumn('timestamp', 'timestamptz', col => col.notNull().defaultTo(sql`now()`))
     .execute()
 
-  // Create `bandwidths` table
   await db.schema
     .createTable('bandwidths')
     .addColumn('id', 'serial', col => col.primaryKey())

@@ -200,29 +200,30 @@ const option = computed(() => ({
 </script>
 
 <template>
-  <div class="mt-6 p-5 bg-slate-900 rounded-xl shadow-xl">
-    <div class="flex justify-between items-center mb-5">
-      <div>
-        <p class="text-slate-200 text-lg font-semibold">
-          {{ isp || 'No ISP Detected' }}
+  <div class="mt-4 sm:mt-6 p-3 sm:p-5 bg-slate-900 rounded-xl shadow-xl">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-5 gap-3">
+      <div class="w-full sm:w-auto">
+        <p class="text-slate-200 text-base sm:text-lg font-semibold flex flex-wrap items-center gap-2">
+          <span class="break-all">{{ isp || 'No ISP Detected' }}</span>
           <u-button
             :disabled="status !== 'idle' && status !== 'complete'"
-            class="ml-3"
+            size="sm"
+            class="sm:ml-3"
             @click="startStream"
           >
             {{ status === 'complete' ? 'Run Again' : 'Start Test' }}
           </u-button>
         </p>
-        <p class="text-slate-400 text-sm">
+        <p class="text-slate-400 text-xs sm:text-sm mt-1 break-all">
           Public IP: {{ publicIp || 'N/A' }}
         </p>
       </div>
-      <div class="text-slate-300 text-right">
+      <div class="text-slate-300 text-sm sm:text-base w-full sm:w-auto text-left sm:text-right">
         Latency: <span class="font-semibold">{{ latency.toFixed(1) }} ms</span>
       </div>
     </div>
 
-    <div class="flex items-center gap-3 mb-5">
+    <div class="flex items-center gap-3 mb-4 sm:mb-5">
       <div
         class="w-3 h-3 rounded-full animate-pulse"
         :class="{
@@ -234,52 +235,52 @@ const option = computed(() => ({
           'bg-purple-500': status === 'complete',
         }"
       />
-      <p class="text-slate-300 font-medium">
+      <p class="text-slate-300 font-medium text-sm sm:text-base">
         {{ statusText }}
       </p>
     </div>
 
-    <div v-if="status !== 'idle'" class="grid grid-cols-3 gap-6 text-center mb-5">
-      <div class="p-4 bg-slate-800 rounded-lg shadow-inner">
-        <p class="text-3xl font-bold text-blue-400">
+    <div v-if="status !== 'idle'" class="grid grid-cols-3 gap-3 sm:gap-6 text-center mb-4 sm:mb-5">
+      <div class="p-3 sm:p-4 bg-slate-800 rounded-lg shadow-inner">
+        <p class="text-2xl sm:text-3xl font-bold text-blue-400">
           {{ currentDownload.toFixed(2) }}
         </p>
-        <p class="text-slate-400 text-sm">
+        <p class="text-slate-400 text-xs sm:text-sm">
           Download (Mbps)
         </p>
       </div>
-      <div class="p-4 bg-slate-800 rounded-lg shadow-inner">
-        <p class="text-3xl font-bold text-green-400">
+      <div class="p-3 sm:p-4 bg-slate-800 rounded-lg shadow-inner">
+        <p class="text-2xl sm:text-3xl font-bold text-green-400">
           {{ currentUpload.toFixed(2) }}
         </p>
-        <p class="text-slate-400 text-sm">
+        <p class="text-slate-400 text-xs sm:text-sm">
           Upload (Mbps)
         </p>
       </div>
-      <div class="p-4 bg-slate-800 rounded-lg shadow-inner">
-        <p class="text-3xl font-bold text-teal-400">
+      <div class="p-3 sm:p-4 bg-slate-800 rounded-lg shadow-inner">
+        <p class="text-2xl sm:text-3xl font-bold text-teal-400">
           {{ latency.toFixed(1) }}
         </p>
-        <p class="text-slate-400 text-sm">
+        <p class="text-slate-400 text-xs sm:text-sm">
           Latency (ms)
         </p>
       </div>
     </div>
 
-    <VChart :option="option" style="width: 100%; height: 400px" autoresize />
+    <VChart :option="option" style="width: 100%; height: 300px;" class="sm:h-[400px]" autoresize />
 
     <u-progress
       v-if="['initializing', 'ping', 'download', 'upload'].includes(status)"
       :model-value="progress * 100"
-      class="mt-4 rounded-lg"
+      class="mt-3 sm:mt-4 rounded-lg"
       height="8"
     />
 
-    <div v-if="status === 'complete'" class="mt-5 border-t border-slate-700 pt-5 text-slate-300 text-sm space-y-1">
+    <div v-if="status === 'complete'" class="mt-4 sm:mt-5 border-t border-slate-700 pt-4 sm:pt-5 text-slate-300 text-xs sm:text-sm space-y-1">
       <p><span class="text-slate-400">Final Download:</span> {{ currentDownload.toFixed(2) }} Mbps</p>
       <p><span class="text-slate-400">Final Upload:</span> {{ currentUpload.toFixed(2) }} Mbps</p>
       <p><span class="text-slate-400">Latency:</span> {{ latency.toFixed(1) }} ms</p>
-      <p v-if="resultUrl">
+      <p v-if="resultUrl" class="break-all">
         <span class="text-slate-400">Result URL:</span>
         <a :href="resultUrl" target="_blank" class="text-blue-400 hover:underline break-all">{{ resultUrl }}</a>
       </p>

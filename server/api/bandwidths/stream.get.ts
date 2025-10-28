@@ -1,7 +1,6 @@
 import { db } from '~~/server/db'
 
 export default defineEventHandler(async (event) => {
-  // SSE headers
   setHeader(event, 'cache-control', 'no-cache')
   setHeader(event, 'connection', 'keep-alive')
   setHeader(event, 'content-type', 'text/event-stream')
@@ -33,16 +32,13 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Send immediately, then every second
   await sendEvent()
   const interval = setInterval(sendEvent, 1000)
 
-  // Handle client disconnect
   event.node.req.on('close', () => {
     clearInterval(interval)
     event.node.res.end()
   })
 
-  // Prevent Nitro from closing the connection
   event._handled = true
 })

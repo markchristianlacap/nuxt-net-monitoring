@@ -32,8 +32,6 @@ useSeoMeta({
   twitterImage: 'https://ui.nuxt.com/assets/templates/nuxt/starter-light.png',
   twitterCard: 'summary_large_image',
 })
-const colorMode = useColorMode()
-colorMode.value = 'dark'
 </script>
 
 <template>

@@ -10,11 +10,11 @@ let database = process.env.NUXT_DB_NAME
 let port = process.env.NUXT_DB_PORT
 if (typeof useRuntimeConfig !== 'undefined') {
   const config = useRuntimeConfig()
-  host = config.db.host
-  user = config.db.user
-  password = config.db.password
-  database = config.db.name
-  port = config.db.port
+  host = config.DB_HOST
+  user = config.DB_USER
+  password = config.DB_PASSWORD
+  database = config.DB_NAME
+  port = config.DB_PORT
 }
 
 const dialect = new PostgresDialect({

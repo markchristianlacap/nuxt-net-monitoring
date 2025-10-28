@@ -1,60 +1,115 @@
-# Nuxt Starter Template
+# Nuxt Network Monitoring System 🚀
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+[![Nuxt.js](https://img.shields.io/badge/Nuxt.js-013220?style=flat\&logo=nuxt.js\&logoColor=white)](https://nuxt.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat\&logo=node.js\&logoColor=white)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Speedtest CLI](https://img.shields.io/badge/Speedtest-CLI-orange?style=flat\&logo=ookla)](https://www.speedtest.net/apps/cli)
 
-Use this template to get started with [Nuxt UI](https://ui.nuxt.com) quickly.
+A **real-time network monitoring system** built with Nuxt.js. Monitor IP availability, interface bandwidth, and internet speed with live charts and historical data.
 
-- [Live demo](https://starter-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+---
 
-<a href="https://starter-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png">
-    <img alt="Nuxt Starter Template" src="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png">
-  </picture>
-</a>
+## 🎯 Features
 
-> The starter template for Vue is on https://github.com/nuxt-ui-templates/starter-vue.
+* **Ping Monitoring**: Track IP availability in real-time.
+* **Bandwidth Monitoring**: Monitor **upload/download** from PfSense interfaces using SNMP.
+* **Live Charts**: Real-time visualization of ping, bandwidth, and speed tests.
+* **Historical Data**: View past network and speed test trends.
+* **Speed Test Integration**:
 
-## Quick Start
+  * Automated speed tests every hour
+  * Manual on-demand tests
+  * Live visualization of test results
+  * Direct integration with **Ookla Speedtest CLI**
 
-```bash [Terminal]
-npm create nuxt@latest -- -t github:nuxt-ui-templates/starter
-```
+---
 
-## Deploy your own
+## 🖥️ Screenshots
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=starter&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fstarter&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fstarter-dark.png&demo-url=https%3A%2F%2Fstarter-template.nuxt.dev%2F&demo-title=Nuxt%20Starter%20Template&demo-description=A%20minimal%20template%20to%20get%20started%20with%20Nuxt%20UI.)
+**Dashboard Example**
+![Dashboard Screenshot](./screenshots/dashboard.png)
 
-## Setup
+**Live Bandwidth Chart**
+![Bandwidth Chart](./screenshots/bandwidth.png)
 
-Make sure to install the dependencies:
+**Speed Test Results**
+![Speed Test Chart](./screenshots/speedtest.png)
+
+> Replace the above images with actual screenshots from your app.
+
+---
+
+## ⚙️ Tech Stack
+
+* **Frontend**: Nuxt.js, Vue 3
+* **Backend**: Node.js (Nuxt server)
+* **Protocols**:
+
+  * Ping (ICMP)
+  * SNMP for PfSense bandwidth
+* **Charts**: ECharts (live & historical visualization)
+* **Speed Test**: Speedtest CLI by Ookla
+
+---
+
+## 🚀 Installation
+
+1. Clone the repository:
 
 ```bash
-pnpm install
+git clone https://github.com/yourusername/nuxt-net-monitor.git
+cd nuxt-net-monitor
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+2. Install dependencies:
 
 ```bash
-pnpm dev
+npm install
 ```
 
-## Production
+3. Configure environment variables (`.env`):
 
-Build the application for production:
+```env
+PF_HOST=192.168.1.1
+PF_SNMP_COMMUNITY=public
+```
+
+4. Run the development server:
 
 ```bash
-pnpm build
+npm run dev
 ```
 
-Locally preview production build:
+---
 
-```bash
-pnpm preview
-```
+## 📝 Usage
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+* **Dashboard**: Live status of IPs and interface bandwidth.
+* **Speed Test**:
+
+  * Click **Run Speed Test** for an on-demand test
+  * Hourly automated tests update live charts automatically
+* **History**: Explore past ping, bandwidth, and speed test data.
+
+---
+
+## 🔧 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature-name`)
+3. Commit your changes (`git commit -m "Add feature"`)
+4. Push to the branch (`git push origin feature-name`)
+5. Open a pull request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+If you want, I can also **add a small diagram showing the system architecture** with Ping, SNMP, and Speedtest integration so anyone can understand it at a glance.
+
+Do you want me to add that diagram?
+

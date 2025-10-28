@@ -29,7 +29,13 @@ export default defineNuxtConfig({
   },
   echarts: {
     charts: ['LineChart'],
-    components: ['GridComponent', 'TooltipComponent', 'DatasetComponent'],
+    components: [
+      'GridComponent',
+      'TooltipComponent',
+      'DatasetComponent',
+      'TitleComponent',
+      'LegendComponent',
+    ],
     renderer: ['canvas'],
   },
   eslint: {

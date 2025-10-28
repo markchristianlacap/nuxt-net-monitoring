@@ -1,10 +1,15 @@
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
 export function runEverySecond(task: () => Promise<void>) {
   async function run() {
     try {
       await task()
-    } catch (err) {
+    }
+    catch (err) {
       console.error('Error in runEverySecond task:', err)
-    } finally {
+    }
+    finally {
       scheduleNext()
     }
   }
@@ -25,4 +30,36 @@ export function runEverySecond(task: () => Promise<void>) {
   next.setSeconds(now.getSeconds() + 1)
   const delay = next.getTime() - now.getTime()
   setTimeout(run, delay)
+}
+export function runEveryHour(task: () => Promise<void>) {
+  async function run() {
+    try {
+      await task()
+    }
+    catch (err) {
+      console.error('Error in runEveryHour task:', err)
+    }
+    finally {
+      scheduleNext()
+    }
+  }
+
+  function scheduleNext() {
+    const now = new Date()
+    const next = new Date(now)
+    next.setHours(now.getHours() + 1, 0, 0, 0) // next exact hour
+    const delay = next.getTime() - now.getTime()
+    setTimeout(run, delay)
+  }
+
+  // align to next exact hour
+  const now = new Date()
+  const next = new Date(now)
+  next.setHours(now.getHours() + 1, 0, 0, 0)
+  const delay = next.getTime() - now.getTime()
+  setTimeout(run, delay)
+}
+
+export function execAsync(command: string): Promise<{ stdout: string, stderr: string }> {
+  return promisify(exec)(command)
 }

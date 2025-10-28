@@ -7,20 +7,20 @@ export async function pingHost(host = '8.8.8.8'): Promise<{ host: string, status
   try {
     const { stdout } = await execAsync(`ping -c 1 ${host}`)
     const match = stdout.match(/time=([\d.]+) ms/)
-    const latency = match ? parseFloat(match[1]) : null
+    const latency = match ? Number.parseFloat(match[1]) : null
     return {
       host,
       status: 'online',
       latency,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
-  } catch {
+  }
+  catch {
     return {
       host,
       status: 'offline',
       latency: null,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
   }
 }
-

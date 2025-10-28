@@ -14,10 +14,10 @@ export default defineEventHandler((event: H3Event) => {
   if (lastAuth && Date.now() - Number(lastAuth) < AUTH_INTERVAL) {
     return
   }
-
+  const config = useRuntimeConfig()
   const auth = getHeader(event, 'authorization')
-  const user = process.env.BASIC_AUTH_USER
-  const pass = process.env.BASIC_AUTH_PASS
+  const user = config.USER
+  const pass = config.PASS
 
   // ask for login if no auth header
   if (!auth || !auth.startsWith('Basic ')) {

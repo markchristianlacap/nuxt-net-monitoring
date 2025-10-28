@@ -100,4 +100,3 @@ pnpm run dev
   * Click **Run Speed Test** for an on-demand test
   * Hourly automated tests update live charts automatically
 * **History**: Explore past ping, bandwidth, and speed test data.
-

@@ -2,8 +2,8 @@
 const host = ref('')
 const timeData = ref<string[]>([])
 const latencyData = ref<number[]>([])
-const maxPoints = 60
 const maxLatency = ref(0)
+const maxPoints = 60
 let eventSource: EventSource | null = null
 
 const currentLatency = computed(() => latencyData.value.at(-1) ?? 0)
@@ -12,23 +12,22 @@ const option = computed<ECOption>(() => ({
   backgroundColor: 'transparent',
   tooltip: {
     trigger: 'axis',
-    backgroundColor: '#1e293b',
+    backgroundColor: '#0f172a',
     borderColor: '#334155',
-    textStyle: { color: '#f8fafc' },
+    textStyle: { color: '#f1f5f9' },
     formatter(params: any) {
-      const time = params[0].axisValue
-      const value = params[0].data
+      const { axisValue, data } = params[0]
       return `
-        <div style="font-size:13px">
-          <b>${time}</b><br/>
-          🏓 Latency: ${value} ms
+        <div style="font-size:13px; line-height:1.6">
+          <b>${axisValue}</b><br/>
+          🏓 Latency: <b style="color:#38bdf8">${data} ms</b>
         </div>
       `
     },
   },
   legend: {
     data: ['🏓 Latency'],
-    textStyle: { color: '#cbd5e1', fontWeight: '500' },
+    textStyle: { color: '#94a3b8', fontWeight: 500 },
     top: 10,
   },
   grid: { top: 60, left: 50, right: 20, bottom: 40 },
@@ -36,7 +35,7 @@ const option = computed<ECOption>(() => ({
     type: 'category',
     data: timeData.value,
     axisLine: { lineStyle: { color: '#475569' } },
-    axisLabel: { color: '#cbd5e1' },
+    axisLabel: { color: '#cbd5e1', fontSize: 11 },
   },
   yAxis: {
     type: 'value',
@@ -44,7 +43,7 @@ const option = computed<ECOption>(() => ({
     nameTextStyle: { color: '#cbd5e1' },
     axisLine: { lineStyle: { color: '#475569' } },
     splitLine: { lineStyle: { color: '#334155' } },
-    axisLabel: { color: '#cbd5e1' },
+    axisLabel: { color: '#cbd5e1', fontSize: 11 },
   },
   series: [
     {
@@ -87,60 +86,75 @@ const option = computed<ECOption>(() => ({
 function startStream() {
   if (eventSource)
     eventSource.close()
+
   timeData.value = []
   latencyData.value = []
   maxLatency.value = 0
 
   eventSource = new EventSource('/api/pings/stream')
+
   eventSource.onmessage = (evt) => {
     const payload = JSON.parse(evt.data)
     const latency = payload.latency ?? 0
     host.value = payload.host
     timeData.value.push(new Date(payload.timestamp).toLocaleTimeString())
     latencyData.value.push(latency)
-
     if (timeData.value.length > maxPoints) {
       timeData.value.shift()
       latencyData.value.shift()
     }
-    if (latency > maxLatency.value)
-      maxLatency.value = latency
+    maxLatency.value = Math.max(maxLatency.value, latency)
   }
 
   eventSource.onerror = () => console.warn('SSE disconnected')
 }
 
-onMounted(() => startStream())
+onMounted(startStream)
 onBeforeUnmount(() => eventSource?.close())
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center justify-center gap-2 mt-2">
-      <span class="font-semibold">Host:</span>
-      <span class="text-2xl font-bold">{{ host }}</span>
+  <div class="p-6 bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700">
+    <!-- Header -->
+    <div class="text-center mb-6">
+      <h2 class="text-slate-200 text-3xl font-bold tracking-wide mb-1">
+        Latency Monitor
+      </h2>
+      <p class="text-slate-400 text-sm">
+        Live ping stream visualization
+      </p>
     </div>
-    <!-- Header Stats -->
-    <div class="flex flex-wrap justify-center md:justify-around items-center gap-4 mb-6 text-slate-100">
-      <div class="flex items-center gap-2 text-cyan-400">
-        <span class="text-2xl">🏓</span>
-        <span class="font-semibold">Current:</span>
-        <span class="text-2xl font-bold">{{ currentLatency.toFixed(2) }}</span>
-        <span class="text-slate-400 text-sm">ms</span>
+
+    <!-- Host display -->
+    <div class="flex items-center justify-center gap-2 mb-6">
+      <span class="text-slate-400 font-medium">Host:</span>
+      <span class="text-2xl font-semibold text-cyan-400">{{ host }}</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="flex flex-wrap justify-center md:justify-around items-center gap-6 mb-8">
+      <div class="flex flex-col items-center bg-slate-800/60 px-6 py-4 rounded-2xl shadow-md border border-slate-700">
+        <span class="text-cyan-400 text-3xl">🏓</span>
+        <span class="text-slate-300 font-semibold mt-2">Current Latency</span>
+        <span class="text-3xl font-bold text-cyan-300">
+          {{ currentLatency.toFixed(2) }}
+          <span class="text-slate-500 text-sm ml-1">ms</span>
+        </span>
       </div>
-      <div class="flex items-center gap-2 text-amber-400">
-        <span class="text-2xl">⚡</span>
-        <span class="font-semibold">Max:</span>
-        <span class="text-2xl font-bold">{{ maxLatency.toFixed(2) }}</span>
-        <span class="text-slate-400 text-sm">ms</span>
+
+      <div class="flex flex-col items-center bg-slate-800/60 px-6 py-4 rounded-2xl shadow-md border border-slate-700">
+        <span class="text-amber-400 text-3xl">⚡</span>
+        <span class="text-slate-300 font-semibold mt-2">Max Latency</span>
+        <span class="text-3xl font-bold text-amber-300">
+          {{ maxLatency.toFixed(2) }}
+          <span class="text-slate-500 text-sm ml-1">ms</span>
+        </span>
       </div>
     </div>
 
     <!-- Chart -->
-    <VChart
-      :option="option"
-      autoresize
-      style="height: 500px; width: 100%;"
-    />
+    <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-inner">
+      <VChart :option="option" autoresize style="height: 420px; width: 100%;" />
+    </div>
   </div>
 </template>

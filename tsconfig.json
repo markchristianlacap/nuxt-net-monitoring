@@ -1,6 +1,8 @@
 {
-  // https://nuxt.com/docs/guide/concepts/typescript
-  "files": [],
+  "compilerOptions": {
+    "strict": true,
+    "allowSyntheticDefaultImports": true
+  },
   "references": [
     {
       "path": "./.nuxt/tsconfig.app.json"
@@ -15,8 +17,6 @@
       "path": "./.nuxt/tsconfig.node.json"
     }
   ],
-  "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "strict": true
-  }
+  // https://nuxt.com/docs/guide/concepts/typescript
+  "files": []
 }

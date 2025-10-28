@@ -1,137 +1,161 @@
-<script lang="ts" setup>
+<script setup lang="ts">
 import type { CalendarDate } from '@internationalized/date'
 import type { TableColumn } from '@nuxt/ui'
 import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
+import { debounce } from 'perfect-debounce'
 
-const df = new DateFormatter('en-US', {
-  dateStyle: 'medium',
-})
-
+const df = new DateFormatter('en-US', { dateStyle: 'medium' })
 const UBadge = resolveComponent('UBadge')
-const query = ref({
+
+// --- Reactive Query ---
+const query = reactive({
   page: 1,
   limit: 10,
   start: null as string | null,
   end: null as string | null,
   status: null as 'online' | 'offline' | null,
 })
-const dateRange = shallowRef({
-  start: null as CalendarDate | null,
-  end: null as CalendarDate | null,
-})
-const pings = await useFetch('/api/pings', {
-  query: query.value,
+
+// --- Date Range State ---
+const dateRange = ref<{ start: CalendarDate | null, end: CalendarDate | null }>({
+  start: null,
+  end: null,
 })
 
+// --- Debounced Fetch ---
+const { data: pingResponse, refresh } = await useFetch('/api/pings', {
+  query,
+  immediate: true,
+})
+
+const debouncedRefresh = debounce(() => refresh(), 300)
+
+// Watchers
+watch(query, debouncedRefresh, { deep: true })
+watch(dateRange, () => {
+  query.start = dateRange.value.start?.toString() ?? null
+  query.end = dateRange.value.end?.toString() ?? null
+}, { deep: true })
+
+// --- Columns ---
 const columns: TableColumn<any>[] = [
-  {
-    accessorKey: 'id',
-    header: '#',
-    cell: ({ row }) => `#${row.getValue('id')}`,
-  },
+  { accessorKey: 'id', header: '#', cell: ({ row }) => `#${row.getValue('id')}` },
   {
     accessorKey: 'timestamp',
     header: 'Date',
-    cell: ({ row }) => {
-      return new Date(row.getValue('timestamp')).toLocaleString('en-US', {
+    cell: ({ row }) =>
+      new Date(row.getValue('timestamp')).toLocaleString('en-US', {
         day: 'numeric',
         month: 'short',
         hour: '2-digit',
         minute: '2-digit',
         hour12: true,
-      })
-    },
+      }),
   },
-  {
-    accessorKey: 'host',
-    header: 'Host',
-  },
+  { accessorKey: 'host', header: 'Host' },
   {
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
-      const color = {
-        online: 'success' as const,
-        offline: 'error' as const,
-      }[row.getValue('status') as string]
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
-        row.getValue('status'))
+      const value = row.getValue('status') as string
+      const color = value === 'online' ? 'success' : 'error'
+      const label = value.charAt(0).toUpperCase() + value.slice(1)
+      return h(UBadge, { variant: 'subtle', color, class: 'capitalize' }, () => label)
     },
   },
   {
     accessorKey: 'latency',
-    header: () => h('div', { class: 'text-right' }, 'Latency'),
-    cell: ({ row }) => {
-      return h('div', { class: 'text-right font-medium' }, `${row.getValue('latency')} ms`)
-    },
+    header: () => h('div', { class: 'text-right' }, 'Latency (ms)'),
+    cell: ({ row }) =>
+      h('div', { class: 'text-right font-medium text-slate-200' }, `${row.getValue('latency')} ms`),
   },
 ]
-watch(() => dateRange.value, () => {
-  query.value.start = dateRange.value.start?.toString() ?? null
-  query.value.end = dateRange.value.end?.toString() ?? null
-}, { deep: true })
+function download() {
+  const a = document.createElement('a')
+  a.href = '/api/pings/download' + `?start=${query.start}&end=${query.end}`
+  a.download = 'pings.csv'
+  a.click()
+}
 </script>
 
 <template>
   <u-page>
-    <div class="container mx-auto mt-5">
-      <div class="flex gap-2 justify-end items-center">
-        <div class="text-xl font-bold">
+    <div class="container mx-auto mt-5 space-y-4 text-slate-100">
+      <!-- Header & Filters -->
+      <div class="flex flex-wrap gap-3 justify-between items-center">
+        <h2 class="text-2xl font-bold">
           Ping Results
-        </div>
-        <div class="flex-1" />
-        <div>Status</div>
-        <URadioGroup
-          v-model="query.status"
-          size="xs"
-          orientation="horizontal"
-          variant="table"
-          :color="query.status === 'offline' ? 'error' : 'success'"
-          :default-value="null"
-          :items="[
-            { label: 'All', value: null },
-            { label: 'Online', value: 'online' },
-            { label: 'Offline', value: 'offline' },
-          ]"
-          label-key="label"
-          value-key="value"
-        />
-        <UPopover>
-          <UButton color="neutral" variant="subtle" icon="i-lucide-calendar">
-            <template v-if="dateRange.start">
-              <template v-if="dateRange.end">
-                {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }} - {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}
+        </h2>
+
+        <div class="flex flex-wrap gap-3 items-center">
+          <!-- Status Filter -->
+          <div class="flex items-center gap-2">
+            <span class="font-semibold">Status:</span>
+            <URadioGroup
+              v-model="query.status"
+              size="xs"
+              orientation="horizontal"
+              variant="table"
+              :items="[
+                { label: 'All', value: null },
+                { label: 'Online', value: 'online' },
+                { label: 'Offline', value: 'offline' },
+              ]"
+              label-key="label"
+              value-key="value"
+            />
+          </div>
+
+          <UPopover>
+            <UButton color="neutral" variant="subtle" icon="i-lucide-calendar">
+              <template v-if="dateRange.start">
+                <template v-if="dateRange.end">
+                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}
+                  -
+                  {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}
+                </template>
+                <template v-else>
+                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}
+                </template>
               </template>
               <template v-else>
-                {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}
+                Pick a date
               </template>
+            </UButton>
+
+            <template #content>
+              <UCalendar v-model="dateRange" :number-of-months="2" range />
             </template>
-            <template v-else>
-              Pick a date
-            </template>
-          </UButton>
-          <template #content>
-            <UCalendar
-              v-model="dateRange"
-              :number-of-months="2"
-              range
-            />
-          </template>
-        </UPopover>
+          </UPopover>
+
+          <UButton color="neutral" variant="subtle" icon="i-lucide-download" @click="download" />
+        </div>
       </div>
+
+      <!-- Table -->
       <u-table
-        :data="pings.data.value?.data"
-        :columns
+        :data="pingResponse?.data"
+        :columns="columns"
+        class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50"
       />
-      <div class="flex justify-between mt-2">
+
+      <!-- Footer -->
+      <div class="flex justify-between items-center mt-3 text-sm text-slate-400">
         <div>
-          Total: {{ pings.data.value?.total.toLocaleString() }}
+          Total: {{ pingResponse?.total?.toLocaleString() ?? 0 }}
         </div>
         <u-pagination
           v-model:page="query.page"
-          :total="pings.data.value?.total"
+          :total="pingResponse?.total ?? 0"
+          :page-size="query.limit"
         />
       </div>
     </div>
   </u-page>
 </template>
+
+<style scoped>
+:deep(.u-table) {
+  background: transparent;
+}
+</style>

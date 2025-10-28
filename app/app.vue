@@ -17,6 +17,11 @@ const items = computed<NavigationMenuItem[]>(() => [
     to: '/bandwidths',
     active: route.path === '/bandwidths',
   },
+  {
+    label: 'Speedtest Results',
+    to: '/speedtest-results',
+    active: route.path === '/speedtest-results',
+  },
 ])
 useSeoMeta({
   title,
@@ -38,14 +43,22 @@ useSeoMeta({
         </div>
       </template>
       <template #right>
-        <UColorModeButton />
+        <UNavigationMenu :items="items" class="hidden md:block" />
+        <u-button
+          label="Run Speedtest"
+          color="primary"
+          icon="i-lucide-play"
+          @click="navigateTo('/speedtest')"
+        />
       </template>
       <template #body>
         <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
       </template>
     </UHeader>
     <UMain>
-      <NuxtPage />
+      <UPage class="w-full max-w-(--ui-container) mx-auto px-4 sm:px-6 lg:px-8 h-full mt-5">
+        <NuxtPage />
+      </UPage>
     </UMain>
   </UApp>
 </template>

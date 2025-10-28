@@ -1,7 +1,8 @@
 {
   "name": "nuxt-net-monitoring",
-  "private": true,
   "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -12,22 +13,19 @@
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.71",
-    "@iconify-json/simple-icons": "^1.2.55",
+    "@iconify-json/simple-icons": "^1.2.56",
     "@nuxt/ui": "^4.1.0",
-    "better-sqlite3": "^12.4.1",
     "kysely": "^0.28.8",
     "net-snmp": "^3.26.0",
     "nuxt": "^4.2.0",
-    "pg": "^8.16.3",
-    "speedtest-net": "^2.2.0"
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.1.0",
     "@nuxt/eslint": "^1.9.0",
     "@types/net-snmp": "^3.23.0",
     "@types/node": "latest",
-    "@types/pg": "^8.15.5",
-    "@types/speedtest-net": "^2.1.5",
+    "@types/pg": "^8.15.6",
     "eslint": "^9.38.0",
     "kysely-ctl": "^0.19.0",
     "nuxt-echarts": "^1.0.1",
@@ -36,6 +34,5 @@
   },
   "resolutions": {
     "unimport": "4.1.1"
-  },
-  "packageManager": "pnpm@10.18.3"
+  }
 }

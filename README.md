@@ -2,8 +2,9 @@
 
 [![Nuxt.js](https://img.shields.io/badge/Nuxt.js-013220?style=flat\&logo=nuxt.js\&logoColor=white)](https://nuxt.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat\&logo=node.js\&logoColor=white)](https://nodejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Speedtest CLI](https://img.shields.io/badge/Speedtest-CLI-orange?style=flat\&logo=ookla)](https://www.speedtest.net/apps/cli)
+[![PfSense SNMP](https://img.shields.io/badge/PfSense-SNMP-blue?style=flat\&logo=pfSense)](https://www.pfsense.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat\&logo=postgresql\&logoColor=white)](https://www.postgresql.org/)
 
 A **real-time network monitoring system** built with Nuxt.js. Monitor IP availability, interface bandwidth, and internet speed with live charts and historical data.
 
@@ -49,6 +50,7 @@ A **real-time network monitoring system** built with Nuxt.js. Monitor IP availab
   * SNMP for PfSense bandwidth
 * **Charts**: ECharts (live & historical visualization)
 * **Speed Test**: Speedtest CLI by Ookla
+* **Database**: PostgreSQL
 
 ---
 
@@ -64,20 +66,28 @@ cd nuxt-net-monitor
 2. Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
 3. Configure environment variables (`.env`):
 
 ```env
-PF_HOST=192.168.1.1
-PF_SNMP_COMMUNITY=public
+NUXT_SNMP_COMMUNITY=hello@world
+NUXT_SNMP_HOST=127.0.0.1
+NUXT_PING_HOST=8.8.8.8
+NUXT_DB_HOST=127.0.0.1
+NUXT_DB_PORT=5432
+NUXT_DB_USER=postgres
+NUXT_DB_PASSWORD=postgres
+NUXT_DB_NAME=net-monitor
+BASIC_AUTH_USER=admin
+BASIC_AUTH_PASS=secret123
 ```
 
 4. Run the development server:
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ---
@@ -90,26 +100,4 @@ npm run dev
   * Click **Run Speed Test** for an on-demand test
   * Hourly automated tests update live charts automatically
 * **History**: Explore past ping, bandwidth, and speed test data.
-
----
-
-## 🔧 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature-name`)
-3. Commit your changes (`git commit -m "Add feature"`)
-4. Push to the branch (`git push origin feature-name`)
-5. Open a pull request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-If you want, I can also **add a small diagram showing the system architecture** with Ping, SNMP, and Speedtest integration so anyone can understand it at a glance.
-
-Do you want me to add that diagram?
 

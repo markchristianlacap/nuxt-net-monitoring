@@ -87,7 +87,8 @@ Before installing, ensure you have:
 3. **PostgreSQL** (v12 or higher) - running and accessible
 4. **Speedtest CLI** by Ookla - [Installation Guide](https://www.speedtest.net/apps/cli)
    ```bash
-   # Example installation on Linux
+   # Example installation on Linux (from official Ookla repository)
+   # Note: Review the script before running or use your system's package manager if available
    curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
    sudo apt-get install speedtest
    ```
@@ -392,7 +393,8 @@ This project is open source and available under the MIT License.
 
 ### Speedtest CLI Not Found
 ```bash
-# Install Speedtest CLI
+# Install Speedtest CLI (from official Ookla repository)
+# Note: Review the script before running or use your system's package manager if available
 curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
 sudo apt-get install speedtest
 ```

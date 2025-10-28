@@ -267,7 +267,7 @@ const option = computed(() => ({
       </div>
     </div>
 
-    <VChart :option="option" style="width: 100%; height: 300px;" class="sm:h-[400px]" autoresize />
+    <VChart :option="option" class="h-[300px] sm:h-[400px] w-full" autoresize />
 
     <u-progress
       v-if="['initializing', 'ping', 'download', 'upload'].includes(status)"

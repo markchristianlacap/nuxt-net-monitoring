@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.1.0",
-    "@nuxt/eslint": "^1.9.0",
+    "@nuxt/eslint": "^1.10.0",
     "@types/net-snmp": "^3.23.0",
     "@types/node": "latest",
     "@types/pg": "^8.15.6",

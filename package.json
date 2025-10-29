@@ -2,6 +2,7 @@
   "name": "nuxt-net-monitoring",
   "type": "module",
   "private": true,
+  "license": "MIT",
   "packageManager": "pnpm@10.18.3",
   "scripts": {
     "build": "nuxt build",

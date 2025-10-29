@@ -383,21 +383,6 @@ const ping = spawn('ping', ['-i', '1', host]) // -i 1 = 1 second interval
 
 ---
 
-## 📸 Screenshots
-
-**Dashboard Example**
-![Dashboard Screenshot](./screenshots/dashboard.png)
-
-**Live Bandwidth Chart**
-![Bandwidth Chart](./screenshots/bandwidth.png)
-
-**Speed Test Results**
-![Speed Test Chart](./screenshots/speedtest.png)
-
-> Screenshots show the actual application UI with live charts and monitoring data.
-
----
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

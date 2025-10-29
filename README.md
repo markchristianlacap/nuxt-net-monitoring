@@ -61,7 +61,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 * **Runtime**: Nuxt Nitro server (Node.js)
 * **Database**: PostgreSQL with Kysely SQL query builder (type-safe)
 * **ORM/Query Builder**: Kysely with PostgresDialect
-* **Protocols**: 
+* **Protocols**:
   - ICMP Ping (via `ping` command)
   - SNMP v2c (net-snmp library)
   - HTTP Basic Authentication
@@ -344,8 +344,8 @@ nuxt-net-monitoring/
 If your network device uses different interface IDs, modify the OIDs in `server/utils/bandwidth.ts`:
 
 ```typescript
-const inOid = '1.3.6.1.2.1.2.2.1.10.5'   // ifInOctets for interface 5
-const outOid = '1.3.6.1.2.1.2.2.1.16.5'  // ifOutOctets for interface 5
+const inOid = '1.3.6.1.2.1.2.2.1.10.5' // ifInOctets for interface 5
+const outOid = '1.3.6.1.2.1.2.2.1.16.5' // ifOutOctets for interface 5
 ```
 
 To find your interface ID, use an SNMP browser or:
@@ -357,7 +357,7 @@ snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.2.2.1.2
 
 To change ping frequency, edit `server/plugins/ping.server.ts`:
 ```typescript
-const ping = spawn('ping', ['-i', '1', host])  // -i 1 = 1 second interval
+const ping = spawn('ping', ['-i', '1', host]) // -i 1 = 1 second interval
 ```
 
 ---

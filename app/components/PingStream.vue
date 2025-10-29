@@ -114,47 +114,47 @@ onBeforeUnmount(() => eventSource?.close())
 </script>
 
 <template>
-  <div class="p-6 bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700">
+  <div class="p-4 sm:p-6 bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700">
     <!-- Header -->
-    <div class="text-center mb-6">
-      <h2 class="text-slate-200 text-3xl font-bold tracking-wide mb-1">
+    <div class="text-center mb-4 sm:mb-6">
+      <h2 class="text-slate-200 text-2xl sm:text-3xl font-bold tracking-wide mb-1">
         Latency Monitor
       </h2>
-      <p class="text-slate-400 text-sm">
+      <p class="text-slate-400 text-xs sm:text-sm">
         Live ping stream visualization
       </p>
     </div>
 
     <!-- Host display -->
-    <div class="flex items-center justify-center gap-2 mb-6">
-      <span class="text-slate-400 font-medium">Host:</span>
-      <span class="text-2xl font-semibold text-cyan-400">{{ host }}</span>
+    <div class="flex items-center justify-center gap-2 mb-4 sm:mb-6">
+      <span class="text-slate-400 font-medium text-sm sm:text-base">Host:</span>
+      <span class="text-xl sm:text-2xl font-semibold text-cyan-400 break-all">{{ host }}</span>
     </div>
 
     <!-- Stats -->
-    <div class="flex flex-wrap justify-center md:justify-around items-center gap-6 mb-8">
-      <div class="flex flex-col items-center bg-slate-800/60 px-6 py-4 rounded-2xl shadow-md border border-slate-700">
-        <span class="text-cyan-400 text-3xl">🏓</span>
-        <span class="text-slate-300 font-semibold mt-2">Current Latency</span>
-        <span class="text-3xl font-bold text-cyan-300">
+    <div class="grid grid-cols-2 gap-3 sm:gap-6 mb-6 sm:mb-8">
+      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
+        <span class="text-cyan-400 text-2xl sm:text-3xl">🏓</span>
+        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Current Latency</span>
+        <span class="text-2xl sm:text-3xl font-bold text-cyan-300">
           {{ currentLatency.toFixed(2) }}
-          <span class="text-slate-500 text-sm ml-1">ms</span>
+          <span class="text-slate-500 text-xs sm:text-sm ml-1">ms</span>
         </span>
       </div>
 
-      <div class="flex flex-col items-center bg-slate-800/60 px-6 py-4 rounded-2xl shadow-md border border-slate-700">
-        <span class="text-amber-400 text-3xl">⚡</span>
-        <span class="text-slate-300 font-semibold mt-2">Max Latency</span>
-        <span class="text-3xl font-bold text-amber-300">
+      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
+        <span class="text-amber-400 text-2xl sm:text-3xl">⚡</span>
+        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Max Latency</span>
+        <span class="text-2xl sm:text-3xl font-bold text-amber-300">
           {{ maxLatency.toFixed(2) }}
-          <span class="text-slate-500 text-sm ml-1">ms</span>
+          <span class="text-slate-500 text-xs sm:text-sm ml-1">ms</span>
         </span>
       </div>
     </div>
 
     <!-- Chart -->
-    <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 shadow-inner">
-      <VChart :option="option" autoresize style="height: 420px; width: 100%;" />
+    <div class="bg-slate-800/50 rounded-xl sm:rounded-2xl p-2 sm:p-4 border border-slate-700 shadow-inner">
+      <VChart :option="option" autoresize class="h-[300px] sm:h-[420px] w-full" />
     </div>
   </div>
 </template>

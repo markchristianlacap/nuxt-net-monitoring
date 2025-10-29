@@ -128,6 +128,8 @@ Edit `.env` with your configuration:
 # SNMP Configuration
 NUXT_SNMP_COMMUNITY=your-snmp-community-string
 NUXT_SNMP_HOST=192.168.1.1  # Your PfSense/router IP
+NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # SNMP OID for inbound traffic (ifInOctets)
+NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # SNMP OID for outbound traffic (ifOutOctets)
 
 # Ping Target
 NUXT_PING_HOST=8.8.8.8  # Target IP to monitor (e.g., Google DNS)
@@ -362,12 +364,14 @@ nuxt-net-monitoring/
 
 ### SNMP OID Configuration
 
-If your network device uses different interface IDs, modify the OIDs in `server/utils/bandwidth.ts`:
+The SNMP OIDs for monitoring network interfaces can be configured via environment variables in your `.env` file:
 
-```typescript
-const inOid = '1.3.6.1.2.1.2.2.1.10.5' // ifInOctets for interface 5
-const outOid = '1.3.6.1.2.1.2.2.1.16.5' // ifOutOctets for interface 5
+```env
+NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets for interface 5
+NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets for interface 5
 ```
+
+If not specified, the application defaults to interface 5 (`.10.5` for inbound and `.16.5` for outbound).
 
 To find your interface ID, use an SNMP browser or:
 ```bash

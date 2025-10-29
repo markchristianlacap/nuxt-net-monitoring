@@ -6,8 +6,8 @@ const host = config.SNMP_HOST
 const community = config.SNMP_COMMUNITY
 const session = snmp.createSession(host, community)
 
-const inOid = '1.3.6.1.2.1.2.2.1.10.5'
-const outOid = '1.3.6.1.2.1.2.2.1.16.5'
+const inOid = config.SNMP_IN_OID
+const outOid = config.SNMP_OUT_OID
 
 let prevIn = 0
 let prevOut = 0

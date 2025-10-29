@@ -135,18 +135,18 @@ function startStream() {
   source.onmessage = (evt) => {
     const data = JSON.parse(evt.data)
     timeData.value.push(new Date(data.timestamp).toLocaleTimeString())
-    inData.value.push(data.inMbps)
-    outData.value.push(data.outMbps)
-    host.value = data.host
-
+    // round to 2 decimal
+    const inMbps = Math.round(data.inMbps * 100) / 100
+    const outMbps = Math.round(data.outMbps * 100) / 100
+    inData.value.push(inMbps)
+    outData.value.push(outMbps)
     if (timeData.value.length > maxData) {
       timeData.value.shift()
       inData.value.shift()
       outData.value.shift()
     }
-
-    currentDownload.value = data.inMbps.toFixed(2)
-    currentUpload.value = data.outMbps.toFixed(2)
+    currentDownload.value = inMbps
+    currentUpload.value = outMbps
     maxDownload.value = Math.max(maxDownload.value, data.inMbps)
     maxUpload.value = Math.max(maxUpload.value, data.outMbps)
   }

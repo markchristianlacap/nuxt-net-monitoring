@@ -1,3 +1,4 @@
+import type { BandwidthResult } from '#shared/types/bandwidth'
 import snmp from 'net-snmp'
 
 const config = useRuntimeConfig()
@@ -31,7 +32,7 @@ async function getData(): Promise<{ inBytes: number, outBytes: number }> {
   })
 }
 
-export async function getBandwidth(): Promise<{ inMbps: number, outMbps: number, host: string, timestamp: string } | null> {
+export async function getBandwidth(): Promise<BandwidthResult | null> {
   try {
     const res = await getData()
     if (firstRun) {
@@ -46,7 +47,14 @@ export async function getBandwidth(): Promise<{ inMbps: number, outMbps: number,
     const outMbps = diffOut / 1048576
     prevIn = res.inBytes
     prevOut = res.outBytes
-    return { inMbps, outMbps, host, timestamp: new Date().toISOString() }
+    if (inMbps < 0 || outMbps < 0)
+      return null
+    return {
+      inMbps,
+      outMbps,
+      host,
+      timestamp: new Date().toISOString(),
+    }
   }
   catch {
     return null

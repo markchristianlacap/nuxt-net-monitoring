@@ -4,6 +4,7 @@ const timeData = ref<string[]>([])
 const latencyData = ref<number[]>([])
 const maxLatency = ref(0)
 const maxPoints = 60
+const status = ref<'online' | 'offline' | 'idle'>('idle')
 let eventSource: EventSource | null = null
 
 const currentLatency = computed(() => latencyData.value.at(-1) ?? 0)
@@ -99,6 +100,7 @@ function startStream() {
     host.value = payload.host
     timeData.value.push(new Date(payload.timestamp).toLocaleTimeString())
     latencyData.value.push(latency)
+    status.value = payload.status
     if (timeData.value.length > maxPoints) {
       timeData.value.shift()
       latencyData.value.shift()
@@ -132,11 +134,11 @@ onBeforeUnmount(() => eventSource?.close())
     </div>
 
     <!-- Stats -->
-    <div class="grid grid-cols-2 gap-3 sm:gap-6 mb-6 sm:mb-8">
+    <div class="grid grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
       <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
         <span class="text-cyan-400 text-2xl sm:text-3xl">🏓</span>
         <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Current Latency</span>
-        <span class="text-2xl sm:text-3xl font-bold text-cyan-300">
+        <span class="text-2xl sm:text-3xl font-bold " :class="currentLatency > 100 || currentLatency <= 0 ? 'text-red-500' : 'text-cyan-300'">
           {{ currentLatency.toFixed(2) }}
           <span class="text-slate-500 text-xs sm:text-sm ml-1">ms</span>
         </span>
@@ -148,6 +150,14 @@ onBeforeUnmount(() => eventSource?.close())
         <span class="text-2xl sm:text-3xl font-bold text-amber-300">
           {{ maxLatency.toFixed(2) }}
           <span class="text-slate-500 text-xs sm:text-sm ml-1">ms</span>
+        </span>
+      </div>
+
+      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
+        <span class="text-amber-400 text-2xl sm:text-3xl">🚀</span>
+        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Status</span>
+        <span class="text-2xl sm:text-3xl font-bold uppercase" :class="status === 'offline' ? 'text-red-500' : status === 'online' ? 'text-green-500' : 'text-blue-300'">
+          {{ status }}
         </span>
       </div>
     </div>

@@ -214,7 +214,7 @@ onBeforeUnmount(() => source?.close())
 
     <!-- Chart -->
     <div class="bg-slate-800/50 rounded-xl sm:rounded-2xl p-2 sm:p-4 border border-slate-700 shadow-inner">
-      <VChart :option="option" autoresize class="h-[300px] sm:h-[420px] w-full" />
+      <VChart :option="option" autoresize :style="{ height: '400px' }" />
     </div>
   </div>
 </template>

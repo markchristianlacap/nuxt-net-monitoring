@@ -1,4 +1,4 @@
-import { db } from '~~/server/db'
+import { spawn } from 'node:child_process'
 
 export default defineEventHandler(async (event) => {
   const res = event.node.res
@@ -9,37 +9,25 @@ export default defineEventHandler(async (event) => {
   let counter = 0
   const config = useRuntimeConfig()
   const host = config.PING_HOST
-  let lastId = 0
-  async function pingHost() {
-    try {
-      const result = await db
-        .selectFrom('pings')
-        .where('host', '=', host)
-        .orderBy('timestamp', 'desc')
-        .limit(1)
-        .selectAll()
-        .executeTakeFirst()
-      return result
-    }
-    catch {
-      return {
-        id: 0,
-        host,
-        status: 'offline' as const,
-        latency: null,
-        timestamp: new Date().toISOString(),
-      }
-    }
-  }
 
-  runEverySecond(async () => {
-    const data = await pingHost()
-    if (!data || data.id === lastId) {
-      return
-    }
-    lastId = data.id
+  const ping = spawn('ping', ['-i', '1', host])
+
+  ping.stdout.on('data', (raw) => {
     res.write(`id: ${++counter}\n`)
+    const latencyMatch = raw.toString().match(/time=([\d.]+) ms/)
+    const latency: number = latencyMatch ? Number(latencyMatch[1]) : 0
+    const data = {
+      latency,
+      timestamp: new Date().toISOString(),
+      status: latency > 0 ? 'online' : 'offline',
+      host,
+    }
     res.write(`data: ${JSON.stringify(data)}\n\n`)
+  })
+
+  ping.on('error', (error) => {
+    console.error(error)
+    res.end()
   })
 
   event.node.req.on('close', () => {

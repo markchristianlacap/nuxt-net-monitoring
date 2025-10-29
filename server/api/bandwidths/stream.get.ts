@@ -1,29 +1,15 @@
-import { db } from '~~/server/db'
-
 export default defineEventHandler(async (event) => {
   setHeader(event, 'cache-control', 'no-cache')
   setHeader(event, 'connection', 'keep-alive')
   setHeader(event, 'content-type', 'text/event-stream')
   setResponseStatus(event, 200)
-  let lastId = 0
+  let counter = 0
   const sendEvent = async () => {
     try {
-      const res = await db.selectFrom('bandwidths').selectAll().orderBy('timestamp', 'desc').limit(1).executeTakeFirst()
-      if (!res)
+      const data = await getBandwidth()
+      if (!data)
         return
-      if (res.inMbps < 0 || res.outMbps < 0)
-        return
-      const data = {
-        inMbps: Number.parseFloat(res.inMbps.toFixed(2)),
-        outMbps: Number.parseFloat(res.outMbps.toFixed(2)),
-        timestamp: res.timestamp,
-        host: res.host,
-      }
-      if (res.id === lastId)
-        return
-
-      lastId = res.id
-      event.node.res.write(`id: ${res.id}\n`)
+      event.node.res.write(`id: ${++counter}\n`)
       event.node.res.write(`data: ${JSON.stringify(data)}\n\n`)
     }
     catch (error) {

@@ -1,5 +1,15 @@
 <script setup lang="ts">
 const tab = ref<'pings' | 'bandwidths'>('pings')
+const tabs = [
+  {
+    label: 'Ping Latency',
+    value: 'pings',
+  },
+  {
+    label: 'Bandwidth',
+    value: 'bandwidths',
+  },
+]
 </script>
 
 <template>
@@ -9,23 +19,18 @@ const tab = ref<'pings' | 'bandwidths'>('pings')
         v-model="tab"
         variant="table"
         orientation="horizontal"
-        :items="[
-          {
-            label: 'Ping Latency',
-            value: 'pings',
-          },
-          {
-            label: 'Bandwidth',
-            value: 'bandwidths',
-          },
-        ]"
+        :items="tabs"
         label-key="label"
         value-key="value"
       />
     </div>
     <div class="mt-4">
-      <PingStream v-show="tab === 'pings'" />
-      <BandwidthStream v-show="tab === 'bandwidths'" />
+      <PingStream
+        v-show="tab === 'pings'"
+      />
+      <BandwidthStream
+        v-show="tab === 'bandwidths'"
+      />
     </div>
   </div>
 </template>

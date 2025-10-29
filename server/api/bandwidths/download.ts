@@ -7,12 +7,12 @@ export default defineEventHandler(async (event) => {
     .orderBy('timestamp', 'desc')
   if (query.start && query.start !== 'null') {
     const start = new Date(query.start as string)
-    start.setHours(0, 0, 0, 0)
+    start.setUTCHours(0, 0, 0, 0)
     baseQuery = baseQuery.where('timestamp', '>=', start)
   }
   if (query.end && query.end !== 'null') {
     const end = new Date(query.end as string)
-    end.setHours(23, 59, 59, 999)
+    end.setUTCHours(23, 59, 59, 999)
     baseQuery = baseQuery.where('timestamp', '<=', end)
   }
 

@@ -72,17 +72,18 @@ const columns: TableColumn<any>[] = [
 
 <template>
   <u-page>
-    <div class="mt-5 space-y-4 text-slate-100">
-      <div class="flex flex-wrap gap-3 justify-between items-center">
-        <h2 class="text-2xl font-bold">
+    <div class="mt-3 sm:mt-5 space-y-4 text-slate-100 px-2 sm:px-0">
+      <div class="flex flex-col sm:flex-row flex-wrap gap-3 justify-between items-start sm:items-center">
+        <h2 class="text-xl sm:text-2xl font-bold">
           Speedtest Results Log
         </h2>
-        <div class="flex flex-wrap gap-3 items-center">
-          <UPopover>
-            <UButton color="neutral" variant="subtle" icon="i-lucide-calendar">
+        <div class="flex gap-2 w-full sm:w-auto">
+          <UPopover class="flex-1 sm:flex-none">
+            <UButton color="neutral" variant="subtle" icon="i-lucide-calendar" class="w-full sm:w-auto justify-start">
               <template v-if="dateRange.start">
                 <template v-if="dateRange.end">
-                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }} - {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}
+                  <span class="hidden sm:inline">{{ df.format(dateRange.start.toDate(getLocalTimeZone())) }} - {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}</span>
+                  <span class="sm:hidden">{{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}</span>
                 </template>
                 <template v-else>
                   {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}
@@ -99,18 +100,21 @@ const columns: TableColumn<any>[] = [
         </div>
       </div>
 
-      <u-table
-        :data="pingResponse?.data"
-        :columns="columns"
-        class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50"
-      />
+      <div class="overflow-x-auto -mx-2 sm:mx-0">
+        <u-table
+          :data="pingResponse?.data"
+          :columns="columns"
+          class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50 min-w-full"
+        />
+      </div>
 
-      <div class="flex justify-between items-center mt-3 text-sm text-slate-400">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-3 text-xs sm:text-sm text-slate-400">
         <div>Total: {{ pingResponse?.total?.toLocaleString() ?? 0 }}</div>
         <u-pagination
           v-model:page="query.page"
           :total="pingResponse?.total ?? 0"
           :page-size="query.limit"
+          size="sm"
         />
       </div>
     </div>

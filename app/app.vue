@@ -45,11 +45,13 @@ useSeoMeta({
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />
         <u-button
-          label="Run Speedtest"
           color="primary"
           icon="i-lucide-play"
           @click="navigateTo('/speedtest')"
-        />
+        >
+          <span class="hidden sm:inline">Run Speedtest</span>
+          <span class="sm:hidden">Test</span>
+        </u-button>
       </template>
       <template #body>
         <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />

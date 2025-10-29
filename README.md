@@ -13,8 +13,8 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 ## 🎯 Features
 
 ### Real-Time Monitoring
-* **Ping Monitoring**: Continuous ping monitoring (every 1 second) with latency tracking and status detection
-* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic (inbound/outbound Mbps) from PfSense or other SNMP-enabled devices
+* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals, live latency tracking, and status detection. Data is averaged and saved to database every 60 seconds
+* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic (inbound/outbound Mbps) from PfSense or other SNMP-enabled devices. Data is collected every second, averaged, and saved every 60 seconds
 * **Live Streaming Data**: Server-sent events (SSE) for real-time data updates without page refresh
 
 ### Speed Test Integration
@@ -209,11 +209,13 @@ The homepage displays real-time monitoring with two tabs:
    - Live streaming ping data every second
    - Real-time latency graph
    - Status indicator (online/offline)
+   - Database stores 60-second averages for historical tracking
 
 2. **Bandwidth Tab**
-   - Live SNMP bandwidth monitoring
+   - Live SNMP bandwidth monitoring every second
    - Upload and download speeds in Mbps
-   - Continuous data collection every second
+   - Real-time visualization
+   - Database stores 60-second averages for historical tracking
 
 ### Speed Test (`/speedtest`)
 
@@ -256,26 +258,45 @@ The application runs three background monitoring processes:
    - Spawns continuous `ping` process on server startup
    - Monitors configured `NUXT_PING_HOST` every 1 second
    - Parses latency from ping output
-   - Stores results in PostgreSQL `pings` table
+   - Collects latency readings and calculates average every 60 seconds
+   - Stores averaged results in PostgreSQL `pings` table
 
 2. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
-   - Queries SNMP device every 1 second
+   - Queries SNMP device every 1 second using precise timing helper (`runEverySecond`)
    - Reads interface byte counters via SNMP OIDs
-   - Calculates bandwidth delta (Mbps)
-   - Stores results in `bandwidths` table
+   - Calculates bandwidth delta (Mbps) for each reading
+   - Collects bandwidth readings and calculates average every 60 seconds
+   - Stores averaged results in `bandwidths` table
 
 3. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
-   - Runs Ookla Speedtest CLI every hour
+   - Runs Ookla Speedtest CLI every hour using precise timing helper (`runEveryHour`)
    - Stores results in `speedtest_results` table
    - Captures download/upload speeds, latency, ISP, and result URL
 
 ### Real-Time Streaming
 
-- **Server-Sent Events (SSE)**: Used for live data streaming
+- **Server-Sent Events (SSE)**: Used for live data streaming to the frontend
 - **API Endpoints**:
-  - `/api/pings/stream.get` - Live ping data stream
-  - `/api/bandwidths/stream.get` - Live bandwidth stream
+  - `/api/pings/stream.get` - Live ping data stream (updates every second)
+  - `/api/bandwidths/stream.get` - Live bandwidth stream (updates every second)
   - `/api/speedtest` (POST) - Live speed test execution stream
+
+### Data Collection & Storage Strategy
+
+The application uses a two-tier approach for optimal performance:
+
+**Real-Time Collection** (Every 1 second):
+- Ping latency measurements
+- SNMP bandwidth readings
+- Streamed to frontend via SSE for live visualization
+
+**Database Storage** (Every 60 seconds):
+- Averaged ping latency over the past minute
+- Averaged bandwidth readings over the past minute
+- Reduces database writes while maintaining data accuracy
+- Historical data remains accessible for analysis and export
+
+This approach provides real-time monitoring responsiveness while efficiently managing database resources.
 
 ### Database Schema
 

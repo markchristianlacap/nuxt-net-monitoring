@@ -107,6 +107,10 @@ Choose one of the following installation methods:
 
 The easiest way to get started! Docker Compose will set up everything automatically, including PostgreSQL and all dependencies.
 
+> 📖 **Quick Start Guide**: See [QUICKSTART.md](./QUICKSTART.md) for a condensed getting-started guide.
+> 
+> 📖 **Full Docker Guide**: See [DOCKER.md](./DOCKER.md) for comprehensive Docker deployment documentation.
+
 #### Prerequisites
 - Docker Engine 20.10+
 - Docker Compose v2.0+

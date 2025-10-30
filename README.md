@@ -127,7 +127,7 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    NUXT_PASS=your-secure-password
    ```
    
-   > **Note**: The `NUXT_DB_HOST` is automatically set to `postgres` in the docker-compose.yml file and should not be included in `.env.docker`.
+   > **Note**: The `NUXT_DB_HOST` is automatically set to `postgres` in docker-compose.yml and should not be modified in `.env.docker`.
 
 3. **Start the Application**
    ```bash

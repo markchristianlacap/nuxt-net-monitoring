@@ -25,3 +25,6 @@ logs
 
 # local database
 *.db
+
+# Docker override
+docker-compose.override.yml

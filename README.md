@@ -162,14 +162,9 @@ The easiest way to get started! Docker Compose will set up everything automatica
 
 #### Docker Tips
 
-- **Accessing Local Network Devices**: If your SNMP device (e.g., PfSense) is on your local network, you may need to use host network mode. Uncomment this line in `docker-compose.yml`:
-  ```yaml
-  network_mode: host
-  ```
-  Note: When using host network mode, the app will be directly accessible on port 3000 without port mapping.
-
+- **Full Documentation**: See [DOCKER.md](./DOCKER.md) for comprehensive Docker deployment guide
+- **Accessing Local Network Devices**: If your SNMP device (e.g., PfSense) is on your local network, you may need to use host network mode. See DOCKER.md for details.
 - **Persistent Data**: Database data is stored in a Docker volume named `postgres_data` and persists across container restarts.
-
 - **Rebuild After Code Changes**:
   ```bash
   docker compose up -d --build

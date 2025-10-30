@@ -30,14 +30,7 @@ logs
 .git
 .gitignore
 
-# Docker
-docker-compose.yml
-Dockerfile
-.dockerignore
-
-# Documentation and non-essential files
-README.md
-LICENSE
+# Documentation (keep Dockerfile and docker-compose files)
 screenshots
 renovate.json
 .editorconfig
@@ -46,3 +39,6 @@ renovate.json
 # Test files (if any)
 *.test.ts
 *.spec.ts
+
+# Docker override
+docker-compose.override.yml

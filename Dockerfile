@@ -1,20 +1,27 @@
 # Use Node.js LTS as base image
 FROM node:20-slim
 
-# Install system dependencies including Speedtest CLI and ping
+# Install system dependencies including ping and postgresql client
 RUN apt-get update && \
     apt-get install -y \
     curl \
     gnupg \
+    wget \
     iputils-ping \
     ca-certificates \
     postgresql-client && \
-    # Install Ookla Speedtest CLI from official repository
-    curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash && \
-    apt-get install -y speedtest && \
     # Clean up to reduce image size
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Ookla Speedtest CLI (optional, can be skipped if build fails)
+# This will be installed at runtime if needed
+RUN curl -fsSL https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash && \
+    apt-get update && \
+    apt-get install -y speedtest && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* || \
+    echo "Warning: Speedtest CLI installation failed. Speed test feature will not be available."
 
 # Install pnpm
 RUN npm install -g pnpm@10.18.3

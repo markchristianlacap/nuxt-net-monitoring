@@ -104,7 +104,7 @@ const columns: TableColumn<any>[] = [
         <u-table
           :data="pingResponse?.data"
           :columns="columns"
-          class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50 min-w-full"
+          class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50 min-w-[800px]"
         />
       </div>
 

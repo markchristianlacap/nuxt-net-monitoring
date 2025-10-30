@@ -103,7 +103,7 @@ function download() {
         <u-table
           :data="bandwidthResponse?.data"
           :columns="columns"
-          class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50 min-w-full"
+          class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50 min-w-[600px]"
         />
       </div>
 

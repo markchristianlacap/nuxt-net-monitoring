@@ -138,6 +138,7 @@ function startStream() {
     // round to 2 decimal
     const inMbps = Math.round(data.inMbps * 100) / 100
     const outMbps = Math.round(data.outMbps * 100) / 100
+    host.value = data.host
     inData.value.push(inMbps)
     outData.value.push(outMbps)
     if (timeData.value.length > maxData) {

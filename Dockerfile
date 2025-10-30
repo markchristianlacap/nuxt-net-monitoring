@@ -15,7 +15,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Ookla Speedtest CLI (optional, can be skipped if build fails)
-# This will be installed at runtime if needed
+# NOTE: This downloads and runs a script from the internet. In production environments,
+# consider verifying the script or using a specific package version for better security.
+# The installation is wrapped in a conditional to allow build to continue if it fails.
 RUN curl -fsSL https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash && \
     apt-get update && \
     apt-get install -y speedtest && \

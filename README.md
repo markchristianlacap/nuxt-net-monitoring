@@ -78,118 +78,183 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
 ---
 
-## 📋 Prerequisites
+## 🚀 Installation
 
-Before installing, ensure you have:
+You can run this application either with Docker (recommended) or manually.
 
-1. **Node.js** (v18 or higher)
-2. **pnpm** (v10.18.3 or compatible version)
-3. **PostgreSQL** (v12 or higher) - running and accessible
-4. **Speedtest CLI** by Ookla - [Installation Guide](https://www.speedtest.net/apps/cli)
+### Option 1: Docker Deployment (Recommended)
+
+The easiest way to get started is using Docker Compose, which sets up both the application and PostgreSQL database automatically.
+
+#### Prerequisites for Docker
+- **Docker** and **Docker Compose** installed on your system
+- **SNMP Access** to your network device (PfSense, router, etc.)
+
+#### Steps
+
+1. **Clone the Repository**
    ```bash
-   # Example installation on Linux (from official Ookla repository)
-   # Note: Review the script before running or use your system's package manager if available
-   curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
-   sudo apt-get install speedtest
+   git clone https://github.com/markchristianlacap/nuxt-net-monitoring.git
+   cd nuxt-net-monitoring
    ```
-5. **SNMP Access** to your network device (PfSense, router, etc.)
-   - SNMP v2c community string
-   - Access to interface OIDs (default: `.1.3.6.1.2.1.2.2.1.10.5` for in, `.1.3.6.1.2.1.2.2.1.16.5` for out)
-6. **ping** command available on your system (usually pre-installed on Linux/macOS/Windows)
+
+2. **Configure Environment Variables**
+   
+   Create a `.env.docker` file from the example:
+   ```bash
+   cp .env.docker.example .env.docker
+   ```
+   
+   Edit `.env.docker` with your configuration:
+   ```env
+   # SNMP Configuration
+   NUXT_SNMP_HOST=192.168.1.1  # Your PfSense/router IP
+   NUXT_SNMP_COMMUNITY=your-snmp-community-string
+   NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets
+   NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets
+   
+   # Ping Target
+   NUXT_PING_HOST=8.8.8.8  # Target IP to monitor
+   
+   # Database Configuration (use these defaults for Docker)
+   NUXT_DB_PORT=5432
+   NUXT_DB_USER=postgres
+   NUXT_DB_PASSWORD=postgres
+   NUXT_DB_NAME=net-monitor
+   
+   # Basic Authentication
+   NUXT_USER=admin
+   NUXT_PASS=your-secure-password
+   ```
+   
+   > **Note**: The `NUXT_DB_HOST` is automatically set to `postgres` in the docker-compose.yml file and should not be included in `.env.docker`.
+
+3. **Start the Application**
+   ```bash
+   docker compose up -d
+   ```
+   
+   This will:
+   - Build the application Docker image with all dependencies (Node.js, Speedtest CLI, ping utilities)
+   - Start a PostgreSQL database container
+   - Run database migrations automatically
+   - Start the application on port 3000
+
+4. **Access the Application**
+   
+   Open your browser and navigate to `http://localhost:3000`
+   
+   You'll be prompted for authentication:
+   - **Username**: Value from `NUXT_USER` in `.env.docker`
+   - **Password**: Value from `NUXT_PASS` in `.env.docker`
+
+5. **View Logs** (optional)
+   ```bash
+   # View all logs
+   docker compose logs -f
+   
+   # View app logs only
+   docker compose logs -f app
+   ```
+
+6. **Stop the Application**
+   ```bash
+   docker compose down
+   ```
+   
+   To remove all data including the database:
+   ```bash
+   docker compose down -v
+   ```
 
 ---
 
-## 🚀 Installation
+### Option 2: Manual Installation
 
-### 1. Clone the Repository
+For development or custom setups, you can install and run the application manually.
 
-```bash
-git clone https://github.com/markchristianlacap/nuxt-net-monitoring.git
-cd nuxt-net-monitoring
-```
+#### Prerequisites
+1. **Node.js** (v18 or higher)
+2. **pnpm** (v10.18.3 or compatible version)
+3. **PostgreSQL** (v12 or higher)
+4. **Speedtest CLI** by Ookla - [Installation Guide](https://www.speedtest.net/apps/cli)
+   ```bash
+   # Example on Linux (review script before running)
+   curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
+   sudo apt-get install speedtest
+   ```
+5. **SNMP Access** to your network device
+6. **ping** command (usually pre-installed)
 
-### 2. Install Dependencies
+#### Steps
 
-```bash
-pnpm install
-```
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/markchristianlacap/nuxt-net-monitoring.git
+   cd nuxt-net-monitoring
+   ```
 
-### 3. Configure Environment Variables
+2. **Install Dependencies**
+   ```bash
+   pnpm install
+   ```
 
-Create a `.env` file in the root directory (you can copy from `.env.example`):
+3. **Configure Environment Variables**
+   
+   Create a `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` with your configuration:
+   ```env
+   # SNMP Configuration
+   NUXT_SNMP_COMMUNITY=your-snmp-community-string
+   NUXT_SNMP_HOST=192.168.1.1
+   NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5
+   NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5
+   
+   # Ping Target
+   NUXT_PING_HOST=8.8.8.8
+   
+   # PostgreSQL Database
+   NUXT_DB_HOST=localhost
+   NUXT_DB_PORT=5432
+   NUXT_DB_USER=postgres
+   NUXT_DB_PASSWORD=your-db-password
+   NUXT_DB_NAME=net-monitor
+   
+   # Basic Authentication
+   NUXT_USER=admin
+   NUXT_PASS=your-secure-password
+   ```
 
-```bash
-cp .env.example .env
-```
+4. **Setup Database**
+   
+   Create the PostgreSQL database:
+   ```bash
+   psql -U postgres -c "CREATE DATABASE \"net-monitor\";"
+   ```
+   
+   Run migrations:
+   ```bash
+   pnpm exec kysely migrate latest
+   ```
 
-Edit `.env` with your configuration:
-
-```env
-# SNMP Configuration
-NUXT_SNMP_COMMUNITY=your-snmp-community-string
-NUXT_SNMP_HOST=192.168.1.1  # Your PfSense/router IP
-NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # SNMP OID for inbound traffic (ifInOctets)
-NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # SNMP OID for outbound traffic (ifOutOctets)
-
-# Ping Target
-NUXT_PING_HOST=8.8.8.8  # Target IP to monitor (e.g., Google DNS)
-
-# PostgreSQL Database
-NUXT_DB_HOST=localhost
-NUXT_DB_PORT=5432
-NUXT_DB_USER=postgres
-NUXT_DB_PASSWORD=your-db-password
-NUXT_DB_NAME=net-monitor
-
-# Basic Authentication
-NUXT_USER=admin
-NUXT_PASS=your-secure-password
-```
-
-### 4. Setup Database
-
-Create the PostgreSQL database:
-
-```bash
-# Connect to PostgreSQL
-psql -U postgres
-
-# Create database
-CREATE DATABASE "net-monitor";
-\q
-```
-
-Run database migrations:
-
-```bash
-pnpm exec kysely migrate latest
-```
-
-This will create the required tables:
-- `pings` - Stores ping latency and status
-- `bandwidths` - Stores SNMP bandwidth data
-- `speedtest_results` - Stores speed test results
-
-### 5. Run the Development Server
-
-```bash
-pnpm run dev
-```
+5. **Run the Application**
+   
+   Development mode:
+   ```bash
+   pnpm run dev
+   ```
+   
+   Production mode:
+   ```bash
+   pnpm run build
+   node .output/server/index.mjs
+   ```
 
 The application will be available at `http://localhost:3000`
-
-### 6. Build for Production
-
-```bash
-# Build the application
-pnpm run build
-
-# Preview production build
-pnpm run preview
-
-# Or start production server
-node .output/server/index.mjs
-```
 
 ---
 
@@ -337,6 +402,28 @@ pnpm exec kysely migrate latest
 pnpm exec kysely migrate down
 ```
 
+### Docker Development
+
+For Docker-based development:
+
+```bash
+# Rebuild and restart containers after code changes
+docker compose up -d --build
+
+# View real-time logs
+docker compose logs -f app
+
+# Execute commands inside the container
+docker compose exec app pnpm run typecheck
+docker compose exec app pnpm run lint
+
+# Access the PostgreSQL database
+docker compose exec postgres psql -U postgres -d net-monitor
+
+# Restart just the app container
+docker compose restart app
+```
+
 ### Project Structure
 
 ```
@@ -401,27 +488,61 @@ This project is open source and available under the MIT License.
 
 ## ⚠️ Troubleshooting
 
-### Speedtest CLI Not Found
+### Docker Issues
+
+**Container fails to start**
+```bash
+# Check container logs
+docker compose logs app
+
+# Check if ports are in use
+sudo netstat -tlnp | grep 3000
+
+# Rebuild containers
+docker compose down
+docker compose up -d --build
+```
+
+**Database connection issues in Docker**
+```bash
+# Check if database is healthy
+docker compose ps
+
+# Check database logs
+docker compose logs postgres
+
+# Restart the database
+docker compose restart postgres
+```
+
+**Changes not reflecting in Docker**
+```bash
+# Rebuild the application image
+docker compose up -d --build app
+```
+
+### General Issues
+
+**Speedtest CLI Not Found**
 ```bash
 # Install Speedtest CLI (from official Ookla repository)
-# Note: Review the script before running or use your system's package manager if available
 curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
 sudo apt-get install speedtest
 ```
 
-### SNMP Connection Issues
+**SNMP Connection Issues**
 - Verify SNMP is enabled on your device
 - Check community string is correct
 - Ensure firewall allows SNMP (UDP port 161)
 - Test with: `snmpwalk -v2c -c your-community device-ip system`
 
-### Database Connection Failed
+**Database Connection Failed** (Manual Installation)
 - Verify PostgreSQL is running
 - Check credentials in `.env` file
 - Ensure database exists: `psql -U postgres -l`
 - Run migrations: `pnpm exec kysely migrate latest`
 
-### Ping Not Working
+**Ping Not Working**
 - Check target host is reachable
 - Verify `ping` command is available
 - Some systems require elevated privileges for ICMP

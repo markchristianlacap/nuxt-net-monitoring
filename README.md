@@ -101,20 +101,100 @@ Before installing, ensure you have:
 
 ## 🚀 Installation
 
-### 1. Clone the Repository
+Choose one of the following installation methods:
+
+### Option A: Docker Compose (Recommended) 🐳
+
+The easiest way to get started! Docker Compose will set up everything automatically, including PostgreSQL and all dependencies.
+
+#### Prerequisites
+- Docker Engine 20.10+
+- Docker Compose v2.0+
+
+#### Quick Start
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/markchristianlacap/nuxt-net-monitoring.git
+   cd nuxt-net-monitoring
+   ```
+
+2. **Configure Environment Variables**
+   
+   Edit the environment variables in `docker-compose.yml` to match your network setup:
+   ```yaml
+   # Update these in docker-compose.yml under app -> environment
+   NUXT_SNMP_COMMUNITY: your-snmp-community-string
+   NUXT_SNMP_HOST: 192.168.1.1  # Your PfSense/router IP
+   NUXT_USER: admin              # Change default username
+   NUXT_PASS: your-secure-password  # Change default password
+   ```
+
+3. **Start the Application**
+   ```bash
+   docker compose up -d
+   ```
+   
+   This will:
+   - Pull/build all required images
+   - Start PostgreSQL database
+   - Run database migrations automatically
+   - Start the monitoring application
+   
+   The application will be available at `http://localhost:3000`
+
+4. **View Logs**
+   ```bash
+   # View all logs
+   docker compose logs -f
+   
+   # View app logs only
+   docker compose logs -f app
+   ```
+
+5. **Stop the Application**
+   ```bash
+   docker compose down
+   
+   # To remove volumes (database data) as well
+   docker compose down -v
+   ```
+
+#### Docker Tips
+
+- **Accessing Local Network Devices**: If your SNMP device (e.g., PfSense) is on your local network, you may need to use host network mode. Uncomment this line in `docker-compose.yml`:
+  ```yaml
+  network_mode: host
+  ```
+  Note: When using host network mode, the app will be directly accessible on port 3000 without port mapping.
+
+- **Persistent Data**: Database data is stored in a Docker volume named `postgres_data` and persists across container restarts.
+
+- **Rebuild After Code Changes**:
+  ```bash
+  docker compose up -d --build
+  ```
+
+---
+
+### Option B: Manual Installation
+
+If you prefer to install manually without Docker:
+
+#### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/markchristianlacap/nuxt-net-monitoring.git
 cd nuxt-net-monitoring
 ```
 
-### 2. Install Dependencies
+#### 2. Install Dependencies
 
 ```bash
 pnpm install
 ```
 
-### 3. Configure Environment Variables
+#### 3. Configure Environment Variables
 
 Create a `.env` file in the root directory (you can copy from `.env.example`):
 
@@ -146,7 +226,7 @@ NUXT_USER=admin
 NUXT_PASS=your-secure-password
 ```
 
-### 4. Setup Database
+#### 4. Setup Database
 
 Create the PostgreSQL database:
 
@@ -170,7 +250,7 @@ This will create the required tables:
 - `bandwidths` - Stores SNMP bandwidth data
 - `speedtest_results` - Stores speed test results
 
-### 5. Run the Development Server
+#### 5. Run the Development Server
 
 ```bash
 pnpm run dev
@@ -178,7 +258,7 @@ pnpm run dev
 
 The application will be available at `http://localhost:3000`
 
-### 6. Build for Production
+#### 6. Build for Production
 
 ```bash
 # Build the application

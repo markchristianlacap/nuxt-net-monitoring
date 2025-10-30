@@ -29,7 +29,8 @@ services:
     env_file:
       - .env.docker
     environment:
-      DB_HOST: postgres
+      # Override DB_HOST to use the postgres service name
+      NUXT_DB_HOST: postgres
     depends_on:
       postgres:
         condition: service_healthy

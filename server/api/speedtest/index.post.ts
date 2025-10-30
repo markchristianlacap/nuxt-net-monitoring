@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   res.setHeader('Content-Type', 'text/event-stream')
   res.flushHeaders?.()
   let counter = 0
-  const speedtest = spawn('speedtest', ['-f', 'jsonl'])
+  const speedtest = spawn('speedtest', ['-f', 'jsonl', '--accept-license'])
   speedtest.stdout.on('data', async (data) => {
     res.write(`id: ${++counter}\n`)
     res.write(`data: ${data.toString()}\n\n`)

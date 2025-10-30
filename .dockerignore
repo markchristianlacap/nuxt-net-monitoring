@@ -1,0 +1,47 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# local database
+*.db
+
+# Git
+.git
+.gitignore
+
+# Documentation (keep Dockerfile and docker-compose files)
+screenshots
+renovate.json
+.editorconfig
+
+# Test files (if any)
+*.test.ts
+*.spec.ts
+
+# Docker override
+docker-compose.override.yml
+
+# pnpm workspace config (conflicts with Docker build)
+pnpm-workspace.yaml
+

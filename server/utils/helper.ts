@@ -1,5 +1,4 @@
 import { exec } from 'node:child_process'
-import { promisify } from 'node:util'
 
 export function runEverySecond(task: () => Promise<void>) {
   async function run() {
@@ -59,5 +58,11 @@ export function runEveryHour(task: () => Promise<void>) {
 }
 
 export function execAsync(command: string): Promise<{ stdout: string, stderr: string }> {
-  return promisify(exec)(command)
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error)
+        return reject(error)
+      resolve({ stdout, stderr })
+    })
+  })
 }

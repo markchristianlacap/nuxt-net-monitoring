@@ -13,7 +13,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 ## 🎯 Features
 
 ### Real-Time Monitoring
-* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals, live latency tracking, and status detection. Data is averaged and saved to database every 60 seconds
+* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals, live latency tracking, and status detection. **Supports multiple hosts simultaneously** via comma-separated configuration. Data is averaged and saved to database every 60 seconds
 * **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic (inbound/outbound Mbps) from PfSense or other SNMP-enabled devices. Data is collected every second, averaged, and saved every 60 seconds
 * **Live Streaming Data**: Server-sent events (SSE) for real-time data updates without page refresh
 
@@ -113,8 +113,8 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets
    NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets
 
-   # Ping Target
-   NUXT_PING_HOST=8.8.8.8  # Target IP to monitor
+   # Ping Targets (supports multiple hosts separated by comma)
+   NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
 
    # Database Configuration (use these defaults for Docker)
    NUXT_DB_PORT=5432
@@ -214,8 +214,8 @@ For development or custom setups, you can install and run the application manual
    NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5
    NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5
 
-   # Ping Target
-   NUXT_PING_HOST=8.8.8.8
+   # Ping Targets (supports multiple hosts separated by comma)
+   NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
 
    # PostgreSQL Database
    NUXT_DB_HOST=localhost
@@ -274,8 +274,11 @@ The homepage displays real-time monitoring with two tabs:
 
 1. **Ping Latency Tab**
    - Live streaming ping data every second
-   - Real-time latency graph
-   - Status indicator (online/offline)
+   - **Monitor multiple hosts simultaneously** with color-coded visualization
+   - Real-time latency graphs for each host
+   - Status indicators (online/offline) per host
+   - Summary statistics: total/online/offline hosts, average latency, peak latency
+   - Individual host metrics: current latency, max latency, status
    - Database stores 60-second averages for historical tracking
 
 2. **Bandwidth Tab**
@@ -322,11 +325,12 @@ View historical records with pagination and export options:
 The application runs three background monitoring processes:
 
 1. **Ping Monitor** (`server/plugins/ping.server.ts`)
-   - Spawns continuous `ping` process on server startup
-   - Monitors configured `NUXT_PING_HOST` every 1 second
-   - Parses latency from ping output
-   - Collects latency readings and calculates average every 60 seconds
-   - Stores averaged results in PostgreSQL `pings` table
+   - Spawns continuous `ping` processes for **multiple hosts** on server startup
+   - Monitors all configured hosts in `NUXT_PING_HOST` (comma-separated) every 1 second
+   - Each host is monitored independently with its own ping process
+   - Parses latency from ping output for each host
+   - Collects latency readings and calculates average every 60 seconds per host
+   - Stores averaged results in PostgreSQL `pings` table with host identification
 
 2. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
    - Queries SNMP device every 1 second using precise timing helper (`runEverySecond`)
@@ -342,9 +346,10 @@ The application runs three background monitoring processes:
 
 ### Real-Time Streaming
 
-- **Server-Sent Events (SSE)**: Used for live data streaming to the frontend
+- **Server-Sent Events (SSE)**: Used for efficient live data streaming to the frontend
+- **Event-driven Architecture**: Background processes emit events that are streamed to connected clients
 - **API Endpoints**:
-  - `/api/pings/stream.get` - Live ping data stream (updates every second)
+  - `/api/pings/stream.get` - Live ping data stream for all monitored hosts (updates every second)
   - `/api/bandwidths/stream.get` - Live bandwidth stream (updates every second)
   - `/api/speedtest` (POST) - Live speed test execution stream
 
@@ -353,15 +358,16 @@ The application runs three background monitoring processes:
 The application uses a two-tier approach for optimal performance:
 
 **Real-Time Collection** (Every 1 second):
-- Ping latency measurements
+- Ping latency measurements for each configured host
 - SNMP bandwidth readings
-- Streamed to frontend via SSE for live visualization
+- Streamed to frontend via SSE for live visualization with real-time updates
 
 **Database Storage** (Every 60 seconds):
-- Averaged ping latency over the past minute
+- Averaged ping latency over the past minute per host
 - Averaged bandwidth readings over the past minute
 - Reduces database writes while maintaining data accuracy
 - Historical data remains accessible for analysis and export
+- Each host's data is stored separately for independent tracking
 
 This approach provides real-time monitoring responsiveness while efficiently managing database resources.
 
@@ -471,6 +477,25 @@ To change ping frequency, edit `server/plugins/ping.server.ts`:
 ```typescript
 const ping = spawn('ping', ['-i', '1', host]) // -i 1 = 1 second interval
 ```
+
+### Multiple Ping Hosts
+
+The application supports monitoring multiple hosts simultaneously. Configure them in your `.env` file:
+
+```env
+# Single host
+NUXT_PING_HOST=8.8.8.8
+
+# Multiple hosts (comma-separated)
+NUXT_PING_HOST=8.8.8.8,1.1.1.1,google.com,192.168.1.1
+```
+
+Features:
+- Each host is monitored independently with its own ping process
+- Color-coded visualization for easy identification
+- Individual statistics and status for each host
+- Overall summary showing total, online, and offline hosts
+- Average and peak latency across all hosts
 
 ---
 

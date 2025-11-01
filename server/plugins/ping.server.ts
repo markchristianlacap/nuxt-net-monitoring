@@ -53,7 +53,13 @@ export default defineNitroPlugin(async () => {
       pingsPerHost.set(host, hostPings)
     })
 
+    ping.on('error', (err) => {
+      console.error(`Ping process error for host ${host}:`, err)
+    })
+
     // Save average for each host every minute
     setInterval(() => saveAverage(host), 60_000)
   })
+
+  console.log(`Ping monitoring started for ${hosts.length} host(s): ${hosts.join(', ')}`)
 })

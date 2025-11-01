@@ -71,7 +71,9 @@ const option = computed<ECOption>(() => {
       axisLabel: { color: '#cbd5e1', fontSize: 11 },
     },
     series: hostList.map(([host, data], index) => {
-      const colors = colorPalette[index % colorPalette.length]!
+      const colorIndex = index % colorPalette.length
+      const colors = colorPalette[colorIndex] ?? colorPalette[0]!
+      
       return {
         name: `🏓 ${host}`,
         type: 'line',
@@ -101,7 +103,7 @@ const option = computed<ECOption>(() => {
             y2: 1,
             colorStops: [
               { offset: 0, color: colors.area },
-              { offset: 1, color: 'rgba(56,189,248,0)' },
+              { offset: 1, color: colors.area.replace('0.25', '0') },
             ],
           },
         },
@@ -175,7 +177,7 @@ onBeforeUnmount(() => eventSource?.close())
         class="flex flex-col bg-slate-800/60 px-4 py-3 rounded-xl shadow-md border border-slate-700"
       >
         <div class="flex items-center gap-2 mb-2">
-          <span class="text-xl" :style="{ color: colorPalette[index % colorPalette.length]!.primary }">🏓</span>
+          <span class="text-xl" :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }">🏓</span>
           <span class="text-slate-200 font-semibold text-sm truncate" :title="hostName">{{ hostName }}</span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">

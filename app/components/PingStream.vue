@@ -19,6 +19,31 @@ const colorPalette = [
   { primary: '#fbbf24', secondary: '#d97706', area: 'rgba(251,191,36,0.25)' },
 ]
 
+// Summary statistics
+const summary = computed(() => {
+  const hostList = Array.from(hosts.value.values())
+  const totalHosts = hostList.length
+  const onlineHosts = hostList.filter(h => h.status === 'online').length
+  const offlineHosts = hostList.filter(h => h.status === 'offline').length
+  const idleHosts = hostList.filter(h => h.status === 'idle').length
+  
+  const allLatencies = hostList.flatMap(h => h.latencyData.slice(-1)).filter(l => l > 0)
+  const avgLatency = allLatencies.length > 0 
+    ? allLatencies.reduce((a, b) => a + b, 0) / allLatencies.length 
+    : 0
+  
+  const maxLatency = Math.max(...hostList.map(h => h.maxLatency), 0)
+  
+  return {
+    totalHosts,
+    onlineHosts,
+    offlineHosts,
+    idleHosts,
+    avgLatency,
+    maxLatency,
+  }
+})
+
 const option = computed<ECOption>(() => {
   const hostList = Array.from(hosts.value.entries())
   if (hostList.length === 0) {
@@ -173,6 +198,34 @@ onBeforeUnmount(() => eventSource?.close())
       <p class="text-slate-400 text-xs sm:text-sm">
         Live ping stream visualization - {{ hosts.size }} host{{ hosts.size !== 1 ? 's' : '' }}
       </p>
+    </div>
+
+    <!-- Overall Summary -->
+    <div v-if="hosts.size > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+      <div class="flex flex-col items-center bg-gradient-to-br from-slate-800/80 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-slate-600/50">
+        <span class="text-slate-400 text-xs font-medium mb-1">Total Hosts</span>
+        <span class="text-2xl font-bold text-cyan-300">{{ summary.totalHosts }}</span>
+      </div>
+      <div class="flex flex-col items-center bg-gradient-to-br from-green-900/30 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-green-700/50">
+        <span class="text-slate-400 text-xs font-medium mb-1">Online</span>
+        <span class="text-2xl font-bold text-green-400">{{ summary.onlineHosts }}</span>
+      </div>
+      <div class="flex flex-col items-center bg-gradient-to-br from-red-900/30 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-red-700/50">
+        <span class="text-slate-400 text-xs font-medium mb-1">Offline</span>
+        <span class="text-2xl font-bold text-red-400">{{ summary.offlineHosts }}</span>
+      </div>
+      <div class="flex flex-col items-center bg-gradient-to-br from-slate-800/80 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-slate-600/50">
+        <span class="text-slate-400 text-xs font-medium mb-1">Avg Latency</span>
+        <span class="text-2xl font-bold text-cyan-300">
+          {{ summary.avgLatency.toFixed(1) }}<span class="text-xs text-slate-500 ml-1">ms</span>
+        </span>
+      </div>
+      <div class="flex flex-col items-center bg-gradient-to-br from-amber-900/30 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-amber-700/50">
+        <span class="text-slate-400 text-xs font-medium mb-1">Peak Latency</span>
+        <span class="text-2xl font-bold text-amber-300">
+          {{ summary.maxLatency.toFixed(1) }}<span class="text-xs text-slate-500 ml-1">ms</span>
+        </span>
+      </div>
     </div>
 
     <!-- Host stats -->

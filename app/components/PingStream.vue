@@ -1,111 +1,151 @@
 <script setup lang="ts">
-const host = ref('')
-const timeData = ref<string[]>([])
-const latencyData = ref<number[]>([])
-const maxLatency = ref(0)
+interface HostData {
+  timeData: string[]
+  latencyData: number[]
+  maxLatency: number
+  status: 'online' | 'offline' | 'idle'
+}
+
+const hosts = ref<Map<string, HostData>>(new Map())
 const maxPoints = 60
-const status = ref<'online' | 'offline' | 'idle'>('idle')
 let eventSource: EventSource | null = null
 
-const currentLatency = computed(() => latencyData.value.at(-1) ?? 0)
+// Color palette for different hosts
+const colorPalette = [
+  { primary: '#38bdf8', secondary: '#0284c7', area: 'rgba(56,189,248,0.25)' },
+  { primary: '#f472b6', secondary: '#db2777', area: 'rgba(244,114,182,0.25)' },
+  { primary: '#a78bfa', secondary: '#7c3aed', area: 'rgba(167,139,250,0.25)' },
+  { primary: '#34d399', secondary: '#059669', area: 'rgba(52,211,153,0.25)' },
+  { primary: '#fbbf24', secondary: '#d97706', area: 'rgba(251,191,36,0.25)' },
+]
 
-const option = computed<ECOption>(() => ({
-  backgroundColor: 'transparent',
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: '#0f172a',
-    borderColor: '#334155',
-    textStyle: { color: '#f1f5f9' },
-    formatter(params: any) {
-      const { axisValue, data } = params[0]
-      return `
-        <div style="font-size:13px; line-height:1.6">
-          <b>${axisValue}</b><br/>
-          🏓 Latency: <b style="color:#38bdf8">${data} ms</b>
-        </div>
-      `
-    },
-  },
-  legend: {
-    data: ['🏓 Latency'],
-    textStyle: { color: '#94a3b8', fontWeight: 500 },
-    top: 10,
-  },
-  grid: { top: 60, left: 50, right: 20, bottom: 40 },
-  xAxis: {
-    type: 'category',
-    data: timeData.value,
-    axisLine: { lineStyle: { color: '#475569' } },
-    axisLabel: { color: '#cbd5e1', fontSize: 11 },
-  },
-  yAxis: {
-    type: 'value',
-    name: 'Latency (ms)',
-    nameTextStyle: { color: '#cbd5e1' },
-    axisLine: { lineStyle: { color: '#475569' } },
-    splitLine: { lineStyle: { color: '#334155' } },
-    axisLabel: { color: '#cbd5e1', fontSize: 11 },
-  },
-  series: [
-    {
-      name: '🏓 Latency',
-      type: 'line',
-      showSymbol: false,
-      smooth: true,
-      data: latencyData.value,
-      lineStyle: {
-        width: 3,
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: '#38bdf8' },
-            { offset: 1, color: '#0284c7' },
-          ],
-        },
-      },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(56,189,248,0.25)' },
-            { offset: 1, color: 'rgba(56,189,248,0)' },
-          ],
-        },
+const option = computed<ECOption>(() => {
+  const hostList = Array.from(hosts.value.entries())
+  if (hostList.length === 0) {
+    return {
+      backgroundColor: 'transparent',
+      title: { text: 'Waiting for ping data...', left: 'center', top: 'middle', textStyle: { color: '#94a3b8' } },
+    }
+  }
+
+  // Use the first host's time data as the common x-axis
+  const timeData = hostList[0]?.[1].timeData || []
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#0f172a',
+      borderColor: '#334155',
+      textStyle: { color: '#f1f5f9' },
+      formatter(params: any) {
+        if (!params || params.length === 0)
+          return ''
+        const axisValue = params[0].axisValue
+        let content = `<div style="font-size:13px; line-height:1.8"><b>${axisValue}</b><br/>`
+        params.forEach((param: any) => {
+          content += `${param.marker} ${param.seriesName}: <b style="color:${param.color}">${param.data} ms</b><br/>`
+        })
+        content += '</div>'
+        return content
       },
     },
-  ],
-}))
+    legend: {
+      data: hostList.map(([host]) => `🏓 ${host}`),
+      textStyle: { color: '#94a3b8', fontWeight: 500 },
+      top: 10,
+    },
+    grid: { top: 60, left: 50, right: 20, bottom: 40 },
+    xAxis: {
+      type: 'category',
+      data: timeData,
+      axisLine: { lineStyle: { color: '#475569' } },
+      axisLabel: { color: '#cbd5e1', fontSize: 11 },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Latency (ms)',
+      nameTextStyle: { color: '#cbd5e1' },
+      axisLine: { lineStyle: { color: '#475569' } },
+      splitLine: { lineStyle: { color: '#334155' } },
+      axisLabel: { color: '#cbd5e1', fontSize: 11 },
+    },
+    series: hostList.map(([host, data], index) => {
+      const colors = colorPalette[index % colorPalette.length]!
+      return {
+        name: `🏓 ${host}`,
+        type: 'line',
+        showSymbol: false,
+        smooth: true,
+        data: data.latencyData,
+        lineStyle: {
+          width: 3,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: colors.primary },
+              { offset: 1, color: colors.secondary },
+            ],
+          },
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: colors.area },
+              { offset: 1, color: 'rgba(56,189,248,0)' },
+            ],
+          },
+        },
+      }
+    }),
+  }
+})
 
 function startStream() {
   if (eventSource)
     eventSource.close()
 
-  timeData.value = []
-  latencyData.value = []
-  maxLatency.value = 0
+  hosts.value.clear()
 
   eventSource = new EventSource('/api/pings/stream')
 
   eventSource.onmessage = (evt) => {
     const payload = JSON.parse(evt.data)
+    const host = payload.host
     const latency = payload.latency ?? 0
-    host.value = payload.host
-    timeData.value.push(new Date(payload.timestamp).toLocaleTimeString())
-    latencyData.value.push(latency)
-    status.value = payload.status
-    if (timeData.value.length > maxPoints) {
-      timeData.value.shift()
-      latencyData.value.shift()
+    const timestamp = new Date(payload.timestamp).toLocaleTimeString()
+
+    if (!hosts.value.has(host)) {
+      hosts.value.set(host, {
+        timeData: [],
+        latencyData: [],
+        maxLatency: 0,
+        status: 'idle',
+      })
     }
-    maxLatency.value = Math.max(maxLatency.value, latency)
+
+    const hostData = hosts.value.get(host)!
+    hostData.timeData.push(timestamp)
+    hostData.latencyData.push(latency)
+    hostData.status = payload.status
+    hostData.maxLatency = Math.max(hostData.maxLatency, latency)
+
+    if (hostData.timeData.length > maxPoints) {
+      hostData.timeData.shift()
+      hostData.latencyData.shift()
+    }
+
+    // Trigger reactivity
+    hosts.value = new Map(hosts.value)
   }
 
   eventSource.onerror = () => console.warn('SSE disconnected')
@@ -123,42 +163,45 @@ onBeforeUnmount(() => eventSource?.close())
         Latency Monitor
       </h2>
       <p class="text-slate-400 text-xs sm:text-sm">
-        Live ping stream visualization
+        Live ping stream visualization - {{ hosts.size }} host{{ hosts.size !== 1 ? 's' : '' }}
       </p>
     </div>
 
-    <!-- Host display -->
-    <div class="flex items-center justify-center gap-2 mb-4 sm:mb-6">
-      <span class="text-slate-400 font-medium text-sm sm:text-base">Host:</span>
-      <span class="text-xl sm:text-2xl font-semibold text-cyan-400 break-all">{{ host }}</span>
-    </div>
-
-    <!-- Stats -->
-    <div class="grid grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
-      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
-        <span class="text-cyan-400 text-2xl sm:text-3xl">🏓</span>
-        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Current Latency</span>
-        <span class="text-2xl sm:text-3xl font-bold " :class="currentLatency > 100 || currentLatency <= 0 ? 'text-red-500' : 'text-cyan-300'">
-          {{ currentLatency.toFixed(2) }}
-          <span class="text-slate-500 text-xs sm:text-sm ml-1">ms</span>
-        </span>
-      </div>
-
-      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
-        <span class="text-amber-400 text-2xl sm:text-3xl">⚡</span>
-        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Max Latency</span>
-        <span class="text-2xl sm:text-3xl font-bold text-amber-300">
-          {{ maxLatency.toFixed(2) }}
-          <span class="text-slate-500 text-xs sm:text-sm ml-1">ms</span>
-        </span>
-      </div>
-
-      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
-        <span class="text-amber-400 text-2xl sm:text-3xl">🚀</span>
-        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Status</span>
-        <span class="text-2xl sm:text-3xl font-bold uppercase" :class="status === 'offline' ? 'text-red-500' : status === 'online' ? 'text-green-500' : 'text-blue-300'">
-          {{ status }}
-        </span>
+    <!-- Host stats -->
+    <div v-if="hosts.size > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+      <div
+        v-for="([hostName, hostData], index) in Array.from(hosts.entries())"
+        :key="hostName"
+        class="flex flex-col bg-slate-800/60 px-4 py-3 rounded-xl shadow-md border border-slate-700"
+      >
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xl" :style="{ color: colorPalette[index % colorPalette.length]!.primary }">🏓</span>
+          <span class="text-slate-200 font-semibold text-sm truncate" :title="hostName">{{ hostName }}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span class="text-slate-400">Current:</span>
+            <span
+              class="ml-1 font-bold"
+              :class="(hostData.latencyData.at(-1) ?? 0) > 100 || (hostData.latencyData.at(-1) ?? 0) <= 0 ? 'text-red-400' : 'text-cyan-300'"
+            >
+              {{ (hostData.latencyData.at(-1) ?? 0).toFixed(2) }} ms
+            </span>
+          </div>
+          <div>
+            <span class="text-slate-400">Max:</span>
+            <span class="ml-1 font-bold text-amber-300">{{ hostData.maxLatency.toFixed(2) }} ms</span>
+          </div>
+          <div class="col-span-2">
+            <span class="text-slate-400">Status:</span>
+            <span
+              class="ml-1 font-bold uppercase"
+              :class="hostData.status === 'offline' ? 'text-red-400' : hostData.status === 'online' ? 'text-green-400' : 'text-blue-300'"
+            >
+              {{ hostData.status }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
 

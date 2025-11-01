@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface HostData {
-  timeData: string[]
+  timestamps: number[]
   latencyData: number[]
   maxLatency: number
   status: 'online' | 'offline' | 'idle'
@@ -28,9 +28,6 @@ const option = computed<ECOption>(() => {
     }
   }
 
-  // Use the first host's time data as the common x-axis
-  const timeData = hostList[0]?.[1].timeData || []
-
   return {
     backgroundColor: 'transparent',
     tooltip: {
@@ -41,10 +38,13 @@ const option = computed<ECOption>(() => {
       formatter(params: any) {
         if (!params || params.length === 0)
           return ''
-        const axisValue = params[0].axisValue
-        let content = `<div style="font-size:13px; line-height:1.8"><b>${axisValue}</b><br/>`
+        const timestamp = params[0].data[0]
+        const timeStr = new Date(timestamp).toLocaleTimeString()
+        let content = `<div style="font-size:13px; line-height:1.8"><b>${timeStr}</b><br/>`
         params.forEach((param: any) => {
-          content += `${param.marker} ${param.seriesName}: <b style="color:${param.color}">${param.data} ms</b><br/>`
+          if (param.data != null) {
+            content += `${param.marker} ${param.seriesName}: <b style="color:${param.color}">${param.data[1]} ms</b><br/>`
+          }
         })
         content += '</div>'
         return content
@@ -57,10 +57,13 @@ const option = computed<ECOption>(() => {
     },
     grid: { top: 60, left: 50, right: 20, bottom: 40 },
     xAxis: {
-      type: 'category',
-      data: timeData,
+      type: 'time',
       axisLine: { lineStyle: { color: '#475569' } },
-      axisLabel: { color: '#cbd5e1', fontSize: 11 },
+      axisLabel: { 
+        color: '#cbd5e1', 
+        fontSize: 11,
+        formatter: (value: number) => new Date(value).toLocaleTimeString(),
+      },
     },
     yAxis: {
       type: 'value',
@@ -74,12 +77,15 @@ const option = computed<ECOption>(() => {
       const colorIndex = index % colorPalette.length
       const colors = colorPalette[colorIndex] ?? colorPalette[0]!
       
+      // Convert to [timestamp, value] pairs for time-based x-axis
+      const timeSeriesData = data.timestamps.map((timestamp, i) => [timestamp, data.latencyData[i]])
+      
       return {
         name: `🏓 ${host}`,
         type: 'line',
         showSymbol: false,
         smooth: true,
-        data: data.latencyData,
+        data: timeSeriesData,
         lineStyle: {
           width: 3,
           color: {
@@ -124,11 +130,11 @@ function startStream() {
     const payload = JSON.parse(evt.data)
     const host = payload.host
     const latency = payload.latency ?? 0
-    const timestamp = new Date(payload.timestamp).toLocaleTimeString()
+    const timestamp = new Date(payload.timestamp).getTime()
 
     if (!hosts.value.has(host)) {
       hosts.value.set(host, {
-        timeData: [],
+        timestamps: [],
         latencyData: [],
         maxLatency: 0,
         status: 'idle',
@@ -136,13 +142,13 @@ function startStream() {
     }
 
     const hostData = hosts.value.get(host)!
-    hostData.timeData.push(timestamp)
+    hostData.timestamps.push(timestamp)
     hostData.latencyData.push(latency)
     hostData.status = payload.status
     hostData.maxLatency = Math.max(hostData.maxLatency, latency)
 
-    if (hostData.timeData.length > maxPoints) {
-      hostData.timeData.shift()
+    if (hostData.timestamps.length > maxPoints) {
+      hostData.timestamps.shift()
       hostData.latencyData.shift()
     }
 

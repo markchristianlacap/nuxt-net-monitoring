@@ -99,12 +99,12 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    ```
 
 2. **Configure Environment Variables**
-   
+
    Create a `.env.docker` file from the example:
    ```bash
    cp .env.docker.example .env.docker
    ```
-   
+
    Edit `.env.docker` with your configuration:
    ```env
    # SNMP Configuration
@@ -112,28 +112,28 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
    NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets
    NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets
-   
+
    # Ping Target
    NUXT_PING_HOST=8.8.8.8  # Target IP to monitor
-   
+
    # Database Configuration (use these defaults for Docker)
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
    NUXT_DB_PASSWORD=postgres
    NUXT_DB_NAME=net-monitor
-   
+
    # Basic Authentication
    NUXT_USER=admin
    NUXT_PASS=your-secure-password
    ```
-   
+
    > **Note**: The `NUXT_DB_HOST` is automatically set to `postgres` in docker-compose.yml and should not be modified in `.env.docker`.
 
 3. **Start the Application**
    ```bash
    docker compose up -d
    ```
-   
+
    This will:
    - Build the application Docker image with all dependencies (Node.js, Speedtest CLI, ping utilities)
    - Start a PostgreSQL database container
@@ -141,9 +141,9 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    - Start the application on port 3000
 
 4. **Access the Application**
-   
+
    Open your browser and navigate to `http://localhost:3000`
-   
+
    You'll be prompted for authentication:
    - **Username**: Value from `NUXT_USER` in `.env.docker`
    - **Password**: Value from `NUXT_PASS` in `.env.docker`
@@ -152,7 +152,7 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    ```bash
    # View all logs
    docker compose logs -f
-   
+
    # View app logs only
    docker compose logs -f app
    ```
@@ -161,7 +161,7 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    ```bash
    docker compose down
    ```
-   
+
    To remove all data including the database:
    ```bash
    docker compose down -v
@@ -200,12 +200,12 @@ For development or custom setups, you can install and run the application manual
    ```
 
 3. **Configure Environment Variables**
-   
+
    Create a `.env` file:
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env` with your configuration:
    ```env
    # SNMP Configuration
@@ -213,41 +213,41 @@ For development or custom setups, you can install and run the application manual
    NUXT_SNMP_HOST=192.168.1.1
    NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5
    NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5
-   
+
    # Ping Target
    NUXT_PING_HOST=8.8.8.8
-   
+
    # PostgreSQL Database
    NUXT_DB_HOST=localhost
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
    NUXT_DB_PASSWORD=your-db-password
    NUXT_DB_NAME=net-monitor
-   
+
    # Basic Authentication
    NUXT_USER=admin
    NUXT_PASS=your-secure-password
    ```
 
 4. **Setup Database**
-   
+
    Create the PostgreSQL database:
    ```bash
    psql -U postgres -c "CREATE DATABASE \"net-monitor\";"
    ```
-   
+
    Run migrations:
    ```bash
    pnpm exec kysely migrate latest
    ```
 
 5. **Run the Application**
-   
+
    Development mode:
    ```bash
    pnpm run dev
    ```
-   
+
    Production mode:
    ```bash
    pnpm run build

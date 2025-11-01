@@ -60,6 +60,4 @@ export default defineNitroPlugin(async () => {
     // Save average for each host every minute
     setInterval(() => saveAverage(host), 60_000)
   })
-
-  console.log(`Ping monitoring started for ${hosts.length} host(s): ${hosts.join(', ')}`)
 })

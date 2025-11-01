@@ -18,10 +18,10 @@ async function getData(): Promise<{ inBytes: number, outBytes: number }> {
     session.get([inOid, outOid], (error, varbinds) => {
       if (error)
         return reject(error)
-      if (!varbinds)
+      if (!varbinds || varbinds.length < 2)
         return reject(new Error('No varbinds'))
-      const inBytes = Number(varbinds[0].value)
-      const outBytes = Number(varbinds[1].value)
+      const inBytes = Number(varbinds[0]?.value || 0)
+      const outBytes = Number(varbinds[1]?.value || 0)
       if (inBytes < 0 || outBytes < 0)
         return reject(new Error('Invalid varbinds'))
       resolve({

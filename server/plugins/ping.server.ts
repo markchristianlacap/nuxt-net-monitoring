@@ -1,18 +1,19 @@
+import type { PingResult } from '#shared/types/ping'
 import { spawn } from 'node:child_process'
 import { db } from '../db'
+import { events } from '../utils/events'
 
 export default defineNitroPlugin(async () => {
   const config = useRuntimeConfig()
   const host = config.PING_HOST
-
+  let currentPing: PingResult | null = null
   const ping = spawn('ping', ['-i', '1', host])
-
-  let latencies: number[] = []
+  let pings: PingResult[] = []
   const saveAverage = async () => {
-    if (latencies.length === 0)
+    if (pings.length === 0)
       return
 
-    const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length
+    const avgLatency = pings.reduce((a, b) => a + b.latency, 0) / pings.length
     const status = avgLatency > 0 ? 'online' : 'offline'
 
     await db.insertInto('pings').values({
@@ -21,14 +22,20 @@ export default defineNitroPlugin(async () => {
       status,
       timestamp: new Date().toISOString(),
     }).execute()
-
-    latencies = []
+    pings = []
   }
 
   ping.stdout.on('data', async (data) => {
     const latencyMatch = data.toString().match(/time=([\d.]+) ms/)
     const latency = latencyMatch ? Number.parseFloat(latencyMatch[1]) : 0
-    latencies.push(latency)
+    currentPing = {
+      host,
+      status: latency > 0 ? 'online' : 'offline',
+      latency,
+      timestamp: new Date().toISOString(),
+    }
+    events.emit('ping:update', currentPing)
+    pings.push(currentPing)
   })
 
   setInterval(saveAverage, 60_000)

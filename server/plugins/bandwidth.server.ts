@@ -6,6 +6,7 @@ export default defineNitroPlugin(() => {
   const host = useRuntimeConfig().SNMP_HOST
   runEverySecond(async () => {
     const bandwidth = await getBandwidth()
+    events.emit('bandwidth:update', bandwidth)
     if (!bandwidth)
       return
     records.push(bandwidth)
@@ -24,5 +25,6 @@ export default defineNitroPlugin(() => {
 
     records = []
   }
+
   setInterval(saveAverage, 60_000)
 })

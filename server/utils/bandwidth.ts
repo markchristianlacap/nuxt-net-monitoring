@@ -14,6 +14,44 @@ const IF_OUT_OCTETS_BASE = '1.3.6.1.2.1.2.2.1.16'
 const interfaceIndexCache = new Map<string, number | null>()
 
 /**
+ * Finds the first available interface with non-zero traffic
+ * @returns The interface index or null if not found
+ */
+async function findFirstActiveInterface(): Promise<number | null> {
+  return new Promise((resolve) => {
+    const ifDescrOid = '1.3.6.1.2.1.2.2.1.2' // ifDescr table
+    let firstIndex: number | null = null
+
+    session.walk(
+      ifDescrOid,
+      (varbinds: snmp.Varbind[]) => {
+        // Feed callback - called for each batch of results
+        for (const varbind of varbinds) {
+          const oidStr = String(varbind.oid)
+          const matches = oidStr.match(/\.(\d+)$/)
+          if (matches && matches[1]) {
+            const index = Number.parseInt(matches[1], 10)
+            if (firstIndex === null) {
+              firstIndex = index
+              // eslint-disable-next-line no-console
+              console.log(`Auto-detected first interface: index ${index} (description: ${varbind.value})`)
+              return resolve(index)
+            }
+          }
+        }
+      },
+      (error: Error | null) => {
+        if (error) {
+          console.error('Error walking SNMP interface descriptions:', error)
+          return resolve(null)
+        }
+        resolve(firstIndex)
+      },
+    )
+  })
+}
+
+/**
  * Resolves an interface name to its interface index via SNMP
  * Uses caching to avoid redundant queries
  * @param interfaceName The interface name (e.g., 'wan', 'lan', 'em0', 'igb0')
@@ -64,37 +102,28 @@ async function resolveInterfaceIndex(interfaceName: string): Promise<number | nu
 }
 
 /**
- * Gets the base OID for a given interface type
+ * Gets the OID for a given interface name
  */
-function getBaseOid(oidType: 'in' | 'out'): string {
-  return oidType === 'in' ? IF_IN_OCTETS_BASE : IF_OUT_OCTETS_BASE
-}
+async function getOidFromInterface(interfaceName: string | undefined, oidType: 'in' | 'out'): Promise<string> {
+  let interfaceIndex: number | null = null
 
-/**
- * Gets the OID for a given configuration value
- * If the value looks like a complete OID, returns it as-is
- * Otherwise, treats it as an interface name or index and resolves it
- */
-async function getOidFromConfig(configValue: string, oidType: 'in' | 'out'): Promise<string> {
-  // Check if the config value looks like a complete OID (contains dots and starts with 1)
-  if (/^1\.[\d.]+$/.test(configValue)) {
-    return configValue
+  if (interfaceName) {
+    // Resolve the provided interface name
+    interfaceIndex = await resolveInterfaceIndex(interfaceName)
+    if (interfaceIndex === null) {
+      throw new Error(`Failed to resolve interface name '${interfaceName}' to an index`)
+    }
   }
-
-  // Check if it's a simple numeric index
-  if (/^\d+$/.test(configValue)) {
-    const baseOid = getBaseOid(oidType)
-    return `${baseOid}.${configValue}`
-  }
-
-  // Otherwise, treat it as an interface name and resolve it
-  const interfaceIndex = await resolveInterfaceIndex(configValue)
-  if (interfaceIndex === null) {
-    throw new Error(`Failed to resolve interface name '${configValue}' to an index`)
+  else {
+    // No interface specified, auto-detect first available interface
+    interfaceIndex = await findFirstActiveInterface()
+    if (interfaceIndex === null) {
+      throw new Error('No interface specified and auto-detection failed')
+    }
   }
 
   // Build the appropriate OID based on the type
-  const baseOid = getBaseOid(oidType)
+  const baseOid = oidType === 'in' ? IF_IN_OCTETS_BASE : IF_OUT_OCTETS_BASE
   return `${baseOid}.${interfaceIndex}`
 }
 
@@ -108,12 +137,10 @@ async function initializeOids(): Promise<void> {
   if (oidsInitialized)
     return
 
-  // Priority: SNMP_IN_OID/SNMP_OUT_OID > SNMP_INTERFACE > default to interface index 5
-  const inConfig = config.SNMP_IN_OID || config.SNMP_INTERFACE || '5'
-  const outConfig = config.SNMP_OUT_OID || config.SNMP_INTERFACE || '5'
+  const interfaceName = config.SNMP_INTERFACE
 
-  inOid = await getOidFromConfig(inConfig, 'in')
-  outOid = await getOidFromConfig(outConfig, 'out')
+  inOid = await getOidFromInterface(interfaceName, 'in')
+  outOid = await getOidFromInterface(interfaceName, 'out')
 
   oidsInitialized = true
   // eslint-disable-next-line no-console

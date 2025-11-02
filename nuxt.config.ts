@@ -14,8 +14,6 @@ export default defineNuxtConfig({
     SNMP_HOST: process.env.NUXT_SNMP_HOST,
     SNMP_COMMUNITY: process.env.NUXT_SNMP_COMMUNITY,
     SNMP_INTERFACE: process.env.NUXT_SNMP_INTERFACE,
-    SNMP_IN_OID: process.env.NUXT_SNMP_IN_OID,
-    SNMP_OUT_OID: process.env.NUXT_SNMP_OUT_OID,
     PING_HOST: process.env.NUXT_PING_HOST,
     DB_HOST: process.env.NUXT_DB_HOST,
     DB_USER: process.env.NUXT_DB_USER,

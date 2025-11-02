@@ -19,9 +19,20 @@ const IP_AD_ENT_IF_INDEX = '1.3.6.1.2.1.4.20.1.2'
 
 // Cache for resolved interface indices to avoid redundant SNMP queries
 const interfaceIndexCache = new Map<string, number | null>()
-const interfaceInfoCache: InterfaceInfo | null = null
-let cachedInterfaceInfo: InterfaceInfo | null = null
-let currentInterfaceIndex: number | null = null
+
+// Storage for multiple interfaces
+interface InterfaceMonitor {
+  interfaceName: string
+  interfaceIndex: number
+  inOid: string
+  outOid: string
+  prevIn: number
+  prevOut: number
+  firstRun: boolean
+  interfaceInfo: InterfaceInfo | null
+}
+
+const monitoredInterfaces = new Map<string, InterfaceMonitor>()
 
 /**
  * Finds the first available interface with non-zero traffic
@@ -222,43 +233,83 @@ async function getOidFromInterface(interfaceName: string | undefined, oidType: '
   return `${baseOid}.${interfaceIndex}`
 }
 
-let inOid: string
-let outOid: string
+// Initialize interfaces (will be resolved on first call if needed)
+let interfacesInitialized = false
 
-// Initialize OIDs (will be resolved on first call if needed)
-let oidsInitialized = false
-
-async function initializeOids(): Promise<void> {
-  if (oidsInitialized)
+/**
+ * Initialize all configured interfaces for monitoring
+ */
+async function initializeInterfaces(): Promise<void> {
+  if (interfacesInitialized)
     return
 
-  const interfaceName = config.SNMP_INTERFACE
+  const interfacesConfig = config.SNMP_INTERFACE || ''
+  const interfaceNames = interfacesConfig
+    .split(',')
+    .map(i => i.trim())
+    .filter(Boolean)
 
-  inOid = await getOidFromInterface(interfaceName, 'in')
-  outOid = await getOidFromInterface(interfaceName, 'out')
-
-  // Extract interface index from OID
-  const indexMatch = inOid.match(/\.(\d+)$/)
-  if (indexMatch && indexMatch[1]) {
-    currentInterfaceIndex = Number.parseInt(indexMatch[1], 10)
-    
-    // Get and cache interface info
-    try {
-      cachedInterfaceInfo = await getInterfaceInfo(currentInterfaceIndex)
-      // eslint-disable-next-line no-console
-      console.log('Interface info:', cachedInterfaceInfo)
-      
-      // Save to database
-      await saveInterfaceInfo(cachedInterfaceInfo)
+  // If no interfaces configured, auto-detect
+  if (interfaceNames.length === 0) {
+    const autoIndex = await findFirstActiveInterface()
+    if (autoIndex) {
+      await initializeInterface('auto', autoIndex)
     }
-    catch (e) {
-      console.error('Failed to get interface info:', e)
+  }
+  else {
+    // Initialize each configured interface
+    for (const interfaceName of interfaceNames) {
+      try {
+        const index = await resolveInterfaceIndex(interfaceName)
+        if (index !== null) {
+          await initializeInterface(interfaceName, index)
+        }
+      }
+      catch (e) {
+        console.error(`Failed to initialize interface '${interfaceName}':`, e)
+      }
     }
   }
 
-  oidsInitialized = true
+  interfacesInitialized = true
   // eslint-disable-next-line no-console
-  console.log(`Initialized SNMP OIDs - IN: ${inOid}, OUT: ${outOid}`)
+  console.log(`Initialized ${monitoredInterfaces.size} interface(s) for monitoring`)
+}
+
+/**
+ * Initialize a single interface for monitoring
+ */
+async function initializeInterface(name: string, index: number): Promise<void> {
+  const inOid = `${IF_IN_OCTETS_BASE}.${index}`
+  const outOid = `${IF_OUT_OCTETS_BASE}.${index}`
+
+  // Get interface info
+  let interfaceInfo: InterfaceInfo | null = null
+  try {
+    interfaceInfo = await getInterfaceInfo(index)
+    // eslint-disable-next-line no-console
+    console.log(`Interface '${name}' info:`, interfaceInfo)
+
+    // Save to database
+    await saveInterfaceInfo(interfaceInfo)
+  }
+  catch (e) {
+    console.error(`Failed to get interface info for '${name}':`, e)
+  }
+
+  monitoredInterfaces.set(name, {
+    interfaceName: name,
+    interfaceIndex: index,
+    inOid,
+    outOid,
+    prevIn: 0,
+    prevOut: 0,
+    firstRun: true,
+    interfaceInfo,
+  })
+
+  // eslint-disable-next-line no-console
+  console.log(`Initialized interface '${name}' (index ${index}) - IN: ${inOid}, OUT: ${outOid}`)
 }
 
 /**
@@ -286,64 +337,101 @@ async function saveInterfaceInfo(info: InterfaceInfo): Promise<void> {
 }
 
 /**
- * Gets the cached interface info
+ * Gets all cached interface info
  */
-export function getInterfaceInfoCached(): InterfaceInfo | null {
-  return cachedInterfaceInfo
+export function getAllInterfaceInfo(): InterfaceInfo[] {
+  const infos: InterfaceInfo[] = []
+  for (const monitor of monitoredInterfaces.values()) {
+    if (monitor.interfaceInfo) {
+      infos.push(monitor.interfaceInfo)
+    }
+  }
+  return infos
 }
 
-let prevIn = 0
-let prevOut = 0
-let firstRun = true
+/**
+ * Gets bandwidth data for a specific interface
+ */
+async function getInterfaceBandwidth(interfaceName: string): Promise<BandwidthResult | null> {
+  const monitor = monitoredInterfaces.get(interfaceName)
+  if (!monitor) {
+    return null
+  }
 
-async function getData(): Promise<{ inBytes: number, outBytes: number }> {
-  return new Promise<{ inBytes: number, outBytes: number }>((resolve, reject) => {
-    session.get([inOid, outOid], (error, varbinds) => {
-      if (error)
-        return reject(error)
-      if (!varbinds || varbinds.length < 2)
-        return reject(new Error('No varbinds'))
-      const inBytes = Number(varbinds[0]?.value || 0)
-      const outBytes = Number(varbinds[1]?.value || 0)
-      if (inBytes < 0 || outBytes < 0)
-        return reject(new Error('Invalid varbinds'))
-      resolve({
-        inBytes,
-        outBytes,
+  try {
+    const data = await new Promise<{ inBytes: number, outBytes: number }>((resolve, reject) => {
+      session.get([monitor.inOid, monitor.outOid], (error, varbinds) => {
+        if (error)
+          return reject(error)
+        if (!varbinds || varbinds.length < 2)
+          return reject(new Error('No varbinds'))
+        const inBytes = Number(varbinds[0]?.value || 0)
+        const outBytes = Number(varbinds[1]?.value || 0)
+        if (inBytes < 0 || outBytes < 0)
+          return reject(new Error('Invalid varbinds'))
+        resolve({ inBytes, outBytes })
       })
     })
-  })
-}
 
-export async function getBandwidth(): Promise<BandwidthResult | null> {
-  try {
-    // Initialize OIDs on first call
-    await initializeOids()
-
-    const res = await getData()
-    if (firstRun) {
-      prevIn = res.inBytes
-      prevOut = res.outBytes
-      firstRun = false
+    if (monitor.firstRun) {
+      monitor.prevIn = data.inBytes
+      monitor.prevOut = data.outBytes
+      monitor.firstRun = false
       return null
     }
-    const diffIn = res.inBytes - prevIn
-    const diffOut = res.outBytes - prevOut
+
+    const diffIn = data.inBytes - monitor.prevIn
+    const diffOut = data.outBytes - monitor.prevOut
     const inMbps = diffIn / 1048576
     const outMbps = diffOut / 1048576
-    prevIn = res.inBytes
-    prevOut = res.outBytes
+    monitor.prevIn = data.inBytes
+    monitor.prevOut = data.outBytes
+
     if (inMbps < 0 || outMbps < 0)
       return null
+
     return {
       inMbps,
       outMbps,
       host,
       timestamp: new Date().toISOString(),
-      interfaceInfo: cachedInterfaceInfo || undefined,
+      interfaceInfo: monitor.interfaceInfo || undefined,
+      interfaceName,
     }
   }
   catch {
     return null
   }
+}
+
+/**
+ * Gets bandwidth data for all monitored interfaces
+ */
+export async function getAllBandwidth(): Promise<BandwidthResult[]> {
+  await initializeInterfaces()
+
+  const results: BandwidthResult[] = []
+  for (const interfaceName of monitoredInterfaces.keys()) {
+    const bandwidth = await getInterfaceBandwidth(interfaceName)
+    if (bandwidth) {
+      results.push(bandwidth)
+    }
+  }
+  return results
+}
+
+/**
+ * Gets bandwidth data for the first interface (backwards compatibility)
+ * @deprecated Use getAllBandwidth() instead
+ */
+export async function getBandwidth(): Promise<BandwidthResult | null> {
+  await initializeInterfaces()
+
+  // Get first interface
+  const firstInterface = Array.from(monitoredInterfaces.keys())[0]
+  if (!firstInterface) {
+    return null
+  }
+
+  return getInterfaceBandwidth(firstInterface)
 }

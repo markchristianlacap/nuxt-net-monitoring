@@ -1,6 +1,6 @@
-import { getInterfaceInfoCached } from '~/server/utils/bandwidth'
+import { getAllInterfaceInfo } from '~/server/utils/bandwidth'
 
 export default defineEventHandler(() => {
-  const interfaceInfo = getInterfaceInfoCached()
-  return interfaceInfo
+  const interfaceInfos = getAllInterfaceInfo()
+  return interfaceInfos
 })

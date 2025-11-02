@@ -112,8 +112,10 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
    
    # Interface Configuration (optional - will auto-detect first interface if not set)
-   # Specify interface name (e.g., 'wan', 'lan', 'em0', 'igb0')
+   # Single interface:
    NUXT_SNMP_INTERFACE=wan
+   # Multiple interfaces (comma-separated):
+   # NUXT_SNMP_INTERFACE=wan,lan,em0
 
    # Ping Targets (supports multiple hosts separated by comma)
    NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
@@ -215,8 +217,10 @@ For development or custom setups, you can install and run the application manual
    NUXT_SNMP_HOST=192.168.1.1
    
    # Interface Configuration (optional - will auto-detect first interface if not set)
-   # Specify interface name (e.g., 'wan', 'lan', 'em0', 'igb0')
+   # Single interface:
    NUXT_SNMP_INTERFACE=wan
+   # Multiple interfaces (comma-separated):
+   # NUXT_SNMP_INTERFACE=wan,lan,em0
 
    # Ping Targets (supports multiple hosts separated by comma)
    NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
@@ -463,9 +467,9 @@ nuxt-net-monitoring/
 
 The application automatically detects and monitors network interfaces via SNMP.
 
-#### Specifying an Interface (Optional)
+#### Single Interface Monitoring
 
-You can optionally specify which interface to monitor in your `.env` file:
+You can specify which interface to monitor in your `.env` file:
 
 ```env
 NUXT_SNMP_INTERFACE=wan  # Common interface names: wan, lan, em0, igb0, etc.
@@ -478,13 +482,27 @@ NUXT_SNMP_INTERFACE=wan  # Common interface names: wan, lan, em0, igb0, etc.
 - `igb0`, `igb1`, `igb2` - Intel gigabit interfaces
 - `re0`, `re1` - Realtek interfaces
 
+#### Multiple Interface Monitoring
+
+You can monitor multiple interfaces simultaneously by providing a comma-separated list:
+
+```env
+NUXT_SNMP_INTERFACE=wan,lan,em0  # Monitor WAN, LAN, and em0 interfaces
+```
+
+The application will:
+- Display each interface separately with color-coded charts
+- Show individual statistics for each interface
+- Display total combined bandwidth across all interfaces
+- Store data for each interface independently in the database
+
 #### Auto-Detection
 
 If you don't specify an interface, the application will automatically detect and use the first available interface on your device. This makes setup even easier - just provide the SNMP host and community string, and the application handles the rest.
 
-#### Finding Your Interface
+#### Finding Your Interfaces
 
-If you're not sure which interface to monitor, you can list all available interfaces on your device:
+If you're not sure which interfaces to monitor, you can list all available interfaces on your device:
 
 ```bash
 snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.2.2.1.2

@@ -6,4 +6,5 @@ export interface BandwidthResult {
   host: string
   timestamp: string | Date
   interfaceInfo?: InterfaceInfo
+  interfaceName?: string
 }

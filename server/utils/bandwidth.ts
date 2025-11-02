@@ -1,4 +1,5 @@
 import type { BandwidthResult } from '#shared/types/bandwidth'
+import type { InterfaceInfo } from '#shared/types/interface'
 import snmp from 'net-snmp'
 
 const config = useRuntimeConfig()
@@ -9,9 +10,18 @@ const session = snmp.createSession(host, community)
 // Base OIDs for interface counters
 const IF_IN_OCTETS_BASE = '1.3.6.1.2.1.2.2.1.10'
 const IF_OUT_OCTETS_BASE = '1.3.6.1.2.1.2.2.1.16'
+const IF_DESCR_BASE = '1.3.6.1.2.1.2.2.1.2'
+const IF_SPEED_BASE = '1.3.6.1.2.1.2.2.1.5'
+const IF_PHYS_ADDRESS_BASE = '1.3.6.1.2.1.2.2.1.6'
+const IF_OPER_STATUS_BASE = '1.3.6.1.2.1.2.2.1.8'
+const IP_AD_ENT_ADDR = '1.3.6.1.2.1.4.20.1.1'
+const IP_AD_ENT_IF_INDEX = '1.3.6.1.2.1.4.20.1.2'
 
 // Cache for resolved interface indices to avoid redundant SNMP queries
 const interfaceIndexCache = new Map<string, number | null>()
+const interfaceInfoCache: InterfaceInfo | null = null
+let cachedInterfaceInfo: InterfaceInfo | null = null
+let currentInterfaceIndex: number | null = null
 
 /**
  * Finds the first available interface with non-zero traffic
@@ -102,6 +112,91 @@ async function resolveInterfaceIndex(interfaceName: string): Promise<number | nu
 }
 
 /**
+ * Gets detailed information about an interface via SNMP
+ */
+async function getInterfaceInfo(interfaceIndex: number): Promise<InterfaceInfo> {
+  return new Promise((resolve, reject) => {
+    const oids = [
+      `${IF_DESCR_BASE}.${interfaceIndex}`,
+      `${IF_SPEED_BASE}.${interfaceIndex}`,
+      `${IF_PHYS_ADDRESS_BASE}.${interfaceIndex}`,
+      `${IF_OPER_STATUS_BASE}.${interfaceIndex}`,
+    ]
+
+    session.get(oids, async (error, varbinds) => {
+      if (error) {
+        console.error('Error getting interface info:', error)
+        return reject(error)
+      }
+
+      const interfaceName = varbinds[0] ? String(varbinds[0].value) : 'unknown'
+      const interfaceSpeed = varbinds[1] ? Number(varbinds[1].value) : null
+      const interfaceMAC = varbinds[2] ? Buffer.from(varbinds[2].value as any).toString('hex').match(/.{2}/g)?.join(':') || null : null
+      const statusCode = varbinds[3] ? Number(varbinds[3].value) : 2
+      const interfaceStatus = statusCode === 1 ? 'up' : 'down'
+
+      // Get IP address for this interface
+      let interfaceIP: string | null = null
+      try {
+        interfaceIP = await getInterfaceIP(interfaceIndex)
+      }
+      catch (e) {
+        console.warn('Failed to get interface IP:', e)
+      }
+
+      resolve({
+        interfaceName,
+        interfaceIndex,
+        interfaceIP,
+        interfaceMAC,
+        interfaceSpeed,
+        interfaceStatus,
+        timestamp: new Date().toISOString(),
+      })
+    })
+  })
+}
+
+/**
+ * Gets the IP address for a given interface index
+ */
+async function getInterfaceIP(interfaceIndex: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    const ipToIfIndex = new Map<string, number>()
+
+    session.walk(
+      IP_AD_ENT_IF_INDEX,
+      (varbinds: snmp.Varbind[]) => {
+        for (const varbind of varbinds) {
+          const oidStr = String(varbind.oid)
+          const ipMatch = oidStr.match(/1\.3\.6\.1\.2\.1\.4\.20\.1\.2\.(\d+\.\d+\.\d+\.\d+)$/)
+          if (ipMatch && ipMatch[1]) {
+            const ip = ipMatch[1]
+            const ifIndex = Number(varbind.value)
+            ipToIfIndex.set(ip, ifIndex)
+            if (ifIndex === interfaceIndex) {
+              return resolve(ip)
+            }
+          }
+        }
+      },
+      (error: Error | null) => {
+        if (error) {
+          console.error('Error walking IP addresses:', error)
+        }
+        // Find the IP for our interface
+        for (const [ip, ifIndex] of ipToIfIndex.entries()) {
+          if (ifIndex === interfaceIndex) {
+            return resolve(ip)
+          }
+        }
+        resolve(null)
+      },
+    )
+  })
+}
+
+/**
  * Gets the OID for a given interface name
  */
 async function getOidFromInterface(interfaceName: string | undefined, oidType: 'in' | 'out'): Promise<string> {
@@ -142,9 +237,59 @@ async function initializeOids(): Promise<void> {
   inOid = await getOidFromInterface(interfaceName, 'in')
   outOid = await getOidFromInterface(interfaceName, 'out')
 
+  // Extract interface index from OID
+  const indexMatch = inOid.match(/\.(\d+)$/)
+  if (indexMatch && indexMatch[1]) {
+    currentInterfaceIndex = Number.parseInt(indexMatch[1], 10)
+    
+    // Get and cache interface info
+    try {
+      cachedInterfaceInfo = await getInterfaceInfo(currentInterfaceIndex)
+      // eslint-disable-next-line no-console
+      console.log('Interface info:', cachedInterfaceInfo)
+      
+      // Save to database
+      await saveInterfaceInfo(cachedInterfaceInfo)
+    }
+    catch (e) {
+      console.error('Failed to get interface info:', e)
+    }
+  }
+
   oidsInitialized = true
   // eslint-disable-next-line no-console
   console.log(`Initialized SNMP OIDs - IN: ${inOid}, OUT: ${outOid}`)
+}
+
+/**
+ * Saves interface info to database
+ */
+async function saveInterfaceInfo(info: InterfaceInfo): Promise<void> {
+  try {
+    const { db } = await import('../db')
+    await db
+      .insertInto('interface_info')
+      .values({
+        interfaceName: info.interfaceName,
+        interfaceIndex: info.interfaceIndex,
+        interfaceIP: info.interfaceIP,
+        interfaceMAC: info.interfaceMAC,
+        interfaceSpeed: info.interfaceSpeed,
+        interfaceStatus: info.interfaceStatus,
+        timestamp: new Date().toISOString(),
+      })
+      .execute()
+  }
+  catch (e) {
+    console.error('Failed to save interface info to database:', e)
+  }
+}
+
+/**
+ * Gets the cached interface info
+ */
+export function getInterfaceInfoCached(): InterfaceInfo | null {
+  return cachedInterfaceInfo
 }
 
 let prevIn = 0
@@ -195,6 +340,7 @@ export async function getBandwidth(): Promise<BandwidthResult | null> {
       outMbps,
       host,
       timestamp: new Date().toISOString(),
+      interfaceInfo: cachedInterfaceInfo || undefined,
     }
   }
   catch {

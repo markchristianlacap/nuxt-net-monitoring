@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { InterfaceInfo } from '#shared/types/interface'
+
 const host = ref('')
 const currentDownload = ref(0)
 const currentUpload = ref(0)
@@ -7,8 +9,22 @@ const maxUpload = ref(0)
 const timeData = ref<string[]>([])
 const inData = ref<number[]>([])
 const outData = ref<number[]>([])
+const interfaceInfo = ref<InterfaceInfo | null>(null)
 const maxData = 50
 let source: EventSource | null = null
+
+// Fetch interface info
+async function fetchInterfaceInfo() {
+  try {
+    const response = await fetch('/api/interface-info')
+    if (response.ok) {
+      interfaceInfo.value = await response.json()
+    }
+  }
+  catch (e) {
+    console.error('Failed to fetch interface info:', e)
+  }
+}
 
 const option = computed<ECOption>(() => ({
   backgroundColor: 'transparent',
@@ -134,6 +150,12 @@ function startStream() {
 
   source.onmessage = (evt) => {
     const data = JSON.parse(evt.data)
+    
+    // Update interface info if available
+    if (data.interfaceInfo && !interfaceInfo.value) {
+      interfaceInfo.value = data.interfaceInfo
+    }
+    
     timeData.value.push(new Date(data.timestamp).toLocaleTimeString())
     // round to 2 decimal
     const inMbps = Math.round(data.inMbps * 100) / 100
@@ -155,7 +177,10 @@ function startStream() {
   source.onerror = () => console.warn('SSE disconnected')
 }
 
-onMounted(startStream)
+onMounted(() => {
+  fetchInterfaceInfo()
+  startStream()
+})
 onBeforeUnmount(() => source?.close())
 </script>
 
@@ -169,6 +194,39 @@ onBeforeUnmount(() => source?.close())
       <p class="text-slate-400 text-xs sm:text-sm">
         Live throughput monitoring
       </p>
+    </div>
+
+    <!-- Interface Info -->
+    <div v-if="interfaceInfo" class="bg-slate-800/60 p-4 rounded-xl mb-6 border border-slate-700">
+      <h3 class="text-slate-300 font-semibold mb-3 text-center">Interface Details</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400">Interface:</span>
+          <span class="text-blue-400 font-medium">{{ interfaceInfo.interfaceName }}</span>
+        </div>
+        <div v-if="interfaceInfo.interfaceIP" class="flex items-center gap-2">
+          <span class="text-slate-400">IP Address:</span>
+          <span class="text-green-400 font-medium">{{ interfaceInfo.interfaceIP }}</span>
+        </div>
+        <div v-if="interfaceInfo.interfaceMAC" class="flex items-center gap-2">
+          <span class="text-slate-400">MAC:</span>
+          <span class="text-purple-400 font-mono text-xs">{{ interfaceInfo.interfaceMAC }}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400">Status:</span>
+          <span :class="interfaceInfo.interfaceStatus === 'up' ? 'text-green-400' : 'text-red-400'" class="font-medium">
+            {{ interfaceInfo.interfaceStatus.toUpperCase() }}
+          </span>
+        </div>
+        <div v-if="interfaceInfo.interfaceSpeed" class="flex items-center gap-2">
+          <span class="text-slate-400">Speed:</span>
+          <span class="text-amber-400 font-medium">{{ (interfaceInfo.interfaceSpeed / 1000000).toFixed(0) }} Mbps</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400">Index:</span>
+          <span class="text-slate-300 font-medium">{{ interfaceInfo.interfaceIndex }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- Host -->

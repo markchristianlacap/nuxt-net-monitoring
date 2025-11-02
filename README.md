@@ -110,8 +110,14 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    # SNMP Configuration
    NUXT_SNMP_HOST=192.168.1.1  # Your PfSense/router IP
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
-   NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets
-   NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets
+   
+   # Interface Configuration (choose one method):
+   # Method 1: Specify interface name (easier, recommended)
+   NUXT_SNMP_INTERFACE=wan  # e.g., 'wan', 'lan', 'em0', 'igb0', etc.
+   
+   # Method 2: Specify OIDs directly (advanced, overrides interface name if set)
+   # NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets
+   # NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets
 
    # Ping Targets (supports multiple hosts separated by comma)
    NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
@@ -211,8 +217,14 @@ For development or custom setups, you can install and run the application manual
    # SNMP Configuration
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
    NUXT_SNMP_HOST=192.168.1.1
-   NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5
-   NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5
+   
+   # Interface Configuration (choose one method):
+   # Method 1: Specify interface name (easier, recommended)
+   NUXT_SNMP_INTERFACE=wan  # e.g., 'wan', 'lan', 'em0', 'igb0', etc.
+   
+   # Method 2: Specify OIDs directly (advanced, overrides interface name if set)
+   # NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5
+   # NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5
 
    # Ping Targets (supports multiple hosts separated by comma)
    NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
@@ -455,21 +467,47 @@ nuxt-net-monitoring/
 
 ## 🔧 Configuration
 
-### SNMP OID Configuration
+### SNMP Interface Configuration
 
-The SNMP OIDs for monitoring network interfaces can be configured via environment variables in your `.env` file:
+The application supports two methods for configuring the SNMP interface to monitor:
+
+#### Method 1: Interface Name (Recommended)
+
+Simply specify the interface name in your `.env` file. The application will automatically resolve it to the correct SNMP OID:
 
 ```env
-NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets for interface 5
+NUXT_SNMP_INTERFACE=wan  # Common interface names: wan, lan, em0, igb0, etc.
+```
+
+This is the **easiest method** as you don't need to know the SNMP OIDs. The application will query your device via SNMP to find the interface index and build the appropriate OIDs automatically.
+
+**Common Interface Names:**
+- `wan` - WAN interface (typical on pfSense)
+- `lan` - LAN interface
+- `em0`, `em1`, `em2` - Intel ethernet interfaces
+- `igb0`, `igb1`, `igb2` - Intel gigabit interfaces
+- `re0`, `re1` - Realtek interfaces
+
+#### Method 2: Direct OID Specification (Advanced)
+
+For advanced users or if automatic resolution doesn't work, you can specify the SNMP OIDs directly:
+
+```env
+NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5   # ifInOctets for interface 5
 NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets for interface 5
 ```
 
-If not specified, the application defaults to interface 5 (`.10.5` for inbound and `.16.5` for outbound).
+**Note:** If both `NUXT_SNMP_IN_OID`/`NUXT_SNMP_OUT_OID` and `NUXT_SNMP_INTERFACE` are set, the direct OID specifications will take precedence.
 
-To find your interface ID, use an SNMP browser or:
+#### Finding Your Interface
+
+If you're not sure which interface to monitor, you can list all available interfaces on your device:
+
 ```bash
 snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.2.2.1.2
 ```
+
+This will show all interface names and their corresponding indices.
 
 ### Custom Ping Interval
 

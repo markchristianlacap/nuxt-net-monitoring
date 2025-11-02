@@ -6,14 +6,28 @@ const host = config.SNMP_HOST
 const community = config.SNMP_COMMUNITY
 const session = snmp.createSession(host, community)
 
+// Base OIDs for interface counters
+const IF_IN_OCTETS_BASE = '1.3.6.1.2.1.2.2.1.10'
+const IF_OUT_OCTETS_BASE = '1.3.6.1.2.1.2.2.1.16'
+
+// Cache for resolved interface indices to avoid redundant SNMP queries
+const interfaceIndexCache = new Map<string, number | null>()
+
 /**
  * Resolves an interface name to its interface index via SNMP
+ * Uses caching to avoid redundant queries
  * @param interfaceName The interface name (e.g., 'wan', 'lan', 'em0', 'igb0')
  * @returns The interface index or null if not found
  */
 async function resolveInterfaceIndex(interfaceName: string): Promise<number | null> {
+  // Check cache first
+  if (interfaceIndexCache.has(interfaceName)) {
+    return interfaceIndexCache.get(interfaceName)!
+  }
+
   return new Promise((resolve) => {
     const ifDescrOid = '1.3.6.1.2.1.2.2.1.2' // ifDescr table
+    const searchName = interfaceName.toLowerCase()
 
     session.walk(
       ifDescrOid,
@@ -24,10 +38,12 @@ async function resolveInterfaceIndex(interfaceName: string): Promise<number | nu
           const oidStr = String(varbind.oid)
           // Extract interface index from OID (last number in the OID)
           const matches = oidStr.match(/\.(\d+)$/)
-          if (matches && matches[1] && description.includes(interfaceName.toLowerCase())) {
+          // Use exact match or word boundary to avoid false matches (e.g., 'wan' matching 'wlan')
+          if (matches && matches[1] && (description === searchName || description.match(new RegExp(`\\b${searchName}\\b`)))) {
             const index = Number.parseInt(matches[1], 10)
             // eslint-disable-next-line no-console
             console.log(`Resolved interface '${interfaceName}' to index ${index} (description: ${varbind.value})`)
+            interfaceIndexCache.set(interfaceName, index)
             return resolve(index)
           }
         }
@@ -36,13 +52,22 @@ async function resolveInterfaceIndex(interfaceName: string): Promise<number | nu
         // Done callback - called when walk completes
         if (error) {
           console.error('Error walking SNMP interface descriptions:', error)
+          interfaceIndexCache.set(interfaceName, null)
           return resolve(null)
         }
         console.error(`Interface '${interfaceName}' not found in SNMP interface table`)
+        interfaceIndexCache.set(interfaceName, null)
         resolve(null)
       },
     )
   })
+}
+
+/**
+ * Gets the base OID for a given interface type
+ */
+function getBaseOid(oidType: 'in' | 'out'): string {
+  return oidType === 'in' ? IF_IN_OCTETS_BASE : IF_OUT_OCTETS_BASE
 }
 
 /**
@@ -58,7 +83,7 @@ async function getOidFromConfig(configValue: string, oidType: 'in' | 'out'): Pro
 
   // Check if it's a simple numeric index
   if (/^\d+$/.test(configValue)) {
-    const baseOid = oidType === 'in' ? '1.3.6.1.2.1.2.2.1.10' : '1.3.6.1.2.1.2.2.1.16'
+    const baseOid = getBaseOid(oidType)
     return `${baseOid}.${configValue}`
   }
 
@@ -69,7 +94,7 @@ async function getOidFromConfig(configValue: string, oidType: 'in' | 'out'): Pro
   }
 
   // Build the appropriate OID based on the type
-  const baseOid = oidType === 'in' ? '1.3.6.1.2.1.2.2.1.10' : '1.3.6.1.2.1.2.2.1.16'
+  const baseOid = getBaseOid(oidType)
   return `${baseOid}.${interfaceIndex}`
 }
 

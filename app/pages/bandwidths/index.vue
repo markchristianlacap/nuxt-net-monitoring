@@ -46,6 +46,7 @@ const columns: TableColumn<any>[] = [
       }),
   },
   { accessorKey: 'host', header: 'Host' },
+  { accessorKey: 'interface', header: 'Interface' },
   {
     accessorKey: 'inMbps',
     header: () => h('div', { class: 'text-right' }, 'Download (Mbps)'),
@@ -98,6 +99,8 @@ function download() {
           <UButton color="neutral" variant="subtle" icon="i-lucide-download" @click="download" />
         </div>
       </div>
+
+      <BandwidthChart :start="query.start" :end="query.end" />
 
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <u-table

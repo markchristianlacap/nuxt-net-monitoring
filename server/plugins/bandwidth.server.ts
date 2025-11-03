@@ -30,6 +30,7 @@ export default defineNitroPlugin(async () => {
       if (!bandwidth)
         continue
       events.emit('bandwidth:update', bandwidth)
+      records.push(bandwidth)
     }
   })
   runEveryMinute(saveAverage)

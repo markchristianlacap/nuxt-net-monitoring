@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3'
+import { setHeader } from 'h3'
 
 export interface CsvExportOptions {
   filename: string

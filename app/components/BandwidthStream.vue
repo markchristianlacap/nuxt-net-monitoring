@@ -17,7 +17,7 @@ const interfaces = ref<Map<string, InterfaceStats>>(new Map())
 const maxPoints = 50
 let eventSource: EventSource | null = null
 
-const colorPalette = chartBaseColors.sort(() => Math.random() - 0.5)
+const colorPalette = [...chartBaseColors].sort(() => Math.random() - 0.5)
 
 const summary = computed(() => {
   const ifaceList = Array.from(interfaces.value.values())

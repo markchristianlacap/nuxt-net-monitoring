@@ -1,37 +1,26 @@
 import { db } from '~~/server/db'
+import { exportToCsv } from '~~/server/utils/csv-export'
+import { applyDateRangeFilter } from '~~/server/utils/query-filters'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
+
   let baseQuery = db.selectFrom('bandwidths')
     .selectAll()
     .orderBy('timestamp', 'desc')
-  if (query.start && query.start !== 'null') {
-    const start = new Date(query.start as string)
-    start.setUTCHours(0, 0, 0, 0)
-    baseQuery = baseQuery.where('timestamp', '>=', start)
-  }
-  if (query.end && query.end !== 'null') {
-    const end = new Date(query.end as string)
-    end.setUTCHours(23, 59, 59, 999)
-    baseQuery = baseQuery.where('timestamp', '<=', end)
-  }
+
+  baseQuery = applyDateRangeFilter(baseQuery, {
+    start: query.start && query.start !== 'null' ? query.start as string : undefined,
+    end: query.end && query.end !== 'null' ? query.end as string : undefined,
+  })
 
   const result = await baseQuery.execute()
 
-  setHeader(event, 'Content-Type', 'text/csv')
-  setHeader(
-    event,
-    'Content-Disposition',
-    'attachment; filename="bandwidths.csv"',
-  )
-
-  event.node.res.write('host,inMbps,outMbps,timestamp\n')
-  result.forEach((row) => {
-    event.node.res.write(
-      `${row.host},${row.inMbps},${row.outMbps},${row.timestamp}\n`,
-    )
+  exportToCsv(event, result, {
+    filename: 'bandwidths.csv',
+    headers: ['host', 'inMbps', 'outMbps', 'timestamp'],
+    formatRow: row => [row.host, String(row.inMbps), String(row.outMbps), String(row.timestamp)],
   })
-  event.node.res.end()
 
   return result
 })

@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import bcrypt from 'bcrypt'
-import { db } from '~/server/db'
+import { db } from '~~/server/db'
 
 const AUTH_COOKIE = 'last_auth_time'
 const AUTH_INTERVAL = 1000 * 60 * 60 * 48

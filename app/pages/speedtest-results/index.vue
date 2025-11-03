@@ -13,7 +13,10 @@ const query = reactive({
   end: null as string | null,
 })
 
-const dateRange = ref()
+const dateRange = ref({
+  start: null as Date | null,
+  end: null as Date | null,
+})
 
 const { data: pingResponse, refresh } = await useFetch('/api/speedtest-results', {
   query,

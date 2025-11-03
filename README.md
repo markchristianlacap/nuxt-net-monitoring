@@ -478,7 +478,6 @@ snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.2.2.1.2
 ```
 
 **Interface Selection:**
-- Leave `NUXT_SNMP_INTERFACES` empty or unset to monitor **all available interfaces**
 - Specify interface names (comma-separated) to monitor only specific interfaces
 - Common interface names: `eth0`, `eth1`, `em0`, `igb0`, `lan`, `wan`, etc.
 
@@ -489,11 +488,6 @@ The application will automatically:
 - Store data separately for each interface in the database
 
 ### Custom Ping Interval
-
-To change ping frequency, edit `server/plugins/ping.server.ts`:
-```typescript
-const ping = spawn('ping', ['-i', '1', host]) // -i 1 = 1 second interval
-```
 
 ### Multiple Ping Hosts
 

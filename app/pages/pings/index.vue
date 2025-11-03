@@ -14,7 +14,10 @@ const query = reactive({
   status: null as 'online' | 'offline' | null,
 })
 
-const dateRange = ref()
+const dateRange = ref({
+  start: null as Date | null,
+  end: null as Date | null,
+})
 
 const { data: pingResponse, refresh } = await useFetch('/api/pings', {
   query,
@@ -146,9 +149,3 @@ function download() {
     </div>
   </u-page>
 </template>
-
-<style scoped>
-:deep(.u-table) {
-  background: transparent;
-}
-</style>

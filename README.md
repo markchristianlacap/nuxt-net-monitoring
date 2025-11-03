@@ -31,6 +31,8 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 ### Security & Access
 * **Basic Authentication**: HTTP Basic Auth with session cookie (48-hour expiry)
 * **Protected Routes**: All endpoints secured via middleware
+* **User Management**: Authenticated users are automatically saved to the database with hashed passwords
+* **User Tracking**: Last login timestamps are recorded for each authentication
 
 ---
 
@@ -266,6 +268,12 @@ When you first access the application, you'll be prompted for HTTP Basic Authent
 
 Authentication is cached via cookie for 48 hours.
 
+**User Database Integration:**
+- Upon successful authentication, users are automatically saved to the database
+- Passwords are securely hashed using bcrypt before storage
+- Last login timestamps are tracked for each user
+- User information can be viewed via the `/api/users` endpoint
+
 ### Main Dashboard (`/`)
 
 The homepage displays real-time monitoring with two tabs:
@@ -354,6 +362,7 @@ The application runs three background monitoring processes:
   - `/api/bandwidths/stream.get` - Live bandwidth stream for all monitored interfaces (updates every second)
   - `/api/interfaces` - Get list of available/configured network interfaces
   - `/api/speedtest` (POST) - Live speed test execution stream
+  - `/api/users` (GET) - List all authenticated users (without passwords)
 
 ### Data Collection & Storage Strategy
 
@@ -380,6 +389,7 @@ All data is stored in PostgreSQL using Kysely ORM:
 - **pings**: `id`, `host`, `status`, `latency`, `timestamp`
 - **bandwidths**: `id`, `host`, `interface`, `inMbps`, `outMbps`, `timestamp`
 - **speedtest_results**: `id`, `download`, `upload`, `latency`, `isp`, `ip`, `url`, `timestamp`
+- **users**: `id`, `username`, `password` (bcrypt hashed), `email`, `name`, `lastLoginAt`, `createdAt`, `updatedAt`
 
 ---
 

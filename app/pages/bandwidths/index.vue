@@ -99,6 +99,8 @@ function download() {
         </div>
       </div>
 
+      <BandwidthChart :start="query.start" :end="query.end" />
+
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <u-table
           :data="bandwidthResponse?.data"

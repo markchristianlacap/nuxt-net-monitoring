@@ -126,6 +126,8 @@ function download() {
         </div>
       </div>
 
+      <PingChart :start="query.start" :end="query.end" :status="query.status" />
+
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <u-table
           :data="pingResponse?.data"

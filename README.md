@@ -14,7 +14,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
 ### Real-Time Monitoring
 * **Ping Monitoring**: Continuous ping monitoring with 1-second intervals, live latency tracking, and status detection. **Supports multiple hosts simultaneously** via comma-separated configuration. Data is averaged and saved to database every 60 seconds
-* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic (inbound/outbound Mbps) from PfSense or other SNMP-enabled devices. Data is collected every second, averaged, and saved every 60 seconds
+* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic (inbound/outbound Mbps) from PfSense or other SNMP-enabled devices. **Supports multiple interfaces simultaneously** via comma-separated configuration. Data is collected every second, averaged, and saved every 60 seconds
 * **Live Streaming Data**: Server-sent events (SSE) for real-time data updates without page refresh
 
 ### Speed Test Integration
@@ -110,8 +110,7 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    # SNMP Configuration
    NUXT_SNMP_HOST=192.168.1.1  # Your PfSense/router IP
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
-   NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets
-   NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets
+   NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor multiple interfaces by name (comma-separated)
 
    # Ping Targets (supports multiple hosts separated by comma)
    NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
@@ -211,8 +210,7 @@ For development or custom setups, you can install and run the application manual
    # SNMP Configuration
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
    NUXT_SNMP_HOST=192.168.1.1
-   NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5
-   NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5
+   NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor multiple interfaces by name (comma-separated)
 
    # Ping Targets (supports multiple hosts separated by comma)
    NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
@@ -283,8 +281,9 @@ The homepage displays real-time monitoring with two tabs:
 
 2. **Bandwidth Tab**
    - Live SNMP bandwidth monitoring every second
-   - Upload and download speeds in Mbps
-   - Real-time visualization
+   - **Monitor multiple interfaces simultaneously** with color-coded visualization
+   - Individual interface metrics: upload and download speeds in Mbps
+   - Real-time visualization for each interface
    - Database stores 60-second averages for historical tracking
 
 ### Speed Test (`/speedtest`)
@@ -334,10 +333,12 @@ The application runs three background monitoring processes:
 
 2. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
    - Queries SNMP device every 1 second using precise timing helper (`runEverySecond`)
-   - Reads interface byte counters via SNMP OIDs
-   - Calculates bandwidth delta (Mbps) for each reading
-   - Collects bandwidth readings and calculates average every 60 seconds
-   - Stores averaged results in `bandwidths` table
+   - Monitors **multiple interfaces** configured in `NUXT_SNMP_INTERFACES` (comma-separated)
+   - Each interface is monitored independently with its own bandwidth calculation
+   - Reads interface byte counters via SNMP OIDs automatically based on interface name
+   - Calculates bandwidth delta (Mbps) for each reading per interface
+   - Collects bandwidth readings and calculates average every 60 seconds per interface
+   - Stores averaged results in `bandwidths` table with interface identification
 
 3. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
    - Runs Ookla Speedtest CLI every hour using precise timing helper (`runEveryHour`)
@@ -350,7 +351,8 @@ The application runs three background monitoring processes:
 - **Event-driven Architecture**: Background processes emit events that are streamed to connected clients
 - **API Endpoints**:
   - `/api/pings/stream.get` - Live ping data stream for all monitored hosts (updates every second)
-  - `/api/bandwidths/stream.get` - Live bandwidth stream (updates every second)
+  - `/api/bandwidths/stream.get` - Live bandwidth stream for all monitored interfaces (updates every second)
+  - `/api/interfaces` - Get list of available/configured network interfaces
   - `/api/speedtest` (POST) - Live speed test execution stream
 
 ### Data Collection & Storage Strategy
@@ -359,15 +361,15 @@ The application uses a two-tier approach for optimal performance:
 
 **Real-Time Collection** (Every 1 second):
 - Ping latency measurements for each configured host
-- SNMP bandwidth readings
+- SNMP bandwidth readings for each configured interface
 - Streamed to frontend via SSE for live visualization with real-time updates
 
 **Database Storage** (Every 60 seconds):
 - Averaged ping latency over the past minute per host
-- Averaged bandwidth readings over the past minute
+- Averaged bandwidth readings over the past minute per interface
 - Reduces database writes while maintaining data accuracy
 - Historical data remains accessible for analysis and export
-- Each host's data is stored separately for independent tracking
+- Each host's and interface's data is stored separately for independent tracking
 
 This approach provides real-time monitoring responsiveness while efficiently managing database resources.
 
@@ -376,7 +378,7 @@ This approach provides real-time monitoring responsiveness while efficiently man
 All data is stored in PostgreSQL using Kysely ORM:
 
 - **pings**: `id`, `host`, `status`, `latency`, `timestamp`
-- **bandwidths**: `id`, `host`, `inMbps`, `outMbps`, `timestamp`
+- **bandwidths**: `id`, `host`, `interface`, `inMbps`, `outMbps`, `timestamp`
 - **speedtest_results**: `id`, `download`, `upload`, `latency`, `isp`, `ip`, `url`, `timestamp`
 
 ---
@@ -455,21 +457,36 @@ nuxt-net-monitoring/
 
 ## 🔧 Configuration
 
-### SNMP OID Configuration
+### SNMP Interface Configuration
 
-The SNMP OIDs for monitoring network interfaces can be configured via environment variables in your `.env` file:
+The application now supports monitoring multiple network interfaces by name instead of manually specifying OIDs. Configure the interfaces you want to monitor in your `.env` file:
 
 ```env
-NUXT_SNMP_IN_OID=1.3.6.1.2.1.2.2.1.10.5  # ifInOctets for interface 5
-NUXT_SNMP_OUT_OID=1.3.6.1.2.1.2.2.1.16.5  # ifOutOctets for interface 5
+NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor multiple interfaces (comma-separated)
 ```
 
-If not specified, the application defaults to interface 5 (`.10.5` for inbound and `.16.5` for outbound).
+**Finding Your Interface Names:**
 
-To find your interface ID, use an SNMP browser or:
+You can discover available interfaces on your SNMP-enabled device using `snmpwalk`:
+
 ```bash
+# List all interface names
+snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.31.1.1.1.1
+
+# List all interface descriptions (alternative)
 snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.2.2.1.2
 ```
+
+**Interface Selection:**
+- Leave `NUXT_SNMP_INTERFACES` empty or unset to monitor **all available interfaces**
+- Specify interface names (comma-separated) to monitor only specific interfaces
+- Common interface names: `eth0`, `eth1`, `em0`, `igb0`, `lan`, `wan`, etc.
+
+The application will automatically:
+- Retrieve interface information (name, description, status, speed, IP)
+- Monitor bandwidth using the appropriate SNMP OIDs for each interface
+- Display each interface with color-coded visualization
+- Store data separately for each interface in the database
 
 ### Custom Ping Interval
 

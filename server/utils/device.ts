@@ -5,7 +5,7 @@ import snmp from 'net-snmp'
 const config = useRuntimeConfig()
 const HOST = config.SNMP_HOST
 const COMMUNITY = config.SNMP_COMMUNITY
-const INTERFACES = config.SNMP_INTERFACES?.split(',') || []
+const INTERFACES = config.SNMP_INTERFACES?.split(',').map(i => i.trim()) || []
 
 // SNMP OIDs used for interface data
 const OIDS = {

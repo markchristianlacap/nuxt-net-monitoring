@@ -125,7 +125,7 @@ const option = computed<ECOption>(() => {
             y2: 1,
             colorStops: [
               { offset: 0, color: colors.area },
-              { offset: 1, color: colors.area.replace('0.25', '0') },
+              { offset: 1, color: 'transparent' },
             ],
           },
         },

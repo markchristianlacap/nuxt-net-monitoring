@@ -131,7 +131,7 @@ const option = computed<ECOption>(() => {
             color: colors.secondary,
           },
           areaStyle: {
-            color: colors.area.replace('0.25', '0.1'),
+            color: 'rgba(0, 0, 0, 0.05)',
           },
         },
       ]

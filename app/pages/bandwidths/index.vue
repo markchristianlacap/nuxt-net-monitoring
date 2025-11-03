@@ -46,6 +46,7 @@ const columns: TableColumn<any>[] = [
       }),
   },
   { accessorKey: 'host', header: 'Host' },
+  { accessorKey: 'interface', header: 'Interface' },
   {
     accessorKey: 'inMbps',
     header: () => h('div', { class: 'text-right' }, 'Download (Mbps)'),

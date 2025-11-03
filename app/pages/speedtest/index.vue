@@ -61,7 +61,7 @@ async function startStream() {
 
       for (const part of parts) {
         const match = part.match(/data:\s*(\{.*\})/s)
-        if (!match)
+        if (!match || !match[1])
           continue
         const event = JSON.parse(match[1])
         handleEvent(event)

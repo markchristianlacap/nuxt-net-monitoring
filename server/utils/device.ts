@@ -70,13 +70,27 @@ export async function getInterfaces(): Promise<DeviceInterface[] | null> {
   try {
     await Promise.all([
       walk(OIDS.ifIndex, (i, v) => (data[i] = { index: Number(v) })),
-      walk(OIDS.ifName, (i, v) => (data[i].name = v.toString())),
-      walk(OIDS.ifDescr, (i, v) => (data[i].description = v.toString())),
+      walk(OIDS.ifName, (i, v) => {
+        if (!data[i])
+          data[i] = {}
+        data[i].name = v.toString()
+      }),
+      walk(OIDS.ifDescr, (i, v) => {
+        if (!data[i])
+          data[i] = {}
+        data[i].description = v.toString()
+      }),
       walk(OIDS.ifOperStatus, (i, v) => {
+        if (!data[i])
+          data[i] = {}
         const map: Record<number, DeviceInterface['status']> = { 1: 'up', 2: 'down', 3: 'testing' }
         data[i].status = map[v as number] || 'unknown'
       }),
-      walk(OIDS.ifSpeed, (i, v) => (data[i].speed = Number(v))),
+      walk(OIDS.ifSpeed, (i, v) => {
+        if (!data[i])
+          data[i] = {}
+        data[i].speed = Number(v)
+      }),
     ])
 
     const ipMap = await getIpAddresses()
@@ -114,7 +128,7 @@ async function snmpGet(oids: string[]): Promise<{ inBytes: bigint, outBytes: big
     session.get(oids, (err, vbs) => {
       if (err || !Array.isArray(vbs))
         return reject(err || new Error('Invalid SNMP response'))
-      const [inBytes, outBytes] = vbs.map((vb) => {
+      const bytes = vbs.map((vb) => {
         if (!vb?.value)
           return 0n
         if (vb.value instanceof Buffer)
@@ -126,6 +140,8 @@ async function snmpGet(oids: string[]): Promise<{ inBytes: bigint, outBytes: big
           return 0n
         }
       })
+      const inBytes = bytes[0] ?? 0n
+      const outBytes = bytes[1] ?? 0n
       resolve({ inBytes, outBytes })
     })
   })

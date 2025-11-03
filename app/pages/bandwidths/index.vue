@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { CalendarDate } from '@internationalized/date'
 import type { TableColumn } from '@nuxt/ui'
 import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
 import { debounce } from 'perfect-debounce'
@@ -13,9 +12,9 @@ const query = reactive({
   end: null as string | null,
 })
 
-const dateRange = ref<{ start: CalendarDate | null, end: CalendarDate | null }>({
-  start: null,
-  end: null,
+const dateRange = ref({
+  start: null as Date | null,
+  end: null as Date | null,
 })
 
 const { data: bandwidthResponse, refresh } = await useFetch('/api/bandwidths', {
@@ -27,8 +26,8 @@ const debouncedRefresh = debounce(() => refresh(), 300)
 
 watch(query, debouncedRefresh, { deep: true })
 watch(dateRange, () => {
-  query.start = dateRange.value.start?.toString() ?? null
-  query.end = dateRange.value.end?.toString() ?? null
+  query.start = dateRange.value?.start?.toString() ?? null
+  query.end = dateRange.value?.end?.toString() ?? null
 }, { deep: true })
 
 const columns: TableColumn<any>[] = [

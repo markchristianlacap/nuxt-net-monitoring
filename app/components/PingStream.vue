@@ -9,7 +9,7 @@ interface HostData {
 const hosts = ref<Map<string, HostData>>(new Map())
 const maxPoints = 60
 let eventSource: EventSource | null = null
-const colorPalette = chartBaseColors.sort(() => Math.random() - 0.5)
+const colorPalette = [...chartBaseColors].sort(() => Math.random() - 0.5)
 // Summary statistics
 const summary = computed(() => {
   const hostList = Array.from(hosts.value.values())

@@ -1,22 +1,16 @@
 import { db } from '~~/server/db'
+import { applyDateRangeFilter } from '~~/server/utils/query-filters'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const page = Number(query.page) || 1
   const limit = Number(query.limit) || 10
+
   let baseQuery = db.selectFrom('speedtest_results')
     .selectAll()
     .orderBy('timestamp', 'desc')
-  if (query.start) {
-    const start = new Date(query.start as string)
-    start.setUTCHours(0, 0, 0, 0)
-    baseQuery = baseQuery.where('timestamp', '>=', start)
-  }
-  if (query.end) {
-    const end = new Date(query.end as string)
-    end.setUTCHours(23, 59, 59, 999)
-    baseQuery = baseQuery.where('timestamp', '<=', end)
-  }
+
+  baseQuery = applyDateRangeFilter(baseQuery, query)
 
   const result = await paginate(db, baseQuery, { page, limit })
 

@@ -1,4 +1,5 @@
 import { db } from '~~/server/db'
+import { applyDateRangeFilter } from '~~/server/utils/query-filters'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -7,16 +8,7 @@ export default defineEventHandler(async (event) => {
     .selectAll()
     .orderBy('timestamp', 'asc')
 
-  if (query.start) {
-    const start = new Date(query.start as string)
-    start.setUTCHours(0, 0, 0, 0)
-    baseQuery = baseQuery.where('timestamp', '>=', start)
-  }
-  if (query.end) {
-    const end = new Date(query.end as string)
-    end.setUTCHours(23, 59, 59, 999)
-    baseQuery = baseQuery.where('timestamp', '<=', end)
-  }
+  baseQuery = applyDateRangeFilter(baseQuery, query)
 
   const data = await baseQuery.execute()
 

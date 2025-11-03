@@ -111,8 +111,7 @@ const option = computed<ECOption>(() => {
         name: 'Download',
         type: 'line',
         yAxisIndex: 0,
-        showSymbol: true,
-        symbolSize: 8,
+        showSymbol: false,
         smooth: true,
         data: downloadData,
         lineStyle: {
@@ -130,8 +129,7 @@ const option = computed<ECOption>(() => {
         name: 'Upload',
         type: 'line',
         yAxisIndex: 0,
-        showSymbol: true,
-        symbolSize: 8,
+        showSymbol: false,
         smooth: true,
         data: uploadData,
         lineStyle: {
@@ -149,8 +147,7 @@ const option = computed<ECOption>(() => {
         name: 'Latency',
         type: 'line',
         yAxisIndex: 1,
-        showSymbol: true,
-        symbolSize: 6,
+        showSymbol: false,
         smooth: true,
         data: latencyData,
         lineStyle: {

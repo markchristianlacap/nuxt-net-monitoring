@@ -33,6 +33,7 @@ export default defineEventHandler(async (event: H3Event) => {
 
   // Save or update user in database
   try {
+    const now = new Date().toISOString()
     const existingUser = await db
       .selectFrom('users')
       .select(['id', 'username'])
@@ -44,14 +45,15 @@ export default defineEventHandler(async (event: H3Event) => {
       await db
         .updateTable('users')
         .set({
-          lastLoginAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          lastLoginAt: now,
+          updatedAt: now,
         })
         .where('id', '=', existingUser.id)
         .execute()
     }
     else {
-      // Create new user with hashed password
+      // Create new user with hashed password for record-keeping
+      // Note: Authentication continues to use environment variables
       const hashedPassword = await bcrypt.hash(password, 10)
       await db
         .insertInto('users')
@@ -60,7 +62,7 @@ export default defineEventHandler(async (event: H3Event) => {
           password: hashedPassword,
           email: null,
           name: username,
-          lastLoginAt: new Date().toISOString(),
+          lastLoginAt: now,
         })
         .execute()
     }

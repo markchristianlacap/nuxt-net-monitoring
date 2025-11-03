@@ -7,6 +7,7 @@ ignoredBuiltDependencies:
   - vue-demi
 
 onlyBuiltDependencies:
+  - bcrypt
   - better-sqlite3
   - lzma-native
   - maplibre-gl

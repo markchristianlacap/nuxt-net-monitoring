@@ -10,6 +10,7 @@ export interface Database {
   pings: PingTable
   bandwidths: BandwidthTable
   speedtest_results: SpeedtestTable
+  users: UserTable
 }
 
 export interface PingTable {
@@ -38,6 +39,18 @@ export interface SpeedtestTable {
   ip: string
   url: string
 }
+
+export interface UserTable {
+  id: Generated<number>
+  username: string
+  password: string
+  email: string | null
+  name: string | null
+  lastLoginAt: ColumnType<Date, string> | null
+  createdAt: ColumnType<Date, string>
+  updatedAt: ColumnType<Date, string>
+}
+
 export type Ping = Selectable<PingTable>
 export type NewPing = Insertable<PingTable>
 export type UpdatePing = Updateable<PingTable>
@@ -49,3 +62,7 @@ export type UpdateBandwidth = Updateable<BandwidthTable>
 export type Speedtest = Selectable<SpeedtestTable>
 export type NewSpeedtest = Insertable<SpeedtestTable>
 export type UpdateSpeedtest = Updateable<SpeedtestTable>
+
+export type User = Selectable<UserTable>
+export type NewUser = Insertable<UserTable>
+export type UpdateUser = Updateable<UserTable>

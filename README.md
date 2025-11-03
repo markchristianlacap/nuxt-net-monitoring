@@ -29,10 +29,13 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 * **Data Export**: Download historical data in CSV format for analysis
 
 ### Security & Access
-* **Basic Authentication**: HTTP Basic Auth with session cookie (48-hour expiry)
-* **Protected Routes**: All endpoints secured via middleware
-* **User Management**: Authenticated users are automatically saved to the database with hashed passwords
+* **Modern Authentication**: Built with @sidebase/nuxt-auth and NextAuth.js for secure session management
+* **Login Dialog**: Clean, user-friendly login interface with form validation
+* **Session-based Auth**: JWT-based sessions with automatic token refresh
+* **Protected Routes**: All application routes secured via authentication middleware
+* **User Management**: Authenticated users are automatically saved to the database with bcrypt-hashed passwords
 * **User Tracking**: Last login timestamps are recorded for each authentication
+* **Account Menu**: Easy access to user profile and logout functionality
 
 ---
 
@@ -123,9 +126,17 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    NUXT_DB_PASSWORD=postgres
    NUXT_DB_NAME=net-monitor
 
-   # Basic Authentication
+   # Authentication Configuration
+   # Default admin credentials (used for initial login)
    NUXT_USER=admin
    NUXT_PASS=your-secure-password
+   
+   # Auth Secret - Generate a secure random string for production
+   # Example: openssl rand -base64 32
+   NUXT_AUTH_SECRET=your-secure-random-string-here
+   
+   # Auth Origin - Set to your production URL
+   NUXT_AUTH_ORIGIN=http://localhost:3000
    ```
 
    > **Note**: The `NUXT_DB_HOST` is automatically set to `postgres` in docker-compose.yml and should not be modified in `.env.docker`.
@@ -145,8 +156,8 @@ The easiest way to get started is using Docker Compose, which sets up both the a
 
    Open your browser and navigate to `http://localhost:3000`
 
-   You'll be prompted for authentication:
-   - **Username**: Value from `NUXT_USER` in `.env.docker`
+   You'll be redirected to the login page. Use the credentials:
+   - **Username**: Value from `NUXT_USER` in `.env.docker` (default: `admin`)
    - **Password**: Value from `NUXT_PASS` in `.env.docker`
 
 5. **View Logs** (optional)
@@ -224,9 +235,17 @@ For development or custom setups, you can install and run the application manual
    NUXT_DB_PASSWORD=your-db-password
    NUXT_DB_NAME=net-monitor
 
-   # Basic Authentication
+   # Authentication Configuration
+   # Default admin credentials (used for initial login)
    NUXT_USER=admin
    NUXT_PASS=your-secure-password
+   
+   # Auth Secret - Generate a secure random string for production
+   # Example: openssl rand -base64 32
+   NUXT_AUTH_SECRET=your-secure-random-string-here
+   
+   # Auth Origin - Set to your production URL
+   NUXT_AUTH_ORIGIN=http://localhost:3000
    ```
 
 4. **Setup Database**
@@ -262,17 +281,33 @@ The application will be available at `http://localhost:3000`
 
 ### Authentication
 
-When you first access the application, you'll be prompted for HTTP Basic Authentication:
-- **Username**: Value from `NUXT_USER` env variable
-- **Password**: Value from `NUXT_PASS` env variable
+The application uses a modern authentication system built with @sidebase/nuxt-auth:
 
-Authentication is cached via cookie for 48 hours.
+**First-Time Setup:**
+1. Navigate to the application URL (e.g., `http://localhost:3000`)
+2. You'll be automatically redirected to the login page
+3. Use the default admin credentials:
+   - **Username**: Value from `NUXT_USER` env variable (default: `admin`)
+   - **Password**: Value from `NUXT_PASS` env variable (default: `secret123`)
+4. On first login, an admin user will be created in the database
 
-**User Database Integration:**
+**Login Page:**
+- Clean, modern login interface with username and password fields
+- Form validation and error handling
+- Secure JWT-based session management
+- Sessions persist across browser restarts
+
+**User Management:**
 - Upon successful authentication, users are automatically saved to the database
-- Passwords are securely hashed using bcrypt before storage
+- Passwords are securely hashed using bcrypt (10 rounds) before storage
 - Last login timestamps are tracked for each user
 - User information can be viewed via the `/api/users` endpoint
+
+**Session Management:**
+- Authenticated sessions use secure JWT tokens
+- User profile is accessible via the account menu in the header
+- Easy logout functionality available from the dropdown menu
+- Protected routes automatically redirect to login if not authenticated
 
 ### Main Dashboard (`/`)
 

@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui',
     'nuxt-echarts',
+    '@sidebase/nuxt-auth',
   ],
   devtools: {
     enabled: true,
@@ -24,6 +25,19 @@ export default defineNuxtConfig({
     DB_PORT: process.env.NUXT_DB_PORT,
     USER: process.env.NUXT_USER,
     PASS: process.env.NUXT_PASS,
+    authSecret: process.env.NUXT_AUTH_SECRET || 'change-this-to-a-secure-random-string-in-production',
+    public: {
+      authOrigin: process.env.NUXT_AUTH_ORIGIN || 'http://localhost:3000',
+    },
+  },
+  auth: {
+    baseURL: process.env.NUXT_AUTH_ORIGIN || 'http://localhost:3000',
+    provider: {
+      type: 'authjs',
+    },
+    globalAppMiddleware: {
+      isEnabled: true,
+    },
   },
   compatibilityDate: '2025-01-15',
   nitro: {

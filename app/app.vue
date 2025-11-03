@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
+const { status, data: session, signOut } = useAuth()
+
 const title = 'Nuxt Net Monitoring'
 const description = 'Nuxt Net Monitoring - Real-time Latency Monitor, PfSense, and Bandwidth Monitor'
 
@@ -23,6 +25,11 @@ const items = computed<NavigationMenuItem[]>(() => [
     active: route.path === '/speedtest-results',
   },
 ])
+
+async function handleLogout() {
+  await signOut({ callbackUrl: '/login' })
+}
+
 useSeoMeta({
   title,
   description,
@@ -52,6 +59,50 @@ useSeoMeta({
           <span class="hidden sm:inline">Run Speedtest</span>
           <span class="sm:hidden">Test</span>
         </u-button>
+        <UDropdown
+          v-if="status === 'authenticated' && session?.user"
+          :items="[[
+            {
+              label: session.user.name || session.user.email || 'User',
+              slot: 'account',
+              disabled: true,
+            },
+          ], [
+            {
+              label: 'Sign out',
+              icon: 'i-lucide-log-out',
+              click: handleLogout,
+            },
+          ]]"
+          :ui="{ width: 'w-48' }"
+          :popper="{ placement: 'bottom-end' }"
+        >
+          <UButton
+            color="gray"
+            variant="ghost"
+            icon="i-lucide-user"
+            :label="session.user.name || 'Account'"
+            class="hidden sm:flex"
+          />
+          <UButton
+            color="gray"
+            variant="ghost"
+            icon="i-lucide-user"
+            square
+            class="sm:hidden"
+          />
+
+          <template #account="{ item }">
+            <div class="text-left">
+              <p class="font-medium text-gray-900 dark:text-white truncate">
+                {{ item.label }}
+              </p>
+              <p v-if="session.user.email" class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{ session.user.email }}
+              </p>
+            </div>
+          </template>
+        </UDropdown>
       </template>
       <template #body>
         <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />

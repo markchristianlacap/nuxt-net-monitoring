@@ -16,9 +16,11 @@
     "@iconify-json/lucide": "^1.2.71",
     "@iconify-json/simple-icons": "^1.2.56",
     "@nuxt/ui": "^4.1.0",
+    "@sidebase/nuxt-auth": "^0.9.4",
     "bcrypt": "^6.0.0",
     "kysely": "^0.28.8",
     "net-snmp": "^3.26.0",
+    "next-auth": "4.21.1",
     "nuxt": "^4.2.0",
     "pg": "^8.16.3"
   },

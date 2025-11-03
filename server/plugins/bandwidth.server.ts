@@ -1,16 +1,14 @@
 import type { BandwidthResult } from '~~/shared/types/bandwidth'
 import { db } from '../db'
 
-export default defineNitroPlugin(() => {
+export default defineNitroPlugin(async () => {
   let records: BandwidthResult[] = []
-  const host = useRuntimeConfig().SNMP_HOST
-  runEverySecond(async () => {
-    const bandwidth = await getBandwidth()
-    events.emit('bandwidth:update', bandwidth)
-    if (!bandwidth)
-      return
-    records.push(bandwidth)
-  })
+  const interfaces = await getInterfaces()
+  if (!interfaces?.length) {
+    console.warn('No interfaces configured in NUXT_SNMP_INTERFACES')
+    return
+  }
+
   async function saveAverage() {
     if (records.length === 0)
       return
@@ -20,11 +18,19 @@ export default defineNitroPlugin(() => {
       inMbps: avgIn,
       outMbps: avgOut,
       timestamp: new Date().toISOString(),
-      host,
+      interface: records[0].interface,
+      host: records[0].host,
     }).execute()
-
     records = []
   }
 
-  setInterval(saveAverage, 60_000)
+  runEverySecond(async () => {
+    for (const iface of interfaces) {
+      const bandwidth = await getBandwidth(iface.name)
+      if (!bandwidth)
+        continue
+      events.emit('bandwidth:update', bandwidth)
+    }
+  })
+  runEveryMinute(saveAverage)
 })

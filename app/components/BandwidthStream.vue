@@ -1,162 +1,162 @@
 <script setup lang="ts">
-const host = ref('')
-const currentDownload = ref(0)
-const currentUpload = ref(0)
-const maxDownload = ref(0)
-const maxUpload = ref(0)
-const timeData = ref<string[]>([])
-const inData = ref<number[]>([])
-const outData = ref<number[]>([])
-const maxData = 50
-let source: EventSource | null = null
+interface InterfaceStats {
+  timestamps: number[]
+  inData: number[]
+  outData: number[]
+  currentDownload: number
+  currentUpload: number
+  maxDownload: number
+  maxUpload: number
+  name: string
+  speed: number
+  ip: string
+}
 
-const option = computed<ECOption>(() => ({
-  backgroundColor: 'transparent',
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: '#0f172a',
-    borderColor: '#334155',
-    textStyle: { color: '#f1f5f9' },
-    formatter(params: any) {
-      const time = params[0].axisValue
-      return `
-        <div style="font-size:13px; line-height:1.6">
-          <b>${time}</b><br/>
-          📥 Download: <b style="color:#60a5fa">${params[0].data} MB/s</b><br/>
-          📤 Upload: <b style="color:#fca5a5">${params[1].data} MB/s</b>
-        </div>
-      `
-    },
-  },
-  legend: {
-    data: [
-      { name: '📥 Download', icon: 'circle' },
-      { name: '📤 Upload', icon: 'circle' },
-    ],
-    textStyle: { color: '#94a3b8', fontWeight: 500 },
-    top: 10,
-  },
-  grid: { top: 60, left: 50, right: 20, bottom: 40 },
-  xAxis: {
-    type: 'category',
-    data: timeData.value,
-    axisLine: { lineStyle: { color: '#475569' } },
-    axisLabel: { color: '#cbd5e1', fontSize: 11 },
-  },
-  yAxis: {
-    type: 'value',
-    name: 'MB/s',
-    nameTextStyle: { color: '#cbd5e1' },
-    axisLine: { lineStyle: { color: '#475569' } },
-    splitLine: { lineStyle: { color: '#334155' } },
-    axisLabel: { color: '#cbd5e1', fontSize: 11 },
-  },
-  series: [
-    {
-      name: '📥 Download',
-      data: inData.value,
-      type: 'line',
-      smooth: true,
-      showSymbol: false,
-      lineStyle: {
-        width: 3,
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: '#60a5fa' },
-            { offset: 1, color: '#2563eb' },
-          ],
-        },
-      },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(59,130,246,0.25)' },
-            { offset: 1, color: 'rgba(59,130,246,0)' },
-          ],
-        },
-      },
-    },
-    {
-      name: '📤 Upload',
-      data: outData.value,
-      type: 'line',
-      smooth: true,
-      showSymbol: false,
-      lineStyle: {
-        width: 3,
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: '#fca5a5' },
-            { offset: 1, color: '#ef4444' },
-          ],
-        },
-      },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(248,113,113,0.25)' },
-            { offset: 1, color: 'rgba(248,113,113,0)' },
-          ],
-        },
-      },
-    },
-  ],
-}))
+const interfaceInfo = await useFetch('/api/interfaces')
+const interfaces = ref<Map<string, InterfaceStats>>(new Map())
+const maxPoints = 50
+let eventSource: EventSource | null = null
 
-function startStream() {
-  if (source)
-    source.close()
+const colorPalette = chartBaseColors.sort(() => Math.random() - 0.5)
 
-  timeData.value = []
-  inData.value = []
-  outData.value = []
-  source = new EventSource('/api/bandwidths/stream')
+const summary = computed(() => {
+  const ifaceList = Array.from(interfaces.value.values())
+  if (ifaceList.length === 0)
+    return { total: 0, maxDownload: 0, maxUpload: 0 }
 
-  source.onmessage = (evt) => {
-    const data = JSON.parse(evt.data)
-    timeData.value.push(new Date(data.timestamp).toLocaleTimeString())
-    // round to 2 decimal
-    const inMbps = Math.round(data.inMbps * 100) / 100
-    const outMbps = Math.round(data.outMbps * 100) / 100
-    host.value = data.host
-    inData.value.push(inMbps)
-    outData.value.push(outMbps)
-    if (timeData.value.length > maxData) {
-      timeData.value.shift()
-      inData.value.shift()
-      outData.value.shift()
+  const total = ifaceList.length
+  const maxDownload = Math.max(...ifaceList.map(i => i.maxDownload))
+  const maxUpload = Math.max(...ifaceList.map(i => i.maxUpload))
+  return { total, maxDownload, maxUpload }
+})
+
+const option = computed<ECOption>(() => {
+  const ifaceList = Array.from(interfaces.value.entries())
+  if (ifaceList.length === 0) {
+    return {
+      backgroundColor: 'transparent',
+      title: { text: 'Waiting for bandwidth data...', left: 'center', top: 'middle', textStyle: { color: '#94a3b8' } },
     }
-    currentDownload.value = inMbps
-    currentUpload.value = outMbps
-    maxDownload.value = Math.max(maxDownload.value, data.inMbps)
-    maxUpload.value = Math.max(maxUpload.value, data.outMbps)
   }
 
-  source.onerror = () => console.warn('SSE disconnected')
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#0f172a',
+      borderColor: '#334155',
+      textStyle: { color: '#f1f5f9' },
+      formatter(params: any) {
+        if (!params || params.length === 0)
+          return ''
+        const timestamp = params[0].data[0]
+        const timeStr = new Date(timestamp).toLocaleTimeString()
+        let content = `<div style="font-size:13px; line-height:1.8"><b>${timeStr}</b><br/>`
+        params.forEach((param: any) => {
+          content += `${param.marker} ${param.seriesName}: <b style="color:${param.color}">${param.data[1]} MB/s</b><br/>`
+        })
+        content += '</div>'
+        return content
+      },
+    },
+    legend: {
+      data: ifaceList.flatMap(([iface]) => [`${iface} 📥 Download`, `${iface} 📤 Upload`]),
+      textStyle: { color: '#94a3b8', fontWeight: 500 },
+      top: 10,
+    },
+    grid: { top: 60, left: 50, right: 20, bottom: 40 },
+    xAxis: { type: 'time', axisLine: { lineStyle: { color: '#475569' } } },
+    yAxis: {
+      type: 'value',
+      name: 'MB/s',
+      nameTextStyle: { color: '#cbd5e1' },
+      axisLine: { lineStyle: { color: '#475569' } },
+      splitLine: { lineStyle: { color: '#334155' } },
+      axisLabel: { color: '#cbd5e1', fontSize: 11 },
+    },
+    series: ifaceList.flatMap(([iface, stats], index) => {
+      const colorIndex = index % colorPalette.length
+      const colors = colorPalette[colorIndex] ?? colorPalette[0]!
+      const inSeries = stats.timestamps.map((t, i) => [t, stats.inData[i]])
+      const outSeries = stats.timestamps.map((t, i) => [t, stats.outData[i]])
+      return [
+        {
+          name: `${iface} 📥 Download`,
+          type: 'line',
+          showSymbol: false,
+          smooth: true,
+          data: inSeries,
+          lineStyle: { width: 3, color: colors.primary },
+          areaStyle: { color: colors.area },
+        },
+        {
+          name: `${iface} 📤 Upload`,
+          type: 'line',
+          showSymbol: false,
+          smooth: true,
+          data: outSeries,
+          lineStyle: { width: 3, color: colors.secondary },
+          areaStyle: { color: colors.area.replace('0.25', '0') },
+        },
+      ]
+    }),
+  }
+})
+
+function startStream() {
+  if (eventSource)
+    eventSource.close()
+  interfaces.value.clear()
+
+  eventSource = new EventSource('/api/bandwidths/stream')
+  eventSource.onmessage = (evt) => {
+    const data = JSON.parse(evt.data)
+    const iface = data.interface
+    if (!interfaces.value.has(iface)) {
+      const info = interfaceInfo.data.value?.filter(i => i.name === iface)?.[0] || {
+        name: iface,
+        speed: 0,
+        ip: '',
+      }
+      interfaces.value.set(iface, {
+        timestamps: [],
+        inData: [],
+        outData: [],
+        currentDownload: 0,
+        currentUpload: 0,
+        maxDownload: 0,
+        maxUpload: 0,
+        name: info.name || iface,
+        speed: info.speed || 0,
+        ip: info.ip || '',
+      })
+    }
+    const stats = interfaces.value.get(iface)!
+    const timestamp = new Date(data.timestamp).getTime()
+    const inMbps = Math.round(data.inMbps * 100) / 100
+    const outMbps = Math.round(data.outMbps * 100) / 100
+
+    stats.timestamps.push(timestamp)
+    stats.inData.push(inMbps)
+    stats.outData.push(outMbps)
+    stats.currentDownload = inMbps
+    stats.currentUpload = outMbps
+    stats.maxDownload = Math.max(stats.maxDownload, inMbps)
+    stats.maxUpload = Math.max(stats.maxUpload, outMbps)
+
+    if (stats.timestamps.length > maxPoints) {
+      stats.timestamps.shift()
+      stats.inData.shift()
+      stats.outData.shift()
+    }
+    interfaces.value = new Map(interfaces.value)
+  }
+
+  eventSource.onerror = () => console.warn('SSE disconnected')
 }
 
 onMounted(startStream)
-onBeforeUnmount(() => source?.close())
+onBeforeUnmount(() => eventSource?.close())
 </script>
 
 <template>
@@ -167,47 +167,40 @@ onBeforeUnmount(() => source?.close())
         Bandwidth Monitor
       </h2>
       <p class="text-slate-400 text-xs sm:text-sm">
-        Live throughput monitoring
+        Live throughput monitoring - {{ summary.total }} interface(s)
       </p>
     </div>
-
-    <!-- Host -->
-    <div class="flex items-center justify-center gap-2 mb-4 sm:mb-6">
-      <span class="text-slate-400 font-medium text-sm sm:text-base">Host:</span>
-      <span class="text-xl sm:text-2xl font-semibold text-blue-400 break-all">{{ host }}</span>
-    </div>
-
-    <!-- Stats -->
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
-      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
-        <span class="text-blue-400 text-2xl sm:text-3xl">📥</span>
-        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Current Download</span>
-        <span class="text-2xl sm:text-3xl font-bold text-blue-300">
-          {{ currentDownload }}
-          <span class="text-slate-500 text-xs sm:text-sm ml-1">MB/s</span>
-        </span>
-      </div>
-
-      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700">
-        <span class="text-red-400 text-2xl sm:text-3xl">📤</span>
-        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Current Upload</span>
-        <span class="text-2xl sm:text-3xl font-bold text-red-300">
-          {{ currentUpload }}
-          <span class="text-slate-500 text-xs sm:text-sm ml-1">MB/s</span>
-        </span>
-      </div>
-
-      <div class="flex flex-col items-center bg-slate-800/60 px-3 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl shadow-md border border-slate-700 col-span-2 lg:col-span-1">
-        <span class="text-amber-400 text-2xl sm:text-3xl">🚀</span>
-        <span class="text-slate-300 font-semibold mt-1 sm:mt-2 text-xs sm:text-base text-center">Max Speeds</span>
-        <div class="flex items-center gap-4 mt-2">
-          <div class="flex flex-col items-center">
-            <span class="text-blue-300 text-lg sm:text-xl font-bold">{{ maxDownload.toFixed(2) }}</span>
-            <span class="text-slate-500 text-xs">MB/s</span>
+    <!-- Interface Cards -->
+    <div v-if="interfaces.size > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+      <div v-for="([iface, stats], index) in Array.from(interfaces.entries())" :key="iface" class="flex flex-col bg-slate-800/60 px-4 py-3 rounded-xl shadow-md border border-slate-700">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xl">📡</span>
+          <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="text-slate-200 font-semibold text-sm truncate">{{ iface }}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span class="text-slate-400">Speed:</span>
+            <span class="ml-1 font-bold text-slate-300">{{ stats.speed }} Mbps</span>
           </div>
-          <div class="flex flex-col items-center">
-            <span class="text-red-300 text-lg sm:text-xl font-bold">{{ maxUpload.toFixed(2) }}</span>
-            <span class="text-slate-500 text-xs">MB/s</span>
+          <div>
+            <span class="text-slate-400">IP:</span>
+            <span class="ml-1 font-bold text-slate-300">{{ stats.ip }}</span>
+          </div>
+          <div>
+            <span class="text-slate-400">Download:</span>
+            <span class="ml-1 font-bold text-blue-300">{{ stats.currentDownload.toFixed(2) }} MB/s</span>
+          </div>
+          <div>
+            <span class="text-slate-400">Upload:</span>
+            <span class="ml-1 font-bold text-red-300">{{ stats.currentUpload.toFixed(2) }} MB/s</span>
+          </div>
+          <div>
+            <span class="text-slate-400">Max Download:</span>
+            <span class="ml-1 font-bold text-blue-400">{{ stats.maxDownload.toFixed(2) }} MB/s</span>
+          </div>
+          <div>
+            <span class="text-slate-400">Max Upload:</span>
+            <span class="ml-1 font-bold text-red-400">{{ stats.maxUpload.toFixed(2) }} MB/s</span>
           </div>
         </div>
       </div>

@@ -57,7 +57,6 @@ export default defineNitroPlugin(async () => {
       console.error(`Ping process error for host ${host}:`, err)
     })
 
-    // Save average for each host every minute
-    setInterval(() => saveAverage(host), 60_000)
+    runEveryMinute(() => saveAverage(host))
   })
 })

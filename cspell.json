@@ -1,1 +1,1 @@
-{ "version": "0.2", "words": ["Mbps", "snmp", "varbinds", "Insertable", "Updateable", "kysely", "autoresize", "nuxt", "lucide"], "flagWords": [], "language": "en" }
+{ "flagWords": [], "language": "en", "version": "0.2", "words": ["Mbps", "snmp", "varbinds", "Insertable", "Updateable", "kysely", "autoresize", "nuxt", "lucide", "Pfsense", "Descr", "Oper", "varbind", "oids", "iface"] }

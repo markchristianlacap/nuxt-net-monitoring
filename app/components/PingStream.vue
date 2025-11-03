@@ -9,54 +9,7 @@ interface HostData {
 const hosts = ref<Map<string, HostData>>(new Map())
 const maxPoints = 60
 let eventSource: EventSource | null = null
-
-const baseColors = [
-  // 1. Sky Blue
-  { primary: '#38bdf8', secondary: '#0369a1', area: 'rgba(56, 189, 248, 0.25)' },
-  // 2. Red
-  { primary: '#f43f5e', secondary: '#9f1239', area: 'rgba(244, 63, 94, 0.25)' },
-  // 3. Green
-  { primary: '#22c55e', secondary: '#15803d', area: 'rgba(34, 197, 94, 0.25)' },
-  // 4. Amber/Yellow
-  { primary: '#f59e0b', secondary: '#b45309', area: 'rgba(245, 158, 11, 0.25)' },
-  // 5. Purple
-  { primary: '#a855f7', secondary: '#6b21a8', area: 'rgba(168, 85, 247, 0.25)' },
-  // 6. Orange
-  { primary: '#f97316', secondary: '#c2410c', area: 'rgba(249, 115, 22, 0.25)' },
-  // 7. Teal
-  { primary: '#14b8a6', secondary: '#0f766e', area: 'rgba(20, 184, 166, 0.25)' },
-  // 8. Pink
-  { primary: '#ec4899', secondary: '#be185d', area: 'rgba(236, 72, 153, 0.25)' },
-  // 9. Lime
-  { primary: '#84cc16', secondary: '#4d7c0f', area: 'rgba(132, 204, 22, 0.25)' },
-  // 10. Indigo
-  { primary: '#6366f1', secondary: '#4338ca', area: 'rgba(99, 102, 241, 0.25)' },
-  // 11. Cyan
-  { primary: '#06b6d4', secondary: '#0e7490', area: 'rgba(6, 182, 212, 0.25)' },
-  // 12. Rose
-  { primary: '#fb7185', secondary: '#e11d48', area: 'rgba(251, 113, 133, 0.25)' },
-  // 13. Emerald
-  { primary: '#10b981', secondary: '#065f46', area: 'rgba(16, 185, 129, 0.25)' },
-  // 14. Fuchsia
-  { primary: '#d946ef', secondary: '#a21caf', area: 'rgba(217, 70, 239, 0.25)' },
-  // 15. True Gray
-  { primary: '#64748b', secondary: '#334155', area: 'rgba(100, 116, 139, 0.25)' },
-  // 16. Bright Yellow
-  { primary: '#eab308', secondary: '#854d0e', area: 'rgba(234, 179, 8, 0.25)' },
-  // 17. Violet
-  { primary: '#8b5cf6', secondary: '#5b21b6', area: 'rgba(139, 92, 246, 0.25)' },
-  // 18. True Red
-  { primary: '#ef4444', secondary: '#b91c1c', area: 'rgba(239, 68, 68, 0.25)' },
-  // 19. Brown / Ochre
-  { primary: '#a16207', secondary: '#78350f', area: 'rgba(161, 98, 7, 0.25)' },
-  // 20. Periwinkle
-  { primary: '#818cf8', secondary: '#4f46e5', area: 'rgba(129, 140, 248, 0.25)' },
-  // 21. Mint
-  { primary: '#34d399', secondary: '#047857', area: 'rgba(52, 211, 153, 0.25)' },
-  // 22. Dark Orange
-  { primary: '#ea580c', secondary: '#9a3412', area: 'rgba(234, 88, 12, 0.25)' },
-]
-const colorPalette = baseColors.sort(() => Math.random() - 0.5)
+const colorPalette = chartBaseColors.sort(() => Math.random() - 0.5)
 // Summary statistics
 const summary = computed(() => {
   const hostList = Array.from(hosts.value.values())

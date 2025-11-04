@@ -10,7 +10,11 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.71",
@@ -24,13 +28,17 @@
   "devDependencies": {
     "@antfu/eslint-config": "^6.2.0",
     "@nuxt/eslint": "^1.10.0",
+    "@nuxt/test-utils": "^3.20.1",
     "@types/net-snmp": "^3.23.0",
     "@types/node": "latest",
     "@types/pg": "^8.15.6",
+    "@vue/test-utils": "^2.4.6",
     "eslint": "^9.39.0",
+    "happy-dom": "^20.0.10",
     "kysely-ctl": "^0.19.0",
     "nuxt-echarts": "^1.0.1",
     "typescript": "^5.9.3",
+    "vitest": "^4.0.6",
     "vue-tsc": "^3.1.2"
   },
   "resolutions": {

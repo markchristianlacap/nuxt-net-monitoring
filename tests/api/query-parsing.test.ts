@@ -179,7 +179,7 @@ describe('aPI endpoint query parameter parsing', () => {
       expect(expectedStructure).toHaveProperty('totalPages')
     })
 
-    it('should data be an array', () => {
+    it('should have data as an array', () => {
       const result = { data: [] }
 
       expect(Array.isArray(result.data)).toBe(true)

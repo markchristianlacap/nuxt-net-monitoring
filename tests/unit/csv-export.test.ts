@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { exportToCsv } from '../../server/utils/csv-export'
 
 describe('csv-export', () => {
@@ -9,7 +9,7 @@ describe('csv-export', () => {
         end: vi.fn(),
         setHeader: vi.fn(),
       }
-      
+
       const mockEvent = {
         node: { res: mockRes },
       } as any
@@ -37,7 +37,7 @@ describe('csv-export', () => {
         end: vi.fn(),
         setHeader: vi.fn(),
       }
-      
+
       const mockEvent = {
         node: { res: mockRes },
       } as any
@@ -46,7 +46,7 @@ describe('csv-export', () => {
       const options = {
         filename: 'test.csv',
         headers: ['ID', 'Name', 'Email'],
-        formatRow: (row: any) => [],
+        formatRow: (_row: any) => [],
       }
 
       exportToCsv(mockEvent, data, options)
@@ -61,7 +61,7 @@ describe('csv-export', () => {
         end: vi.fn(),
         setHeader: vi.fn(),
       }
-      
+
       const mockEvent = {
         node: { res: mockRes },
       } as any
@@ -70,7 +70,7 @@ describe('csv-export', () => {
         { id: 1, name: 'Alice', email: 'alice@test.com' },
         { id: 2, name: 'Bob', email: 'bob@test.com' },
       ]
-      
+
       const options = {
         filename: 'users.csv',
         headers: ['ID', 'Name', 'Email'],
@@ -92,7 +92,7 @@ describe('csv-export', () => {
         end: vi.fn(),
         setHeader: vi.fn(),
       }
-      
+
       const mockEvent = {
         node: { res: mockRes },
       } as any
@@ -117,7 +117,7 @@ describe('csv-export', () => {
         end: vi.fn(),
         setHeader: vi.fn(),
       }
-      
+
       const mockEvent = {
         node: { res: mockRes },
       } as any
@@ -126,7 +126,7 @@ describe('csv-export', () => {
       const options = {
         filename: 'my-data (2024).csv',
         headers: ['ID'],
-        formatRow: (row: any) => [],
+        formatRow: (_row: any) => [],
       }
 
       exportToCsv(mockEvent, data, options)
@@ -143,7 +143,7 @@ describe('csv-export', () => {
         end: vi.fn(),
         setHeader: vi.fn(),
       }
-      
+
       const mockEvent = {
         node: { res: mockRes },
       } as any
@@ -151,7 +151,7 @@ describe('csv-export', () => {
       const data = [
         { id: 1, value: 123.45, active: true },
       ]
-      
+
       const options = {
         filename: 'test.csv',
         headers: ['ID', 'Value', 'Active'],
@@ -173,7 +173,7 @@ describe('csv-export', () => {
         end: vi.fn(),
         setHeader: vi.fn(),
       }
-      
+
       const mockEvent = {
         node: { res: mockRes },
       } as any

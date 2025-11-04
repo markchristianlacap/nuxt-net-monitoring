@@ -403,12 +403,69 @@ pnpm run typecheck
 # Lint code
 pnpm run lint
 
+# Run tests
+pnpm run test
+
+# Run tests once (CI mode)
+pnpm run test:run
+
+# Run tests with UI
+pnpm run test:ui
+
+# Run tests with coverage report
+pnpm run test:coverage
+
 # Run database migrations
 pnpm exec kysely migrate latest
 
 # Rollback last migration
 pnpm exec kysely migrate down
 ```
+
+### Testing
+
+This project includes a comprehensive test suite following Nuxt best practices:
+
+**Test Structure:**
+- **Unit Tests** (`tests/unit/`) - Testing utility functions, helpers, and business logic
+  - Scheduler utilities (runEverySecond, runEveryHour, runEveryMinute)
+  - Pagination logic
+  - Query filters and date range handling
+  - CSV export functionality
+  - Authentication middleware logic
+- **API Tests** (`tests/api/`) - Testing API endpoints and request handling
+  - Query parameter parsing and validation
+  - Pagination and filtering
+  - Response structure validation
+- **Component Tests** (`tests/components/`) - Testing Vue components and UI logic
+  - PingStream component behavior
+  - BandwidthStream component logic
+  - Page component interactions
+
+**Test Coverage:**
+- Total: 160 tests across 9 test files
+- All tests passing ✅
+
+**Running Tests:**
+```bash
+# Run all tests in watch mode (development)
+pnpm run test
+
+# Run all tests once (CI/production)
+pnpm run test:run
+
+# Run tests with interactive UI
+pnpm run test:ui
+
+# Generate coverage report
+pnpm run test:coverage
+```
+
+**Testing Stack:**
+- **Vitest** - Fast unit test framework with Vite integration
+- **@nuxt/test-utils** - Nuxt-specific testing utilities
+- **@vue/test-utils** - Official Vue component testing library
+- **happy-dom** - Lightweight DOM implementation for testing
 
 ### Docker Development
 

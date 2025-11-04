@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { runEverySecond, runEveryHour, runEveryMinute } from '../../server/utils/helper'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { runEveryHour, runEveryMinute, runEverySecond } from '../../server/utils/helper'
 
 describe('helper utilities', () => {
   beforeEach(() => {

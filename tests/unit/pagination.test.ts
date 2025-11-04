@@ -1,12 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 // Mock Kysely for pagination tests
-class MockDatabase {
-  fn = {
-    countAll: vi.fn().mockReturnValue({ as: vi.fn().mockReturnValue('count') }),
-  }
-}
-
 class MockQueryBuilder {
   private _limit: number | undefined
   private _offset: number | undefined
@@ -23,7 +17,7 @@ class MockQueryBuilder {
     return this
   }
 
-  select(value: any) {
+  select(_value: any) {
     return this
   }
 
@@ -69,7 +63,7 @@ describe('pagination utility', () => {
       const page = 1
       const limit = 10
       const offset = (page - 1) * limit
-      
+
       expect(offset).toBe(0)
     })
 
@@ -77,7 +71,7 @@ describe('pagination utility', () => {
       const page = 3
       const limit = 10
       const offset = (page - 1) * limit
-      
+
       expect(offset).toBe(20)
     })
 
@@ -85,7 +79,7 @@ describe('pagination utility', () => {
       const total = 100
       const limit = 10
       const totalPages = Math.ceil(total / limit)
-      
+
       expect(totalPages).toBe(10)
     })
 
@@ -93,7 +87,7 @@ describe('pagination utility', () => {
       const total = 95
       const limit = 10
       const totalPages = Math.ceil(total / limit)
-      
+
       expect(totalPages).toBe(10)
     })
 
@@ -101,7 +95,7 @@ describe('pagination utility', () => {
       const total = 5
       const limit = 10
       const totalPages = Math.ceil(total / limit)
-      
+
       expect(totalPages).toBe(1)
     })
 
@@ -109,7 +103,7 @@ describe('pagination utility', () => {
       const total = 0
       const limit = 10
       const totalPages = Math.ceil(total / limit)
-      
+
       expect(totalPages).toBe(0)
     })
 
@@ -117,13 +111,13 @@ describe('pagination utility', () => {
       const page = undefined || 1
       const limit = 10
       const offset = (page - 1) * limit
-      
+
       expect(offset).toBe(0)
     })
 
     it('should use default limit 10 when not provided', () => {
       const limit = undefined || 10
-      
+
       expect(limit).toBe(10)
     })
   })
@@ -144,7 +138,7 @@ describe('pagination utility', () => {
 
     it('should clear select and orderBy for count query', () => {
       const query = new MockQueryBuilder()
-      
+
       query.clearSelect().clearOrderBy()
       const state = query.getState()
 
@@ -155,16 +149,16 @@ describe('pagination utility', () => {
     it('should return correct count from executeTakeFirst', async () => {
       const query = new MockQueryBuilder()
       const result = await query.executeTakeFirst()
-      
+
       expect(result.count).toBe(42)
     })
 
     it('should return paginated data from execute', async () => {
       const query = new MockQueryBuilder()
       query.limit(3).offset(0)
-      
+
       const data = await query.execute()
-      
+
       expect(data).toHaveLength(3)
       expect(data[0]).toEqual({ id: 1, data: 'item-1' })
     })
@@ -190,7 +184,7 @@ describe('pagination utility', () => {
     it('should convert count to number', () => {
       const count = '42'
       const total = Number(count)
-      
+
       expect(total).toBe(42)
       expect(typeof total).toBe('number')
     })
@@ -199,7 +193,7 @@ describe('pagination utility', () => {
       const total = 42
       const limit = 10
       const totalPages = Math.ceil(total / limit)
-      
+
       expect(totalPages).toBe(5)
     })
   })

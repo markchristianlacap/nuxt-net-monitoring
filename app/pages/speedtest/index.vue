@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'
-
 const maxPoints = ref(30)
 const downloads = ref<number[]>([])
 const uploads = ref<number[]>([])

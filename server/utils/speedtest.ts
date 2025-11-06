@@ -1,4 +1,3 @@
-import type { SpeedtestResult, SpeedtestServer } from '#shared/types/speedtest-server'
 import { spawn } from 'node:child_process'
 
 const MAX_RETRIES = 3

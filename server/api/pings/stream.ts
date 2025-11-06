@@ -1,5 +1,3 @@
-import { events } from '~~/server/utils/events'
-
 export default defineEventHandler(async (event) => {
   const res = event.node.res
   res.setHeader('Cache-Control', 'no-cache')

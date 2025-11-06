@@ -1,4 +1,3 @@
-import type { BandwidthResult, DeviceInterface } from '#shared/types/bandwidth'
 import { Buffer } from 'node:buffer'
 import snmp from 'net-snmp'
 

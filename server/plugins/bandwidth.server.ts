@@ -1,4 +1,3 @@
-import type { BandwidthResult } from '~~/shared/types/bandwidth'
 import { db } from '../db'
 
 export default defineNitroPlugin(async () => {

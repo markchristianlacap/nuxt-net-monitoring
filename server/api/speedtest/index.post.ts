@@ -1,4 +1,3 @@
-import type { SpeedtestResult } from '~~/shared/types/speedtest-server'
 import { spawn } from 'node:child_process'
 import { db } from '~~/server/db'
 

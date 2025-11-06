@@ -1,7 +1,5 @@
-import type { PingResult } from '#shared/types/ping'
 import { spawn } from 'node:child_process'
 import { db } from '../db'
-import { events } from '../utils/events'
 
 export default defineNitroPlugin(async () => {
   const config = useRuntimeConfig()

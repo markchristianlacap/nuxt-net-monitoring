@@ -7,21 +7,25 @@ const tz = getLocalTimeZone()
 
 const route = useRoute()
 
+// Get today's date range
+const today = new Date()
+today.setHours(0, 0, 0, 0)
+const todayEnd = new Date(today)
+todayEnd.setHours(23, 59, 59, 999)
+
 const query = reactive({
   page: Number(route.query.page) || 1,
   limit: Number(route.query.limit) || 10,
-  start: route.query.start as string | null || null,
-  end: route.query.end as string | null || null,
+  start: (route.query.start as string | null) || today.toISOString(),
+  end: (route.query.end as string | null) || todayEnd.toISOString(),
 })
 
 const dateRange = ref<any | null>(null)
 
 // Initialize dateRange from query
-if (query.start && query.end) {
-  const start = parseAbsolute(query.start, tz)
-  const end = parseAbsolute(query.end, tz)
-  dateRange.value = { start, end } as any
-}
+const start = parseAbsolute(query.start, tz)
+const end = parseAbsolute(query.end, tz)
+dateRange.value = { start, end } as any
 
 const { data: bandwidthResponse } = await useFetch('/api/bandwidths', {
   query,

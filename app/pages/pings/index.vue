@@ -1,35 +1,42 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
-import { debounce } from 'perfect-debounce'
+import { DateFormatter, getLocalTimeZone, parseAbsolute } from '@internationalized/date'
 
 const df = new DateFormatter('en-US', { dateStyle: 'medium' })
+const tz = getLocalTimeZone()
 const UBadge = resolveComponent('UBadge')
 
+const route = useRoute()
+
 const query = reactive({
-  page: 1,
-  limit: 10,
-  start: null as string | null,
-  end: null as string | null,
-  status: null as 'online' | 'offline' | null,
+  page: Number(route.query.page) || 1,
+  limit: Number(route.query.limit) || 10,
+  start: route.query.start as string | null || null,
+  end: route.query.end as string | null || null,
+  status: route.query.status as 'online' | 'offline' | null || null,
 })
 
-const dateRange = ref({
-  start: null as Date | null,
-  end: null as Date | null,
-})
+const dateRange = ref<any | null>(null)
 
-const { data: pingResponse, refresh } = await useFetch('/api/pings', {
+// Initialize dateRange from query
+if (query.start && query.end) {
+  const start = parseAbsolute(query.start, tz)
+  const end = parseAbsolute(query.end, tz)
+  dateRange.value = { start, end } as any
+}
+
+const { data: pingResponse } = await useFetch('/api/pings', {
   query,
   immediate: true,
 })
 
-const debouncedRefresh = debounce(() => refresh(), 300)
+watch(query, () => {
+  navigateTo({ query })
+}, { deep: true })
 
-watch(query, debouncedRefresh, { deep: true })
 watch(dateRange, () => {
-  query.start = dateRange.value?.start?.toString() ?? null
-  query.end = dateRange.value?.end?.toString() ?? null
+  query.start = dateRange.value?.start ? dateRange.value.start.toDate(tz).toISOString() : null
+  query.end = dateRange.value?.end ? dateRange.value.end.toDate(tz).toISOString() : null
 }, { deep: true })
 
 const columns: TableColumn<any>[] = [
@@ -65,8 +72,16 @@ const columns: TableColumn<any>[] = [
   },
 ]
 function download() {
+  let url = '/api/pings/download'
+  const params = []
+  if (query.start)
+    params.push(`start=${query.start}`)
+  if (query.end)
+    params.push(`end=${query.end}`)
+  if (params.length)
+    url += `?${params.join('&')}`
   const a = document.createElement('a')
-  a.href = '/api/pings/download' + `?start=${query.start}&end=${query.end}`
+  a.href = url
   a.download = 'pings.csv'
   a.click()
 }
@@ -101,13 +116,13 @@ function download() {
           <div class="flex gap-2 w-full sm:w-auto">
             <UPopover class="flex-1 sm:flex-none">
               <UButton color="neutral" variant="subtle" icon="i-lucide-calendar" class="w-full sm:w-auto justify-start">
-                <template v-if="dateRange.start">
-                  <template v-if="dateRange.end">
-                    <span class="hidden sm:inline">{{ df.format(dateRange.start.toDate(getLocalTimeZone())) }} - {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}</span>
-                    <span class="sm:hidden">{{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}</span>
+                <template v-if="dateRange?.start">
+                  <template v-if="dateRange?.end">
+                    <span class="hidden sm:inline">{{ df.format(dateRange.start.toDate(tz)) }} - {{ df.format(dateRange.end.toDate(tz)) }}</span>
+                    <span class="sm:hidden">{{ df.format(dateRange.start.toDate(tz)) }}</span>
                   </template>
                   <template v-else>
-                    {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}
+                    {{ df.format(dateRange.start.toDate(tz)) }}
                   </template>
                 </template>
                 <template v-else>

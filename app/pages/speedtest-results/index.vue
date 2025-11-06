@@ -1,34 +1,41 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
-import { debounce } from 'perfect-debounce'
+import { DateFormatter, getLocalTimeZone, parseAbsolute } from '@internationalized/date'
 
 const df = new DateFormatter('en-US', { dateStyle: 'medium' })
+const tz = getLocalTimeZone()
 const UIcon = resolveComponent('UIcon')
 
+const route = useRoute()
+
 const query = reactive({
-  page: 1,
-  limit: 10,
-  start: null as string | null,
-  end: null as string | null,
+  page: Number(route.query.page) || 1,
+  limit: Number(route.query.limit) || 10,
+  start: route.query.start as string | null || null,
+  end: route.query.end as string | null || null,
 })
 
-const dateRange = ref({
-  start: null as Date | null,
-  end: null as Date | null,
-})
+const dateRange = ref<any | null>(null)
 
-const { data: pingResponse, refresh } = await useFetch('/api/speedtest-results', {
+// Initialize dateRange from query
+if (query.start && query.end) {
+  const start = parseAbsolute(query.start, tz)
+  const end = parseAbsolute(query.end, tz)
+  dateRange.value = { start, end } as any
+}
+
+const { data: resultsResponse } = await useFetch('/api/speedtest-results', {
   query,
   immediate: true,
 })
 
-const debouncedRefresh = debounce(() => refresh(), 300)
+watch(query, () => {
+  navigateTo({ query })
+}, { deep: true })
 
-watch(query, debouncedRefresh, { deep: true })
 watch(dateRange, () => {
-  query.start = dateRange.value?.start?.toString() ?? null
-  query.end = dateRange.value?.end?.toString() ?? null
+  query.start = dateRange.value?.start ? dateRange.value.start.toDate(tz).toISOString() : null
+  query.end = dateRange.value?.end ? dateRange.value.end.toDate(tz).toISOString() : null
 }, { deep: true })
 
 const columns: TableColumn<any>[] = [
@@ -79,13 +86,13 @@ const columns: TableColumn<any>[] = [
         <div class="flex gap-2 w-full sm:w-auto">
           <UPopover class="flex-1 sm:flex-none">
             <UButton color="neutral" variant="subtle" icon="i-lucide-calendar" class="w-full sm:w-auto justify-start">
-              <template v-if="dateRange.start">
-                <template v-if="dateRange.end">
-                  <span class="hidden sm:inline">{{ df.format(dateRange.start.toDate(getLocalTimeZone())) }} - {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}</span>
-                  <span class="sm:hidden">{{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}</span>
+              <template v-if="dateRange?.start">
+                <template v-if="dateRange?.end">
+                  <span class="hidden sm:inline">{{ df.format(dateRange.start.toDate(tz)) }} - {{ df.format(dateRange.end.toDate(tz)) }}</span>
+                  <span class="sm:hidden">{{ df.format(dateRange.start.toDate(tz)) }}</span>
                 </template>
                 <template v-else>
-                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}
+                  {{ df.format(dateRange.start.toDate(tz)) }}
                 </template>
               </template>
               <template v-else>
@@ -103,17 +110,17 @@ const columns: TableColumn<any>[] = [
 
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <u-table
-          :data="pingResponse?.data"
+          :data="resultsResponse?.data"
           :columns="columns"
           class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50 min-w-[800px]"
         />
       </div>
 
       <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-3 text-xs sm:text-sm text-slate-400">
-        <div>Total: {{ pingResponse?.total?.toLocaleString() ?? 0 }}</div>
+        <div>Total: {{ resultsResponse?.total?.toLocaleString() ?? 0 }}</div>
         <u-pagination
           v-model:page="query.page"
-          :total="pingResponse?.total ?? 0"
+          :total="resultsResponse?.total ?? 0"
           :page-size="query.limit"
           size="sm"
         />

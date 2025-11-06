@@ -20,14 +20,18 @@ export function applyDateRangeFilter<DB, TB extends keyof DB & string, O>(
 
   if (dateQuery.start) {
     const start = new Date(dateQuery.start)
-    start.setUTCHours(0, 0, 0, 0)
-    filteredQuery = filteredQuery.where(timestampColumn as any, '>=', start as any)
+    if (!Number.isNaN(start.getTime())) {
+      start.setUTCHours(0, 0, 0, 0)
+      filteredQuery = filteredQuery.where(timestampColumn as any, '>=', start as any)
+    }
   }
 
   if (dateQuery.end) {
     const end = new Date(dateQuery.end)
-    end.setUTCHours(23, 59, 59, 999)
-    filteredQuery = filteredQuery.where(timestampColumn as any, '<=', end as any)
+    if (!Number.isNaN(end.getTime())) {
+      end.setUTCHours(23, 59, 59, 999)
+      filteredQuery = filteredQuery.where(timestampColumn as any, '<=', end as any)
+    }
   }
 
   return filteredQuery

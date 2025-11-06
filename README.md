@@ -13,15 +13,16 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 ## 🎯 Features
 
 ### Real-Time Monitoring
-* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals, live latency tracking, and status detection. **Supports multiple hosts simultaneously** via comma-separated configuration. Data is averaged and saved to database every 60 seconds
-* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic (inbound/outbound Mbps) from PfSense or other SNMP-enabled devices. **Supports multiple interfaces simultaneously** via comma-separated configuration. Data is collected every second, averaged, and saved every 60 seconds
-* **Live Streaming Data**: Server-sent events (SSE) for real-time data updates without page refresh
+* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals using native `ping` command processes. **Supports multiple hosts simultaneously** via comma-separated `NUXT_PING_HOST` configuration. Each host runs in its own ping process for independent monitoring. Live latency data is streamed via SSE, and 60-second averages are saved to database
+* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic using net-snmp library. **Supports multiple interfaces simultaneously** via comma-separated `NUXT_SNMP_INTERFACES` configuration. Auto-discovers interface details (name, description, status, speed, IP) and monitors 64-bit counters (ifHCIn/ifHCOut). Data collected every second with precise timing, averaged, and saved every 60 seconds
+* **Live Streaming Data**: Server-sent events (SSE) for real-time data updates without page refresh, with independent streams for ping and bandwidth data
 
 ### Speed Test Integration
-* **Automated Testing**: Scheduled speed tests run automatically every hour
-* **Manual Testing**: On-demand speed tests with live progress visualization
-* **Real-Time Results**: Live streaming of download/upload speeds during test execution
-* **Direct Integration**: Uses official Ookla Speedtest CLI for accurate measurements
+* **Automated Testing**: Scheduled speed tests run automatically every hour using precise timing helpers
+* **Manual Testing**: On-demand speed tests with live progress visualization via SSE streaming
+* **Real-Time Results**: Live streaming of download/upload speeds during test execution with JSONL output parsing
+* **Direct Integration**: Uses official Ookla Speedtest CLI with retry logic (3 attempts with exponential backoff)
+* **Comprehensive Data**: Captures bandwidth, latency, ISP, public IP, and shareable result URLs
 
 ### Data Visualization & History
 * **Live Charts**: Real-time ECharts visualizations with smooth animations
@@ -58,17 +59,28 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 * **State Management**: Vue 3 Composition API with reactive refs
 
 ### Backend
-* **Runtime**: Nuxt Nitro server (Node.js)
-* **Database**: PostgreSQL with Kysely SQL query builder (type-safe)
-* **ORM/Query Builder**: Kysely with PostgresDialect
+* **Runtime**: Nuxt Nitro server (Node.js) with Nitro plugins for background processes
+* **Database**: PostgreSQL with Kysely SQL query builder (type-safe) and migrations
+* **ORM/Query Builder**: Kysely with PostgresDialect for schema management
+* **Process Management**: Child process spawning for ping and speedtest CLI execution
+* **SNMP Library**: net-snmp for device communication with session management and caching
 * **Protocols**:
-  - ICMP Ping (via `ping` command)
-  - SNMP v2c (net-snmp library)
-  - HTTP Basic Authentication
+  - ICMP Ping (via native `ping` command with stdout parsing)
+  - SNMP v2c (net-snmp library with 64-bit counter support)
+  - HTTP Basic Authentication with session cookies
+* **Timing & Scheduling**: Precise interval helpers with automatic next-execution calculation
 
 ### External Dependencies
-* **Speedtest CLI**: Ookla Speedtest CLI (`speedtest` command) for bandwidth testing
-* **SNMP**: Access to SNMP-enabled network device (e.g., PfSense router)
+* **Speedtest CLI**: Ookla Speedtest CLI (`speedtest` command) with retry logic and error handling
+* **SNMP**: Access to SNMP-enabled network device (e.g., PfSense router) with session management
+* **System Commands**: Native `ping` command for ICMP latency measurements
+
+### Error Handling & Reliability
+* **Retry Logic**: Speedtest operations include exponential backoff retry (3 attempts, 1s base delay)
+* **Process Management**: Automatic ping process error handling and restart capabilities  
+* **SNMP Session Management**: Persistent session reuse with error recovery
+* **Counter Wraparound**: 64-bit SNMP counter overflow detection and handling
+* **Graceful Degradation**: Individual component failures don't affect other monitoring functions
 
 ### Development Tools
 * **Package Manager**: pnpm (v10.18.3)
@@ -321,39 +333,47 @@ View historical records with pagination and export options:
 
 ### Background Processes
 
-The application runs three background monitoring processes:
+The application runs three background monitoring processes via Nitro plugins:
 
 1. **Ping Monitor** (`server/plugins/ping.server.ts`)
-   - Spawns continuous `ping` processes for **multiple hosts** on server startup
-   - Monitors all configured hosts in `NUXT_PING_HOST` (comma-separated) every 1 second
-   - Each host is monitored independently with its own ping process
-   - Parses latency from ping output for each host
-   - Collects latency readings and calculates average every 60 seconds per host
-   - Stores averaged results in PostgreSQL `pings` table with host identification
+   - Spawns independent `ping` processes for **each configured host** on server startup
+   - Monitors all hosts in `NUXT_PING_HOST` (comma-separated) with 1-second intervals
+   - Each host runs in its own child process with separate stdout monitoring
+   - Parses latency from ping output using regex pattern matching (`time=([\d.]+) ms`)
+   - Streams real-time data via events system and SSE to frontend
+   - Collects latency readings in memory arrays per host
+   - Calculates and stores 60-second averages in PostgreSQL `pings` table
+   - Handles ping process errors and restart logic
 
 2. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
-   - Queries SNMP device every 1 second using precise timing helper (`runEverySecond`)
+   - Uses precise timing helper (`runEverySecond`) for consistent 1-second intervals
+   - Auto-discovers and caches interface information for 30 seconds
    - Monitors **multiple interfaces** configured in `NUXT_SNMP_INTERFACES` (comma-separated)
-   - Each interface is monitored independently with its own bandwidth calculation
-   - Reads interface byte counters via SNMP OIDs automatically based on interface name
-   - Calculates bandwidth delta (Mbps) for each reading per interface
-   - Collects bandwidth readings and calculates average every 60 seconds per interface
-   - Stores averaged results in `bandwidths` table with interface identification
+   - Queries SNMP device using net-snmp library with session management
+   - Reads 64-bit interface counters (ifHCIn/ifHCOut) via SNMP OIDs
+   - Calculates bandwidth delta between readings (handles counter wraparound)
+   - Converts bytes to Mbps: `(bytes * 8) / (timeDiff * 1,000,000)`
+   - Streams real-time bandwidth data via events to frontend
+   - Stores 60-second averages in `bandwidths` table with interface identification
 
 3. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
-   - Runs Ookla Speedtest CLI every hour using precise timing helper (`runEveryHour`)
-   - Stores results in `speedtest_results` table
-   - Captures download/upload speeds, latency, ISP, and result URL
+   - Runs Ookla Speedtest CLI every hour using `runEveryHour` timing helper
+   - Executes `speedtest -f jsonl --accept-license` command
+   - Implements retry logic with exponential backoff (3 attempts, 1s base delay)
+   - Parses JSONL output to extract final result object
+   - Stores comprehensive results in `speedtest_results` table
+   - Captures: download/upload bandwidth, latency, ISP, public IP, result URL
 
 ### Real-Time Streaming
 
-- **Server-Sent Events (SSE)**: Used for efficient live data streaming to the frontend
-- **Event-driven Architecture**: Background processes emit events that are streamed to connected clients
-- **API Endpoints**:
-  - `/api/pings/stream.get` - Live ping data stream for all monitored hosts (updates every second)
-  - `/api/bandwidths/stream.get` - Live bandwidth stream for all monitored interfaces (updates every second)
-  - `/api/interfaces` - Get list of available/configured network interfaces
-  - `/api/speedtest` (POST) - Live speed test execution stream
+- **Server-Sent Events (SSE)**: Efficient live data streaming using Nuxt's event system
+- **Event-driven Architecture**: Background processes emit events via global events emitter
+- **Stream Endpoints**:
+  - `/api/pings/stream.get` - Live ping data stream for all monitored hosts (1-second updates)
+  - `/api/bandwidths/stream.get` - Live bandwidth stream for all monitored interfaces (1-second updates)  
+  - `/api/speedtest` (POST) - Live speed test execution with JSONL streaming and progress updates
+- **Interface Discovery**: `/api/interfaces` - Returns available SNMP interfaces with auto-discovery
+- **Connection Management**: Automatic cleanup on client disconnect and error handling
 
 ### Data Collection & Storage Strategy
 
@@ -438,18 +458,21 @@ docker compose restart app
 nuxt-net-monitoring/
 ├── app/
 │   ├── pages/              # Vue pages (routes)
-│   ├── components/         # Vue components
+│   ├── components/         # Vue components  
 │   ├── assets/            # CSS and static assets
 │   └── app.vue            # Root component with navigation
 ├── server/
-│   ├── api/               # API endpoints
-│   ├── db/                # Database config and migrations
-│   ├── middleware/        # Server middleware (auth)
-│   ├── plugins/           # Background processes
-│   └── utils/             # Utility functions
-├── shared/                # Shared types and utilities
+│   ├── api/               # API endpoints with SSE streaming
+│   ├── db/                # Database config, migrations, and types
+│   ├── middleware/        # Server middleware (Basic Auth)
+│   ├── plugins/           # Background processes (ping, bandwidth, speedtest)
+│   └── utils/             # Utility functions (timing, SNMP, CSV export)
+├── shared/                # Shared types and utilities between client/server
+│   ├── types/             # TypeScript interfaces and types
+│   └── utils/             # Shared utility functions
 ├── nuxt.config.ts         # Nuxt configuration
-├── kysely.config.ts       # Database migration config
+├── kysely.config.ts       # Database migration configuration  
+├── docker-compose.yml     # Docker deployment configuration
 └── .env                   # Environment variables
 ```
 
@@ -459,15 +482,31 @@ nuxt-net-monitoring/
 
 ### SNMP Interface Configuration
 
-The application now supports monitoring multiple network interfaces by name instead of manually specifying OIDs. Configure the interfaces you want to monitor in your `.env` file:
+The application supports monitoring multiple network interfaces with automatic discovery and 30-second caching. Configure interfaces in your `.env` file:
 
 ```env
-NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor multiple interfaces (comma-separated)
+NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor specific interfaces (comma-separated)
+# Leave empty to monitor all discovered interfaces
 ```
 
-**Finding Your Interface Names:**
+**SNMP OIDs Used:**
+- Interface Index: `1.3.6.1.2.1.2.2.1.1`
+- Interface Name: `1.3.6.1.2.1.31.1.1.1.1` 
+- Interface Description: `1.3.6.1.2.1.2.2.1.2`
+- Interface Status: `1.3.6.1.2.1.2.2.1.8`
+- Interface Speed: `1.3.6.1.2.1.31.1.1.1.15`
+- 64-bit In Octets: `1.3.6.1.2.1.31.1.1.1.6`
+- 64-bit Out Octets: `1.3.6.1.2.1.31.1.1.1.10`
+- IP Address Mapping: `1.3.6.1.2.1.4.20.1.2`
 
-You can discover available interfaces on your SNMP-enabled device using `snmpwalk`:
+**Interface Discovery Process:**
+1. Walks SNMP tree to discover all interfaces
+2. Retrieves interface details (name, description, status, speed)
+3. Maps IP addresses to interface indices
+4. Filters by configured interface names if specified
+5. Caches results for 30 seconds to reduce SNMP queries
+
+**Finding Your Interface Names:**
 
 ```bash
 # List all interface names
@@ -479,15 +518,30 @@ snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.2.2.1.2
 
 **Interface Selection:**
 - Specify interface names (comma-separated) to monitor only specific interfaces
+- Leave `NUXT_SNMP_INTERFACES` empty to monitor all discovered interfaces
 - Common interface names: `eth0`, `eth1`, `em0`, `igb0`, `lan`, `wan`, etc.
 
-The application will automatically:
-- Retrieve interface information (name, description, status, speed, IP)
-- Monitor bandwidth using the appropriate SNMP OIDs for each interface
-- Display each interface with color-coded visualization
-- Store data separately for each interface in the database
+The application automatically:
+- Handles 64-bit counter values and wraparound detection
+- Converts byte counters to Mbps with precise timing calculations
+- Maintains separate bandwidth state tracking per interface
+- Provides color-coded visualization for each interface
+- Stores data separately for each interface in the database
 
-### Custom Ping Interval
+### Custom Ping Interval & Timing
+
+The application uses precise timing helpers for consistent intervals:
+
+**Timing Functions** (`server/utils/helper.ts`):
+- `runEverySecond()` - Calculates precise delays to align with clock seconds
+- `runEveryMinute()` - Aligns execution with clock minutes (00 seconds)  
+- `runEveryHour()` - Aligns execution with clock hours (00:00)
+
+**Implementation Details:**
+- Uses `scheduleTask()` with dynamic interval calculation
+- Handles task errors without breaking the schedule
+- Automatically reschedules next execution after completion
+- Provides millisecond-precision timing alignment
 
 ### Multiple Ping Hosts
 

@@ -10,6 +10,7 @@ interface InterfaceStats {
   name: string
   speed: number
   ip: string
+  status: 'up' | 'down' | 'testing' | 'unknown'
 }
 
 const interfaceInfo = await useFetch('/api/interfaces')
@@ -117,6 +118,7 @@ function startStream() {
         name: iface,
         speed: 0,
         ip: '',
+        status: 'unknown',
       }
       interfaces.value.set(iface, {
         timestamps: [],
@@ -129,6 +131,7 @@ function startStream() {
         name: info.name || iface,
         speed: info.speed || 0,
         ip: info.ip || '',
+        status: info.status,
       })
     }
     const stats = interfaces.value.get(iface)!
@@ -176,6 +179,18 @@ onBeforeUnmount(() => eventSource?.close())
         <div class="flex items-center gap-2 mb-2">
           <span class="text-xl">📡</span>
           <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="text-slate-200 font-semibold text-sm truncate">{{ iface }}</span>
+          <span class="text-slate-400 text-xs font-medium">
+            Status:
+          </span>
+          <span
+            :class="{
+              'text-green-400': stats.status === 'up',
+              'text-red-400': stats.status === 'down',
+              'text-slate-400': stats.status === 'unknown',
+            }" class="text-xs font-semibold uppercase"
+          >
+            {{ stats.status }}
+          </span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>

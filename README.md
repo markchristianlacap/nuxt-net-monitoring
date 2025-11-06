@@ -486,7 +486,6 @@ The application supports monitoring multiple network interfaces with automatic d
 
 ```env
 NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor specific interfaces (comma-separated)
-# Leave empty to monitor all discovered interfaces
 ```
 
 **SNMP OIDs Used:**
@@ -518,7 +517,6 @@ snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.2.2.1.2
 
 **Interface Selection:**
 - Specify interface names (comma-separated) to monitor only specific interfaces
-- Leave `NUXT_SNMP_INTERFACES` empty to monitor all discovered interfaces
 - Common interface names: `eth0`, `eth1`, `em0`, `igb0`, `lan`, `wan`, etc.
 
 The application automatically:

@@ -2,36 +2,56 @@
 
 [![Nuxt.js](https://img.shields.io/badge/Nuxt.js-013220?style=flat\&logo=nuxt.js\&logoColor=white)](https://nuxt.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat\&logo=node.js\&logoColor=white)](https://nodejs.org/)
-[![Speedtest CLI](https://img.shields.io/badge/Speedtest-CLI-orange?style=flat\&logo=ookla)](https://www.speedtest.net/apps/cli)
 [![PfSense SNMP](https://img.shields.io/badge/PfSense-SNMP-blue?style=flat\&logo=pfSense)](https://www.pfsense.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat\&logo=postgresql\&logoColor=white)](https://www.postgresql.org/)
+[![Speedtest CLI](https://img.shields.io/badge/Speedtest%20CLI-2C3E50?style=flat\&logo=Speedtest%20CLI\&logoColor=white)](https://www.speedtest.net/apps/cli)
 
 A **real-time network monitoring system** built with Nuxt.js that continuously monitors network performance. Track ping latency, SNMP bandwidth from network devices (e.g., PfSense), and run internet speed tests with live visualizations and historical data storage.
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Screenshots](#️-screenshots)
+- [Quick Start](#-quick-start)
+  - [Docker Deployment](#docker-deployment-recommended)
+  - [Manual Installation](#manual-installation)
+- [Usage](#-usage)
+- [Configuration](#-configuration)
+  - [SNMP Interface Setup](#snmp-interface-configuration)
+  - [Multiple Ping Hosts](#multiple-ping-hosts)
+- [Tech Stack](#️-tech-stack)
+- [Architecture](#️-architecture)
+  - [How It Works](#how-it-works)
+  - [Database Schema](#database-schema)
+- [Development](#️-development)
+- [Troubleshooting](#️-troubleshooting)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
 ## 🎯 Features
 
 ### Real-Time Monitoring
-* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals using native `ping` command processes. **Supports multiple hosts simultaneously** via comma-separated `NUXT_PING_HOST` configuration. Each host runs in its own ping process for independent monitoring. Live latency data is streamed via SSE, and 60-second averages are saved to database
-* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic using net-snmp library. **Supports multiple interfaces simultaneously** via comma-separated `NUXT_SNMP_INTERFACES` configuration. Auto-discovers interface details (name, description, status, speed, IP) and monitors 64-bit counters (ifHCIn/ifHCOut). Data collected every second with precise timing, averaged, and saved every 60 seconds
-* **Live Streaming Data**: Server-sent events (SSE) for real-time data updates without page refresh, with independent streams for ping and bandwidth data
+* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals. Supports multiple hosts via comma-separated `NUXT_PING_HOST`. Each host runs in its own process. Live data streamed via SSE, 60-second averages saved to database
+* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic. Supports multiple interfaces via comma-separated `NUXT_SNMP_INTERFACES`. Auto-discovers interface details, monitors 64-bit counters. Data collected every second, averaged and saved every 60 seconds
+* **Live Streaming**: Server-sent events (SSE) for real-time data updates without page refresh
 
 ### Speed Test Integration
-* **Automated Testing**: Scheduled speed tests run automatically every hour using precise timing helpers
-* **Manual Testing**: On-demand speed tests with live progress visualization via SSE streaming
-* **Real-Time Results**: Live streaming of download/upload speeds during test execution with JSONL output parsing
-* **Direct Integration**: Uses official Ookla Speedtest CLI with retry logic (3 attempts with exponential backoff)
-* **Comprehensive Data**: Captures bandwidth, latency, ISP, public IP, and shareable result URLs
+* **Automated Testing**: Scheduled speed tests every hour
+* **Manual Testing**: On-demand speed tests with live progress visualization
+* **Real-Time Results**: Live streaming of download/upload speeds during execution
+* **Direct Integration**: Uses official Ookla Speedtest CLI with retry logic
+* **Comprehensive Data**: Captures bandwidth, latency, ISP, public IP, and result URLs
 
 ### Data Visualization & History
-* **Live Charts**: Real-time ECharts visualizations with smooth animations
-* **Historical Data**: Browse and export historical ping, bandwidth, and speed test data
-* **Data Export**: Download historical data in CSV format for analysis
+* **Live Charts**: Real-time ECharts visualizations
+* **Historical Data**: Browse and export historical data
+* **Data Export**: CSV format downloads
 
 ### Security & Access
-* **Basic Authentication**: HTTP Basic Auth with session cookie (48-hour expiry)
-* **Protected Routes**: All endpoints secured via middleware
+* **Basic Authentication**: HTTP Basic Auth with 48-hour session cookies
+* **Protected Routes**: All endpoints secured
 
 ---
 
@@ -46,61 +66,15 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 **Speed Test Results**
 ![Speed Test Chart](./screenshots/speedtest.png)
 
-> Screenshots show the actual application UI with live charts and monitoring data.
-
 ---
 
-## ⚙️ Tech Stack
+## 🚀 Quick Start
 
-### Frontend
-* **Framework**: Nuxt 4.x (Vue 3 with auto-imports)
-* **UI Library**: Nuxt UI (TailwindCSS-based component library)
-* **Charts**: nuxt-echarts with Apache ECharts (LineChart with real-time streaming)
-* **State Management**: Vue 3 Composition API with reactive refs
+### Docker Deployment (Recommended)
 
-### Backend
-* **Runtime**: Nuxt Nitro server (Node.js) with Nitro plugins for background processes
-* **Database**: PostgreSQL with Kysely SQL query builder (type-safe) and migrations
-* **ORM/Query Builder**: Kysely with PostgresDialect for schema management
-* **Process Management**: Child process spawning for ping and speedtest CLI execution
-* **SNMP Library**: net-snmp for device communication with session management and caching
-* **Protocols**:
-  - ICMP Ping (via native `ping` command with stdout parsing)
-  - SNMP v2c (net-snmp library with 64-bit counter support)
-  - HTTP Basic Authentication with session cookies
-* **Timing & Scheduling**: Precise interval helpers with automatic next-execution calculation
-
-### External Dependencies
-* **Speedtest CLI**: Ookla Speedtest CLI (`speedtest` command) with retry logic and error handling
-* **SNMP**: Access to SNMP-enabled network device (e.g., PfSense router) with session management
-* **System Commands**: Native `ping` command for ICMP latency measurements
-
-### Error Handling & Reliability
-* **Retry Logic**: Speedtest operations include exponential backoff retry (3 attempts, 1s base delay)
-* **Process Management**: Automatic ping process error handling and restart capabilities  
-* **SNMP Session Management**: Persistent session reuse with error recovery
-* **Counter Wraparound**: 64-bit SNMP counter overflow detection and handling
-* **Graceful Degradation**: Individual component failures don't affect other monitoring functions
-
-### Development Tools
-* **Package Manager**: pnpm (v10.18.3)
-* **TypeScript**: Full TypeScript support with type checking
-* **Linting**: ESLint with Antfu's config
-* **Database Migrations**: kysely-ctl for schema management
-
----
-
-## 🚀 Installation
-
-You can run this application either with Docker (recommended) or manually.
-
-### Option 1: Docker Deployment (Recommended)
-
-The easiest way to get started is using Docker Compose, which sets up both the application and PostgreSQL database automatically.
-
-#### Prerequisites for Docker
-- **Docker** and **Docker Compose** installed on your system
-- **SNMP Access** to your network device (PfSense, router, etc.)
+#### Prerequisites
+- Docker and Docker Compose
+- SNMP access to your network device
 
 #### Steps
 
@@ -120,14 +94,14 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    Edit `.env.docker` with your configuration:
    ```env
    # SNMP Configuration
-   NUXT_SNMP_HOST=192.168.1.1  # Your PfSense/router IP
+   NUXT_SNMP_HOST=192.168.1.1
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
-   NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor multiple interfaces by name (comma-separated)
+   NUXT_SNMP_INTERFACES=eth0,eth1
 
-   # Ping Targets (supports multiple hosts separated by comma)
-   NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
+   # Ping Targets
+   NUXT_PING_HOST=8.8.8.8,1.1.1.1
 
-   # Database Configuration (use these defaults for Docker)
+   # Database Configuration
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
    NUXT_DB_PASSWORD=postgres
@@ -138,26 +112,18 @@ The easiest way to get started is using Docker Compose, which sets up both the a
    NUXT_PASS=your-secure-password
    ```
 
-   > **Note**: The `NUXT_DB_HOST` is automatically set to `postgres` in docker-compose.yml and should not be modified in `.env.docker`.
+   > **Note**: `NUXT_DB_HOST` is automatically set to `postgres` in docker-compose.yml.
 
 3. **Start the Application**
    ```bash
    docker compose up -d
    ```
 
-   This will:
-   - Build the application Docker image with all dependencies (Node.js, Speedtest CLI, ping utilities)
-   - Start a PostgreSQL database container
-   - Run database migrations automatically
-   - Start the application on port 3000
+   This builds the application, starts PostgreSQL, runs migrations, and starts on port 3000.
 
 4. **Access the Application**
 
-   Open your browser and navigate to `http://localhost:3000`
-
-   You'll be prompted for authentication:
-   - **Username**: Value from `NUXT_USER` in `.env.docker`
-   - **Password**: Value from `NUXT_PASS` in `.env.docker`
+   Navigate to `http://localhost:3000` and authenticate with your credentials.
 
 5. **View Logs** (optional)
    ```bash
@@ -180,22 +146,15 @@ The easiest way to get started is using Docker Compose, which sets up both the a
 
 ---
 
-### Option 2: Manual Installation
+### Manual Installation
 
 For development or custom setups, you can install and run the application manually.
 
 #### Prerequisites
-1. **Node.js** (v18 or higher)
-2. **pnpm** (v10.18.3 or compatible version)
-3. **PostgreSQL** (v12 or higher)
-4. **Speedtest CLI** by Ookla - [Installation Guide](https://www.speedtest.net/apps/cli)
-   ```bash
-   # Example on Linux (review script before running)
-   curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
-   sudo apt-get install speedtest
-   ```
-5. **SNMP Access** to your network device
-6. **ping** command (usually pre-installed)
+1. Node.js (v18+), pnpm (v10.18.3+), PostgreSQL (v12+)
+2. [Speedtest CLI](https://www.speedtest.net/apps/cli) by Ookla
+3. SNMP access to your network device
+4. `ping` command
 
 #### Steps
 
@@ -222,10 +181,10 @@ For development or custom setups, you can install and run the application manual
    # SNMP Configuration
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
    NUXT_SNMP_HOST=192.168.1.1
-   NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor multiple interfaces by name (comma-separated)
+   NUXT_SNMP_INTERFACES=eth0,eth1
 
-   # Ping Targets (supports multiple hosts separated by comma)
-   NUXT_PING_HOST=8.8.8.8,1.1.1.1  # Monitor multiple IPs/hosts simultaneously
+   # Ping Targets
+   NUXT_PING_HOST=8.8.8.8,1.1.1.1
 
    # PostgreSQL Database
    NUXT_DB_HOST=localhost
@@ -272,11 +231,7 @@ The application will be available at `http://localhost:3000`
 
 ### Authentication
 
-When you first access the application, you'll be prompted for HTTP Basic Authentication:
-- **Username**: Value from `NUXT_USER` env variable
-- **Password**: Value from `NUXT_PASS` env variable
-
-Authentication is cached via cookie for 48 hours.
+Use your `NUXT_USER` and `NUXT_PASS` credentials. Authentication is cached for 48 hours.
 
 ### Main Dashboard (`/`)
 
@@ -284,54 +239,109 @@ The homepage displays real-time monitoring with two tabs:
 
 1. **Ping Latency Tab**
    - Live streaming ping data every second
-   - **Monitor multiple hosts simultaneously** with color-coded visualization
-   - Real-time latency graphs for each host
-   - Status indicators (online/offline) per host
-   - Summary statistics: total/online/offline hosts, average latency, peak latency
-   - Individual host metrics: current latency, max latency, status
-   - Database stores 60-second averages for historical tracking
+   - Monitor multiple hosts with color-coded visualization
+   - Real-time latency graphs and status indicators per host
+   - Summary statistics: total/online/offline hosts, average/peak latency
+   - 60-second averages stored in database
 
 2. **Bandwidth Tab**
    - Live SNMP bandwidth monitoring every second
-   - **Monitor multiple interfaces simultaneously** with color-coded visualization
-   - Individual interface metrics: upload and download speeds in Mbps
-   - Real-time visualization for each interface
-   - Database stores 60-second averages for historical tracking
+   - Monitor multiple interfaces with color-coded visualization
+   - Individual interface metrics: upload/download speeds in Mbps
+   - 60-second averages stored in database
 
 ### Speed Test (`/speedtest`)
 
-Click **"Run Speed Test"** button in the header or navigate to `/speedtest`:
 - Live progress with real-time metrics
-- Download and upload speed visualization
+- Download/upload speed visualization
 - Ping latency measurement
 - ISP and public IP detection
-- Results saved automatically to database
-- Sharable result URL from Speedtest.net
+- Results saved automatically
+- Sharable result URL
 
 ### Historical Data
 
-View historical records with pagination and export options:
-
-1. **Ping Results** (`/pings`)
-   - Historical ping data with timestamps
-   - Status and latency records
-   - CSV export functionality
-
-2. **Bandwidth Results** (`/bandwidths`)
-   - Historical bandwidth measurements
-   - Upload/download trends over time
-   - CSV export available
-
-3. **Speed Test Results** (`/speedtest-results`)
-   - Past speed test history
-   - Complete test details (download, upload, latency, ISP, result URL)
-   - CSV export for analysis
+1. **Ping Results** (`/pings`) - Historical ping data with CSV export
+2. **Bandwidth Results** (`/bandwidths`) - Historical bandwidth measurements with CSV export  
+3. **Speed Test Results** (`/speedtest-results`) - Past speed test history with CSV export
 
 ---
 
-## 🏗️ How It Works
+## 🔧 Configuration
 
-### Background Processes
+### SNMP Interface Configuration
+
+Configure interfaces in your `.env` file:
+
+```env
+NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor specific interfaces (comma-separated)
+```
+
+**SNMP OIDs Used:**
+- Interface Index: `1.3.6.1.2.1.2.2.1.1`
+- Interface Name: `1.3.6.1.2.1.31.1.1.1.1` 
+- Interface Description: `1.3.6.1.2.1.2.2.1.2`
+- Interface Status: `1.3.6.1.2.1.2.2.1.8`
+- Interface Speed: `1.3.6.1.2.1.31.1.1.1.15`
+- 64-bit In Octets: `1.3.6.1.2.1.31.1.1.1.6`
+- 64-bit Out Octets: `1.3.6.1.2.1.31.1.1.1.10`
+- IP Address Mapping: `1.3.6.1.2.1.4.20.1.2`
+
+**Interface Discovery Process:**
+1. Walks SNMP tree to discover all interfaces
+2. Retrieves interface details
+3. Maps IP addresses to interface indices
+4. Filters by configured interface names
+5. Caches results for 30 seconds
+
+**Finding Your Interface Names:**
+
+```bash
+snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.31.1.1.1.1
+```
+
+**Interface Selection:**
+- Specify interface names (comma-separated) to monitor specific interfaces
+- Common names: `eth0`, `eth1`, `em0`, `igb0`, `lan`, `wan`
+
+The application automatically handles 64-bit counter values, converts to Mbps, maintains separate tracking per interface, and provides color-coded visualization.
+
+### Multiple Ping Hosts
+
+Configure multiple hosts in your `.env` file:
+
+```env
+NUXT_PING_HOST=8.8.8.8,1.1.1.1,google.com,192.168.1.1
+```
+
+Features: Independent monitoring per host, color-coded visualization, individual statistics, overall summary with total/online/offline hosts.
+
+---
+
+## ⚙️ Tech Stack
+
+### Frontend
+* **Framework**: Nuxt 4.x (Vue 3)
+* **UI Library**: Nuxt UI (TailwindCSS-based)
+* **Charts**: nuxt-echarts with Apache ECharts
+
+### Backend
+* **Runtime**: Nuxt Nitro server (Node.js)
+* **Database**: PostgreSQL with Kysely SQL query builder
+* **SNMP Library**: net-snmp for device communication
+* **Protocols**: ICMP Ping, SNMP v2c, HTTP Basic Authentication
+
+### External Dependencies
+* **Speedtest CLI**: Ookla Speedtest CLI with retry logic
+* **SNMP**: SNMP-enabled network device (e.g., PfSense router)
+* **System Commands**: Native `ping` command
+---
+
+## 🏗️ Architecture
+
+### How It Works
+
+#### Background Processes
 
 The application runs three background monitoring processes via Nitro plugins:
 
@@ -364,18 +374,18 @@ The application runs three background monitoring processes via Nitro plugins:
    - Stores comprehensive results in `speedtest_results` table
    - Captures: download/upload bandwidth, latency, ISP, public IP, result URL
 
-### Real-Time Streaming
+#### Real-Time Streaming
 
 - **Server-Sent Events (SSE)**: Efficient live data streaming using Nuxt's event system
 - **Event-driven Architecture**: Background processes emit events via global events emitter
 - **Stream Endpoints**:
-  - `/api/pings/stream.get` - Live ping data stream for all monitored hosts (1-second updates)
-  - `/api/bandwidths/stream.get` - Live bandwidth stream for all monitored interfaces (1-second updates)  
+  - `/api/pings/stream` - Live ping data stream for all monitored hosts (1-second updates)
+  - `/api/bandwidths/stream` - Live bandwidth stream for all monitored interfaces (1-second updates)  
   - `/api/speedtest` (POST) - Live speed test execution with JSONL streaming and progress updates
 - **Interface Discovery**: `/api/interfaces` - Returns available SNMP interfaces with auto-discovery
 - **Connection Management**: Automatic cleanup on client disconnect and error handling
 
-### Data Collection & Storage Strategy
+#### Data Collection & Storage Strategy
 
 The application uses a two-tier approach for optimal performance:
 
@@ -478,87 +488,51 @@ nuxt-net-monitoring/
 
 ---
 
-## 🔧 Configuration
+## ⚠️ Troubleshooting
 
-### SNMP Interface Configuration
+### Docker Issues
 
-The application supports monitoring multiple network interfaces with automatic discovery and 30-second caching. Configure interfaces in your `.env` file:
-
-```env
-NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor specific interfaces (comma-separated)
-```
-
-**SNMP OIDs Used:**
-- Interface Index: `1.3.6.1.2.1.2.2.1.1`
-- Interface Name: `1.3.6.1.2.1.31.1.1.1.1` 
-- Interface Description: `1.3.6.1.2.1.2.2.1.2`
-- Interface Status: `1.3.6.1.2.1.2.2.1.8`
-- Interface Speed: `1.3.6.1.2.1.31.1.1.1.15`
-- 64-bit In Octets: `1.3.6.1.2.1.31.1.1.1.6`
-- 64-bit Out Octets: `1.3.6.1.2.1.31.1.1.1.10`
-- IP Address Mapping: `1.3.6.1.2.1.4.20.1.2`
-
-**Interface Discovery Process:**
-1. Walks SNMP tree to discover all interfaces
-2. Retrieves interface details (name, description, status, speed)
-3. Maps IP addresses to interface indices
-4. Filters by configured interface names if specified
-5. Caches results for 30 seconds to reduce SNMP queries
-
-**Finding Your Interface Names:**
-
+**Container fails to start**
 ```bash
-# List all interface names
-snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.31.1.1.1.1
-
-# List all interface descriptions (alternative)
-snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.2.2.1.2
+docker compose logs app
+sudo netstat -tlnp | grep 3000  # Check port usage
+docker compose up -d --build    # Rebuild
 ```
 
-**Interface Selection:**
-- Specify interface names (comma-separated) to monitor only specific interfaces
-- Common interface names: `eth0`, `eth1`, `em0`, `igb0`, `lan`, `wan`, etc.
-
-The application automatically:
-- Handles 64-bit counter values and wraparound detection
-- Converts byte counters to Mbps with precise timing calculations
-- Maintains separate bandwidth state tracking per interface
-- Provides color-coded visualization for each interface
-- Stores data separately for each interface in the database
-
-### Custom Ping Interval & Timing
-
-The application uses precise timing helpers for consistent intervals:
-
-**Timing Functions** (`server/utils/helper.ts`):
-- `runEverySecond()` - Calculates precise delays to align with clock seconds
-- `runEveryMinute()` - Aligns execution with clock minutes (00 seconds)  
-- `runEveryHour()` - Aligns execution with clock hours (00:00)
-
-**Implementation Details:**
-- Uses `scheduleTask()` with dynamic interval calculation
-- Handles task errors without breaking the schedule
-- Automatically reschedules next execution after completion
-- Provides millisecond-precision timing alignment
-
-### Multiple Ping Hosts
-
-The application supports monitoring multiple hosts simultaneously. Configure them in your `.env` file:
-
-```env
-# Single host
-NUXT_PING_HOST=8.8.8.8
-
-# Multiple hosts (comma-separated)
-NUXT_PING_HOST=8.8.8.8,1.1.1.1,google.com,192.168.1.1
+**Database connection issues**
+```bash
+docker compose ps              # Check health
+docker compose logs postgres   # Check logs
+docker compose restart postgres
 ```
 
-Features:
-- Each host is monitored independently with its own ping process
-- Color-coded visualization for easy identification
-- Individual statistics and status for each host
-- Overall summary showing total, online, and offline hosts
-- Average and peak latency across all hosts
+**Changes not reflecting**
+```bash
+docker compose up -d --build app
+```
+
+### General Issues
+
+**Speedtest CLI Not Found**
+```bash
+curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
+sudo apt-get install speedtest
+```
+
+**SNMP Connection Issues**
+- Verify SNMP is enabled on your device
+- Check community string is correct
+- Ensure firewall allows SNMP (UDP port 161)
+- Test with: `snmpwalk -v2c -c your-community device-ip system`
+
+**Database Connection Failed**
+- Verify PostgreSQL is running and credentials are correct
+- Ensure database exists: `psql -U postgres -l`
+- Run migrations: `pnpm exec kysely migrate latest`
+
+**Ping Not Working**
+- Check target host is reachable and `ping` command is available
+- Some systems require elevated privileges for ICMP
 
 ---
 
@@ -571,69 +545,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📄 License
 
 This project is open source and available under the MIT License.
-
----
-
-## ⚠️ Troubleshooting
-
-### Docker Issues
-
-**Container fails to start**
-```bash
-# Check container logs
-docker compose logs app
-
-# Check if ports are in use
-sudo netstat -tlnp | grep 3000
-
-# Rebuild containers
-docker compose down
-docker compose up -d --build
-```
-
-**Database connection issues in Docker**
-```bash
-# Check if database is healthy
-docker compose ps
-
-# Check database logs
-docker compose logs postgres
-
-# Restart the database
-docker compose restart postgres
-```
-
-**Changes not reflecting in Docker**
-```bash
-# Rebuild the application image
-docker compose up -d --build app
-```
-
-### General Issues
-
-**Speedtest CLI Not Found**
-```bash
-# Install Speedtest CLI (from official Ookla repository)
-curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
-sudo apt-get install speedtest
-```
-
-**SNMP Connection Issues**
-- Verify SNMP is enabled on your device
-- Check community string is correct
-- Ensure firewall allows SNMP (UDP port 161)
-- Test with: `snmpwalk -v2c -c your-community device-ip system`
-
-**Database Connection Failed** (Manual Installation)
-- Verify PostgreSQL is running
-- Check credentials in `.env` file
-- Ensure database exists: `psql -U postgres -l`
-- Run migrations: `pnpm exec kysely migrate latest`
-
-**Ping Not Working**
-- Check target host is reachable
-- Verify `ping` command is available
-- Some systems require elevated privileges for ICMP
 
 ---
 

@@ -1,38 +1,78 @@
 import type { SpeedtestResult, SpeedtestServer } from '#shared/types/speedtest-server'
 import { spawn } from 'node:child_process'
 
-export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
-  const process = spawn('speedtest', ['-f', 'json', '--accept-license', '-L'])
-  return new Promise<SpeedtestServer[]>((resolve, reject) => {
-    process.stdout.on('data', (data) => {
-      try {
-        resolve(JSON.parse(data.toString()) as SpeedtestServer[])
-      }
-      catch (err) {
-        reject(err)
-      }
-    })
-    process.stderr.on('data', (data) => {
-      reject(new Error(data.toString()))
-    })
-  })
+const MAX_RETRIES = 3
+const RETRY_DELAY_MS = 1000
+
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
-export async function runSpeedtest(): Promise<SpeedtestResult> {
-  const process = spawn('speedtest', ['-f', 'jsonl', '--accept-license'])
-  return new Promise<SpeedtestResult>((resolve, reject) => {
-    process.stdout.on('data', (data) => {
+
+async function retry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn()
+    }
+    catch (err) {
+      if (attempt < retries - 1)
+        await delay(RETRY_DELAY_MS * 2 ** attempt)
+      else
+        throw err
+    }
+  }
+  throw new Error('Retry failed')
+}
+
+export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
+  return retry(() => new Promise((resolve, reject) => {
+    const process = spawn('speedtest', ['-f', 'json', '--accept-license', '-L'])
+    let output = ''
+    let stderr = ''
+
+    process.stdout.on('data', data => (output += data.toString()))
+    process.stderr.on('data', data => (stderr += data.toString()))
+
+    process.on('close', (code) => {
+      if (code !== 0 || stderr)
+        return reject(new Error(stderr || `Exited with code ${code}`))
+      if (!output.trim())
+        return reject(new Error('No output from speedtest'))
       try {
-        const res = JSON.parse(data.toString())
-        if (res.type === 'result') {
-          resolve(res as SpeedtestResult)
-        }
+        resolve(JSON.parse(output) as SpeedtestServer[])
       }
       catch (err) {
         reject(err)
       }
     })
-    process.stderr.on('data', (data) => {
-      reject(new Error(data.toString()))
+  }))
+}
+
+export async function runSpeedtest(): Promise<SpeedtestResult> {
+  return retry(() => new Promise((resolve, reject) => {
+    const process = spawn('speedtest', ['-f', 'jsonl', '--accept-license'])
+    let output = ''
+    let stderr = ''
+
+    process.stdout.on('data', data => (output += data.toString()))
+    process.stderr.on('data', data => (stderr += data.toString()))
+
+    process.on('close', (code) => {
+      if (code !== 0 || stderr)
+        return reject(new Error(stderr || `Exited with code ${code}`))
+      if (!output.trim())
+        return reject(new Error('No output from speedtest'))
+      try {
+        const lines = output.trim().split('\n')
+        for (const line of lines) {
+          const res = JSON.parse(line)
+          if (res.type === 'result')
+            return resolve(res as SpeedtestResult)
+        }
+        reject(new Error('No result found'))
+      }
+      catch (err) {
+        reject(err)
+      }
     })
-  })
+  }))
 }

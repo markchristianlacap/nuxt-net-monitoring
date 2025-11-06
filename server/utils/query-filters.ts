@@ -21,7 +21,6 @@ export function applyDateRangeFilter<DB, TB extends keyof DB & string, O>(
   if (dateQuery.start) {
     const start = new Date(dateQuery.start)
     if (!Number.isNaN(start.getTime())) {
-      start.setHours(0, 0, 0, 0)
       filteredQuery = filteredQuery.where(timestampColumn as any, '>=', start as any)
     }
   }
@@ -29,7 +28,6 @@ export function applyDateRangeFilter<DB, TB extends keyof DB & string, O>(
   if (dateQuery.end) {
     const end = new Date(dateQuery.end)
     if (!Number.isNaN(end.getTime())) {
-      end.setHours(23, 59, 59, 999)
       filteredQuery = filteredQuery.where(timestampColumn as any, '<=', end as any)
     }
   }

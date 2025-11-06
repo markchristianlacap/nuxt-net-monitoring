@@ -17,16 +17,16 @@ todayEnd.setHours(23, 59, 59, 999)
 const query = reactive({
   page: Number(route.query.page) || 1,
   limit: Number(route.query.limit) || 10,
-  start: (route.query.start as string | null) || today.toISOString(),
-  end: (route.query.end as string | null) || todayEnd.toISOString(),
+  start: (route.query.start as string | null) || today.toISOString() as string | null,
+  end: (route.query.end as string | null) || todayEnd.toISOString() as string | null,
   status: route.query.status as 'online' | 'offline' | null || null,
 })
 
 const dateRange = ref<any | null>(null)
 
 // Initialize dateRange from query
-const start = parseAbsolute(query.start, tz)
-const end = parseAbsolute(query.end, tz)
+const start = query.start ? parseAbsolute(query.start, tz) : null
+const end = query.end ? parseAbsolute(query.end, tz) : null
 dateRange.value = { start, end } as any
 
 const { data: pingResponse } = await useFetch('/api/pings', {
@@ -39,8 +39,8 @@ watch(query, () => {
 }, { deep: true })
 
 watch(dateRange, () => {
-  query.start = dateRange.value?.start ? dateRange.value.start.toDate(tz).toISOString() : null
-  query.end = dateRange.value?.end ? dateRange.value.end.toDate(tz).toISOString() : null
+  query.start = dateRange.value?.start ? new Date(dateRange.value.start.toDate(tz).setHours(0, 0, 0, 0)).toISOString() : null
+  query.end = dateRange.value?.end ? new Date(dateRange.value.end.toDate(tz).setHours(23, 59, 59, 999)).toISOString() : null
 }, { deep: true })
 
 const columns: TableColumn<any>[] = [

@@ -18,11 +18,14 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
   })
 }
 export async function runSpeedtest(): Promise<SpeedtestResult> {
-  const process = spawn('speedtest', ['-f', 'json', '--accept-license'])
+  const process = spawn('speedtest', ['-f', 'jsonl', '--accept-license'])
   return new Promise<SpeedtestResult>((resolve, reject) => {
     process.stdout.on('data', (data) => {
       try {
-        resolve(JSON.parse(data.toString()) as SpeedtestResult)
+        const res = JSON.parse(data.toString())
+        if (res.type === 'result') {
+          resolve(res as SpeedtestResult)
+        }
       }
       catch (err) {
         reject(err)

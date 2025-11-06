@@ -1,47 +1,23 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { DateFormatter, getLocalTimeZone, parseAbsolute } from '@internationalized/date'
 
-const df = new DateFormatter('en-US', { dateStyle: 'medium' })
-const tz = getLocalTimeZone()
 const UBadge = resolveComponent('UBadge')
-
 const route = useRoute()
-
-// Get today's date range
 const today = new Date()
 today.setHours(0, 0, 0, 0)
-const todayEnd = new Date(today)
-todayEnd.setHours(23, 59, 59, 999)
-
+const end = new Date()
+end.setHours(23, 59, 59, 999)
 const query = reactive({
   page: Number(route.query.page) || 1,
   limit: Number(route.query.limit) || 10,
   start: (route.query.start as string | null) || today.toISOString() as string | null,
-  end: (route.query.end as string | null) || todayEnd.toISOString() as string | null,
+  end: (route.query.end as string | null) || end.toISOString() as string | null,
   status: route.query.status as 'online' | 'offline' | null || null,
 })
 
-const dateRange = ref<any | null>(null)
-
-// Initialize dateRange from query
-const start = query.start ? parseAbsolute(query.start, tz) : null
-const end = query.end ? parseAbsolute(query.end, tz) : null
-dateRange.value = { start, end } as any
-
-const { data: pingResponse } = await useFetch('/api/pings', {
+const { data } = await useFetch('/api/pings', {
   query,
-  immediate: true,
 })
-
-watch(query, () => {
-  navigateTo({ query })
-}, { deep: true })
-
-watch(dateRange, () => {
-  query.start = dateRange.value?.start ? new Date(dateRange.value.start.toDate(tz).setHours(0, 0, 0, 0)).toISOString() : null
-  query.end = dateRange.value?.end ? new Date(dateRange.value.end.toDate(tz).setHours(23, 59, 59, 999)).toISOString() : null
-}, { deep: true })
 
 const columns: TableColumn<any>[] = [
   { accessorKey: 'id', header: '#', cell: ({ row }) => `#${row.getValue('id')}` },
@@ -89,6 +65,9 @@ function download() {
   a.download = 'pings.csv'
   a.click()
 }
+watch(query, () => {
+  navigateTo({ query })
+}, { deep: true })
 </script>
 
 <template>
@@ -118,27 +97,7 @@ function download() {
           </div>
 
           <div class="flex gap-2 w-full sm:w-auto">
-            <UPopover class="flex-1 sm:flex-none">
-              <UButton color="neutral" variant="subtle" icon="i-lucide-calendar" class="w-full sm:w-auto justify-start">
-                <template v-if="dateRange?.start">
-                  <template v-if="dateRange?.end">
-                    <span class="hidden sm:inline">{{ df.format(dateRange.start.toDate(tz)) }} - {{ df.format(dateRange.end.toDate(tz)) }}</span>
-                    <span class="sm:hidden">{{ df.format(dateRange.start.toDate(tz)) }}</span>
-                  </template>
-                  <template v-else>
-                    {{ df.format(dateRange.start.toDate(tz)) }}
-                  </template>
-                </template>
-                <template v-else>
-                  Pick a date
-                </template>
-              </UButton>
-
-              <template #content>
-                <UCalendar v-model="dateRange" :number-of-months="2" range />
-              </template>
-            </UPopover>
-
+            <common-date-range v-model:start="query.start" v-model:end="query.end" />
             <UButton color="neutral" variant="subtle" icon="i-lucide-download" @click="download" />
           </div>
         </div>
@@ -148,7 +107,7 @@ function download() {
 
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <u-table
-          :data="pingResponse?.data"
+          :data="data?.data"
           :columns="columns"
           class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50 min-w-[600px]"
         />
@@ -156,11 +115,11 @@ function download() {
 
       <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-3 text-xs sm:text-sm text-slate-400">
         <div>
-          Total: {{ pingResponse?.total?.toLocaleString() ?? 0 }}
+          Total: {{ data?.total?.toLocaleString() ?? 0 }}
         </div>
         <u-pagination
           v-model:page="query.page"
-          :total="pingResponse?.total ?? 0"
+          :total="data?.total ?? 0"
           :page-size="query.limit"
           size="sm"
         />

@@ -1,10 +1,10 @@
 import type { H3Event } from 'h3'
 import { setHeader } from 'h3'
 
-export interface CsvExportOptions {
+export interface CsvExportOptions<T = any> {
   filename: string
   headers: string[]
-  formatRow: (row: any) => string[]
+  formatRow: (row: T) => string[]
 }
 
 /**
@@ -13,10 +13,10 @@ export interface CsvExportOptions {
  * @param data - Array of data to export
  * @param options - Export configuration
  */
-export function exportToCsv(
+export function exportToCsv<T = any>(
   event: H3Event,
-  data: any[],
-  options: CsvExportOptions,
+  data: T[],
+  options: CsvExportOptions<T>,
 ): void {
   setHeader(event, 'Content-Type', 'text/csv')
   setHeader(

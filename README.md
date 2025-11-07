@@ -93,7 +93,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
    Edit `.env.docker` with your configuration:
    ```env
-   # SNMP Configuration
+   # SNMP Configuration must be v2c
    NUXT_SNMP_HOST=192.168.1.1
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
    NUXT_SNMP_INTERFACES=eth0,eth1
@@ -178,7 +178,7 @@ For development or custom setups, you can install and run the application manual
 
    Edit `.env` with your configuration:
    ```env
-   # SNMP Configuration
+   # SNMP Configuration must be v2c
    NUXT_SNMP_COMMUNITY=your-snmp-community-string
    NUXT_SNMP_HOST=192.168.1.1
    NUXT_SNMP_INTERFACES=eth0,eth1

@@ -21,8 +21,11 @@ const OIDS = {
 let SESSION: snmp.Session | null = null
 
 export function getDeviceSession(): snmp.Session {
-  if (!SESSION)
-    SESSION = snmp.createSession(HOST, COMMUNITY)
+  if (!SESSION) {
+    SESSION = snmp.createSession(HOST, COMMUNITY, {
+      version: snmp.Version2c,
+    })
+  }
   return SESSION
 }
 
@@ -156,6 +159,7 @@ export async function getBandwidth(iface: string): Promise<BandwidthResult | nul
       `${OIDS.ifHCIn}.${index}`,
       `${OIDS.ifHCOut}.${index}`,
     ])
+
     const now = Date.now()
 
     const prev = BANDWIDTH_STATE[iface]

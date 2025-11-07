@@ -2,11 +2,11 @@
 
 [![Nuxt.js](https://img.shields.io/badge/Nuxt.js-013220?style=flat\&logo=nuxt.js\&logoColor=white)](https://nuxt.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat\&logo=node.js\&logoColor=white)](https://nodejs.org/)
-[![PfSense SNMP](https://img.shields.io/badge/PfSense-SNMP-blue?style=flat\&logo=pfSense)](https://www.pfsense.org/)
+[![pfSense/OPNsense SNMP](https://img.shields.io/badge/pfSense%2FOPNsense-SNMP-blue?style=flat)](https://www.pfsense.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat\&logo=postgresql\&logoColor=white)](https://www.postgresql.org/)
 [![Speedtest CLI](https://img.shields.io/badge/Speedtest%20CLI-2C3E50?style=flat\&logo=Speedtest%20CLI\&logoColor=white)](https://www.speedtest.net/apps/cli)
 
-A **real-time network monitoring system** built with Nuxt.js that continuously monitors network performance. Track ping latency, SNMP bandwidth from network devices (e.g., PfSense), and run internet speed tests with live visualizations and historical data storage.
+A **real-time network monitoring system** built with Nuxt.js that continuously monitors network performance. Track ping latency, SNMP bandwidth from network devices (e.g., pfSense, OPNsense), and run internet speed tests with live visualizations and historical data storage.
 
 ## 📋 Table of Contents
 
@@ -271,6 +271,8 @@ The homepage displays real-time monitoring with two tabs:
 
 ### SNMP Interface Configuration
 
+**Compatible with pfSense and OPNsense firewalls** - both use standard SNMP v2c protocol.
+
 Configure interfaces in your `.env` file:
 
 ```env
@@ -333,7 +335,7 @@ Features: Independent monitoring per host, color-coded visualization, individual
 
 ### External Dependencies
 * **Speedtest CLI**: Ookla Speedtest CLI with retry logic
-* **SNMP**: SNMP-enabled network device (e.g., PfSense router)
+* **SNMP**: SNMP-enabled network device (e.g., pfSense, OPNsense router)
 * **System Commands**: Native `ping` command
 ---
 

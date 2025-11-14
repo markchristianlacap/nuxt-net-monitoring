@@ -262,7 +262,7 @@ The homepage displays real-time monitoring with two tabs:
 ### Historical Data
 
 1. **Ping Results** (`/pings`) - Historical ping data with CSV export
-2. **Bandwidth Results** (`/bandwidths`) - Historical bandwidth measurements with CSV export  
+2. **Bandwidth Results** (`/bandwidths`) - Historical bandwidth measurements with CSV export
 3. **Speed Test Results** (`/speedtest-results`) - Past speed test history with CSV export
 
 ---
@@ -281,7 +281,7 @@ NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor specific interfaces (comma-separated)
 
 **SNMP OIDs Used:**
 - Interface Index: `1.3.6.1.2.1.2.2.1.1`
-- Interface Name: `1.3.6.1.2.1.31.1.1.1.1` 
+- Interface Name: `1.3.6.1.2.1.31.1.1.1.1`
 - Interface Description: `1.3.6.1.2.1.2.2.1.2`
 - Interface Status: `1.3.6.1.2.1.2.2.1.8`
 - Interface Speed: `1.3.6.1.2.1.31.1.1.1.15`
@@ -382,7 +382,7 @@ The application runs three background monitoring processes via Nitro plugins:
 - **Event-driven Architecture**: Background processes emit events via global events emitter
 - **Stream Endpoints**:
   - `/api/pings/stream` - Live ping data stream for all monitored hosts (1-second updates)
-  - `/api/bandwidths/stream` - Live bandwidth stream for all monitored interfaces (1-second updates)  
+  - `/api/bandwidths/stream` - Live bandwidth stream for all monitored interfaces (1-second updates)
   - `/api/speedtest` (POST) - Live speed test execution with JSONL streaming and progress updates
 - **Interface Discovery**: `/api/interfaces` - Returns available SNMP interfaces with auto-discovery
 - **Connection Management**: Automatic cleanup on client disconnect and error handling
@@ -470,7 +470,7 @@ docker compose restart app
 nuxt-net-monitoring/
 ├── app/
 │   ├── pages/              # Vue pages (routes)
-│   ├── components/         # Vue components  
+│   ├── components/         # Vue components
 │   ├── assets/            # CSS and static assets
 │   └── app.vue            # Root component with navigation
 ├── server/
@@ -483,7 +483,7 @@ nuxt-net-monitoring/
 │   ├── types/             # TypeScript interfaces and types
 │   └── utils/             # Shared utility functions
 ├── nuxt.config.ts         # Nuxt configuration
-├── kysely.config.ts       # Database migration configuration  
+├── kysely.config.ts       # Database migration configuration
 ├── docker-compose.yml     # Docker deployment configuration
 └── .env                   # Environment variables
 ```

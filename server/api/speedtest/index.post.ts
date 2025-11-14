@@ -8,6 +8,7 @@ export default defineEventHandler(async (event) => {
   res.setHeader('Content-Type', 'text/event-stream')
   res.flushHeaders?.()
   let counter = 0
+  // Use 8 threads for consistent performance in background processes
   const speedtest = spawn('speedtest', ['-f', 'jsonl', '--accept-license', '--threads=8'])
   speedtest.stdout.on('data', async (data) => {
     res.write(`id: ${++counter}\n`)

@@ -4,7 +4,6 @@ export default defineNitroPlugin(async () => {
   const results: Map<string, BandwidthResult[]> = new Map()
   const interfaces = await getInterfaces()
   if (!interfaces?.length) {
-    console.warn('No interfaces configured in NUXT_SNMP_INTERFACES')
     return
   }
 

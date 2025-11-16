@@ -37,12 +37,13 @@ async function walk(oid: string, handler: (index: number, value: any, oid?: stri
   const session = getDeviceSession()
   return new Promise((resolve, reject) => {
     session.subtree(oid, (varbinds) => {
-      const vb = Array.isArray(varbinds) ? varbinds[0] : varbinds
-      if (!vb?.oid)
-        return
-      const idx = Number(vb.oid.split('.').pop())
-      if (Number.isFinite(idx))
-        handler(idx, vb.value, vb.oid)
+      for (const vb of Array.isArray(varbinds) ? varbinds : [varbinds]) {
+        if (!vb.oid)
+          return
+        const idx = Number(vb.oid.split('.').pop())
+        if (Number.isFinite(idx))
+          handler(idx, vb.value, vb.oid)
+      }
     }, err => (err ? reject(err) : resolve()))
   })
 }
@@ -52,17 +53,19 @@ async function getIpAddresses(): Promise<Record<number, string>> {
   const session = getDeviceSession()
   return new Promise((resolve, reject) => {
     session.subtree(OIDS.ipAdEntIfIndex, (varbinds) => {
-      const vb = Array.isArray(varbinds) ? varbinds[0] : varbinds
-      if (!vb?.oid)
-        return
-      const ip = vb.oid.split('.').slice(-4).join('.')
-      const ifIndex = Number(vb.value)
-      if (ip && ifIndex)
-        ipMap[ifIndex] = ip
+      for (const vb of Array.isArray(varbinds) ? varbinds : [varbinds]) {
+        if (!vb.oid)
+          return
+        if (!vb?.oid)
+          return
+        const ip = vb.oid.split('.').slice(-4).join('.')
+        const ifIndex = Number(vb.value)
+        if (ip && ifIndex)
+          ipMap[ifIndex] = ip
+      }
     }, err => (err ? reject(err) : resolve(ipMap)))
   })
 }
-
 export async function getInterfaces(): Promise<DeviceInterface[] | null> {
   const now = Date.now()
   if (INTERFACES_INFO && now - CACHE_TIMESTAMP < CACHE_TTL)
@@ -94,7 +97,6 @@ export async function getInterfaces(): Promise<DeviceInterface[] | null> {
         data[i].speed = Number(v)
       }),
     ])
-
     const ipMap = await getIpAddresses()
     const all = Object.values(data)
       .filter(i => i.name)
@@ -102,7 +104,6 @@ export async function getInterfaces(): Promise<DeviceInterface[] | null> {
         ...i,
         ip: ipMap[i.index!],
       })) as DeviceInterface[]
-
     const filtered = INTERFACES.length ? all.filter(i => INTERFACES.includes(i.name)) : all
     INTERFACES_INFO = filtered
     CACHE_TIMESTAMP = now

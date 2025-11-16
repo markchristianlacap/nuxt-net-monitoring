@@ -24,7 +24,10 @@ async function retry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T>
 
 export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
   return retry(() => new Promise((resolve, reject) => {
-    const process = spawn('speedtest', ['-f', 'json', '--accept-license', '-L'])
+    const process = spawn('speedtest', ['-f', 'json', '--accept-license', '-L'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      detached: true,
+    })
     let output = ''
     let stderr = ''
 
@@ -48,7 +51,10 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
 
 export async function runSpeedtest(): Promise<SpeedtestResult> {
   return retry(() => new Promise((resolve, reject) => {
-    const process = spawn('speedtest', ['-f', 'jsonl', '--accept-license'])
+    const process = spawn('speedtest', ['-f', 'json', '--accept-license'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      detached: true,
+    })
     let output = ''
     let stderr = ''
 

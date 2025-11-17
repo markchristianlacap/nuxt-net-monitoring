@@ -1,7 +1,10 @@
 import { db } from '../db'
 
 export default defineNitroPlugin(async () => {
-  runEveryHour(async () => {
+  const config = useRuntimeConfig()
+  const frequencySeconds = Number.parseInt(config.SPEEDTEST_FREQUENCY || '3600', 10)
+
+  runEveryInterval(frequencySeconds, async () => {
     const res = await runSpeedtest()
     await db.insertInto('speedtest_results').values({
       download: res.download.bandwidth,

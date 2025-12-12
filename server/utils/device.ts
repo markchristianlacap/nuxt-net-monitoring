@@ -24,6 +24,7 @@ export function getDeviceSession(): snmp.Session {
   if (!SESSION) {
     SESSION = snmp.createSession(HOST, COMMUNITY, {
       version: snmp.Version2c,
+      retries: 10,
     })
   }
   return SESSION

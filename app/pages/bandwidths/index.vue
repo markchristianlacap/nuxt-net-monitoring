@@ -1,69 +1,35 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { createIdColumn, createTimestampColumn } from '~/composables/useTableColumns'
+import { DATA_COLORS, TABLE_CLASSES } from '~/constants/tableStyles'
 
-const route = useRoute()
-const today = new Date()
-today.setHours(0, 0, 0, 0)
-const end = new Date()
-end.setHours(23, 59, 59, 999)
-const query = reactive({
-  page: Number(route.query.page) || 1,
-  limit: Number(route.query.limit) || 10,
-  start: (route.query.start as string | null) || today.toISOString(),
-  end: (route.query.end as string | null) || end.toISOString(),
-})
+const { query, downloadCSV, isDownloading } = useDataTable('bandwidths', 'bandwidths.csv')
+
+// Override default pagination limit
+query.limit = Number(useRoute().query.limit) || 10
 
 const { data } = await useFetch('/api/bandwidths', {
   query,
 })
 
 const columns: TableColumn<any>[] = [
-  { accessorKey: 'id', header: '#', cell: ({ row }) => `#${row.getValue('id')}` },
-  {
-    accessorKey: 'timestamp',
-    header: 'Date',
-    cell: ({ row }) =>
-      new Date(row.getValue('timestamp')).toLocaleString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }),
-  },
+  createIdColumn(),
+  createTimestampColumn(),
   { accessorKey: 'host', header: 'Host' },
   { accessorKey: 'interface', header: 'Interface' },
   {
     accessorKey: 'inMbps',
     header: () => h('div', { class: 'text-right' }, 'Download (Mbps)'),
     cell: ({ row }) =>
-      h('div', { class: 'text-right font-medium text-blue-400' }, `${Number(row.getValue('inMbps')).toFixed(2)}`),
+      h('div', { class: `text-right font-medium ${DATA_COLORS.in}` }, `${Number(row.getValue('inMbps')).toFixed(2)}`),
   },
   {
     accessorKey: 'outMbps',
     header: () => h('div', { class: 'text-right' }, 'Upload (Mbps)'),
     cell: ({ row }) =>
-      h('div', { class: 'text-right font-medium text-rose-400' }, `${Number(row.getValue('outMbps')).toFixed(2)}`),
+      h('div', { class: `text-right font-medium ${DATA_COLORS.out}` }, `${Number(row.getValue('outMbps')).toFixed(2)}`),
   },
 ]
-
-function download() {
-  let url = '/api/bandwidths/download'
-  const params = []
-  if (query.start)
-    params.push(`start=${query.start}`)
-  if (query.end)
-    params.push(`end=${query.end}`)
-  if (params.length)
-    url += `?${params.join('&')}`
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'bandwidths.csv'
-  a.click()
-}
-watch(query, () => {
-  navigateTo({ query })
-}, { deep: true })
 </script>
 
 <template>
@@ -75,7 +41,14 @@ watch(query, () => {
         </h2>
         <div class="flex gap-2 w-full sm:w-auto">
           <common-date-range v-model:start="query.start" v-model:end="query.end" />
-          <UButton color="neutral" variant="subtle" icon="i-lucide-download" @click="download" />
+          <UButton 
+            color="neutral" 
+            variant="subtle" 
+            icon="i-lucide-download" 
+            :loading="isDownloading"
+            :disabled="isDownloading"
+            @click="downloadCSV" 
+          />
         </div>
       </div>
 
@@ -85,7 +58,8 @@ watch(query, () => {
         <u-table
           :data="data?.data"
           :columns="columns"
-          class="rounded-2xl overflow-hidden border border-slate-700/40 bg-slate-900/50 min-w-[600px]"
+          class="min-w-[600px]"
+          :class="TABLE_CLASSES"
         />
       </div>
 

@@ -20,7 +20,13 @@ export default defineEventHandler((event: H3Event) => {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
-  const [username, password] = Buffer.from(auth.split(' ')[1], 'base64')
+  const authParts = auth.split(' ')
+  if (authParts.length !== 2 || !authParts[1]) {
+    setHeader(event, 'WWW-Authenticate', 'Basic realm="Protected"')
+    throw createError({ statusCode: 401, statusMessage: 'Invalid authorization header' })
+  }
+
+  const [username, password] = Buffer.from(authParts[1], 'base64')
     .toString()
     .split(':')
 

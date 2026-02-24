@@ -4,7 +4,7 @@ import snmp from 'net-snmp'
 const config = useRuntimeConfig()
 const HOST = config.SNMP_HOST
 const COMMUNITY = config.SNMP_COMMUNITY
-const INTERFACES = config.SNMP_INTERFACES?.split(',').map(i => i.trim()) || []
+const INTERFACES = config.SNMP_INTERFACES?.split(',').map((i: string) => i.trim()) || []
 
 // SNMP OIDs used for interface data
 const OIDS = {
@@ -56,8 +56,6 @@ async function getIpAddresses(): Promise<Record<number, string>> {
     session.subtree(OIDS.ipAdEntIfIndex, (varbinds) => {
       for (const vb of Array.isArray(varbinds) ? varbinds : [varbinds]) {
         if (!vb.oid)
-          return
-        if (!vb?.oid)
           return
         const ip = vb.oid.split('.').slice(-4).join('.')
         const ifIndex = Number(vb.value)

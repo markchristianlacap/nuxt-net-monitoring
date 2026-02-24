@@ -10,20 +10,28 @@ export default defineEventHandler(async (event) => {
   let counter = 0
   const speedtest = spawn('speedtest', ['-f', 'jsonl', '--accept-license'])
   speedtest.stdout.on('data', async (data) => {
-    res.write(`id: ${++counter}\n`)
-    res.write(`data: ${data.toString()}\n\n`)
-    const payload = JSON.parse(data.toString())
-    if (payload.type === 'result') {
-      const result = payload as SpeedtestResult
-      await db.insertInto('speedtest_results').values({
-        download: result.download.bandwidth,
-        upload: result.upload.bandwidth,
-        latency: result.ping.latency,
-        ip: result.server.ip,
-        isp: result.isp,
-        timestamp: new Date().toISOString(),
-        url: result.result.url,
-      }).execute()
+    try {
+      res.write(`id: ${++counter}\n`)
+      res.write(`data: ${data.toString()}\n\n`)
+
+      const payload = JSON.parse(data.toString())
+      if (payload.type === 'result') {
+        const result = payload as SpeedtestResult
+        await db.insertInto('speedtest_results').values({
+          download: result.download.bandwidth,
+          upload: result.upload.bandwidth,
+          latency: result.ping.latency,
+          ip: result.server.ip,
+          isp: result.isp,
+          timestamp: new Date().toISOString(),
+          url: result.result.url,
+        }).execute()
+      }
+    }
+    catch (error) {
+      console.error('Error processing speedtest data:', error)
+      res.write(`id: ${++counter}\n`)
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to process data' })}\n\n`)
     }
   })
 

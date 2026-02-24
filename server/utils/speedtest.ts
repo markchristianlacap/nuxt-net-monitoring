@@ -13,13 +13,16 @@ async function retry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T>
       return await fn()
     }
     catch (err) {
-      if (attempt < retries - 1)
+      if (attempt < retries - 1) {
         await delay(RETRY_DELAY_MS * 2 ** attempt)
-      else
+      }
+      else {
         throw err
+      }
     }
   }
-  throw new Error('Retry failed')
+  // This should never be reached, but TypeScript requires it
+  throw new Error('Max retries exceeded')
 }
 
 export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {

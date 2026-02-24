@@ -9,7 +9,7 @@ export default defineNitroPlugin(async () => {
 
   async function saveAverage(iface: string) {
     const records = results.get(iface)
-    if (!records)
+    if (!records?.length)
       return
     const avgIn = records.reduce((a, b) => a + b.inMbps, 0) / records.length
     const avgOut = records.reduce((a, b) => a + b.outMbps, 0) / records.length
@@ -18,7 +18,7 @@ export default defineNitroPlugin(async () => {
       outMbps: avgOut,
       timestamp: new Date().toISOString(),
       interface: iface,
-      host: records[0].host,
+      host: records[0]!.host,
     }).execute()
     results.set(iface, [])
   }

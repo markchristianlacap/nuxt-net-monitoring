@@ -38,7 +38,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 * **Live Streaming**: Server-sent events (SSE) for real-time data updates without page refresh
 
 ### Speed Test Integration
-* **Automated Testing**: Scheduled speed tests every hour
+* **Automated Testing**: Scheduled speed tests with configurable frequency (default: every hour)
 * **Manual Testing**: On-demand speed tests with live progress visualization
 * **Real-Time Results**: Live streaming of download/upload speeds during execution
 * **Direct Integration**: Uses official Ookla Speedtest CLI with retry logic
@@ -100,6 +100,11 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
    # Ping Targets
    NUXT_PING_HOST=8.8.8.8,1.1.1.1
+
+   # Speed Test Configuration
+   # Frequency in seconds (default: 3600 = 1 hour)
+   # Examples: 1800 = 30 minutes, 3600 = 1 hour, 7200 = 2 hours
+   NUXT_SPEEDTEST_FREQUENCY=3600
 
    # Database Configuration
    NUXT_DB_PORT=5432
@@ -185,6 +190,11 @@ For development or custom setups, you can install and run the application manual
 
    # Ping Targets
    NUXT_PING_HOST=8.8.8.8,1.1.1.1
+
+   # Speed Test Configuration
+   # Frequency in seconds (default: 3600 = 1 hour)
+   # Examples: 1800 = 30 minutes, 3600 = 1 hour, 7200 = 2 hours
+   NUXT_SPEEDTEST_FREQUENCY=3600
 
    # PostgreSQL Database
    NUXT_DB_HOST=localhost
@@ -318,6 +328,25 @@ NUXT_PING_HOST=8.8.8.8,1.1.1.1,google.com,192.168.1.1
 
 Features: Independent monitoring per host, color-coded visualization, individual statistics, overall summary with total/online/offline hosts.
 
+### Speed Test Frequency
+
+Configure the frequency of automated speed tests in your `.env` file:
+
+```env
+# Speed Test Configuration
+# Frequency in seconds (default: 3600 = 1 hour)
+NUXT_SPEEDTEST_FREQUENCY=3600
+```
+
+**Common Frequency Values:**
+- `1800` = 30 minutes
+- `3600` = 1 hour (default)
+- `7200` = 2 hours
+- `14400` = 4 hours
+- `86400` = 24 hours (once per day)
+
+The speed test will automatically run at the specified interval. You can still trigger manual speed tests at any time via the web interface.
+
 ---
 
 ## ⚙️ Tech Stack
@@ -369,7 +398,8 @@ The application runs three background monitoring processes via Nitro plugins:
    - Stores 60-second averages in `bandwidths` table with interface identification
 
 3. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
-   - Runs Ookla Speedtest CLI every hour using `runEveryHour` timing helper
+   - Runs Ookla Speedtest CLI at configurable intervals using `runEveryInterval` timing helper
+   - Frequency configured via `NUXT_SPEEDTEST_FREQUENCY` environment variable (default: 3600 seconds/1 hour)
    - Executes `speedtest -f jsonl --accept-license` command
    - Implements retry logic with exponential backoff (3 attempts, 1s base delay)
    - Parses JSONL output to extract final result object

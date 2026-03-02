@@ -48,3 +48,7 @@ export function runEveryMinute(task: () => Promise<void>) {
     return next.getTime() - now.getTime()
   }, task)
 }
+
+export function runEveryInterval(intervalSeconds: number, task: () => Promise<void>) {
+  scheduleTask(() => intervalSeconds * 1000, task)
+}

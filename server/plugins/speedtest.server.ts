@@ -10,7 +10,7 @@ export default defineNitroPlugin(async () => {
       download: res.download.bandwidth,
       upload: res.upload.bandwidth,
       latency: res.ping.latency,
-      ip: res.server.ip,
+      ip: res.interface.externalIp,
       isp: res.isp,
       timestamp: new Date().toISOString(),
       url: res.result.url,

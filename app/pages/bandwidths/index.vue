@@ -41,13 +41,13 @@ const columns: TableColumn<any>[] = [
         </h2>
         <div class="flex gap-2 w-full sm:w-auto">
           <common-date-range v-model:start="query.start" v-model:end="query.end" />
-          <UButton 
-            color="neutral" 
-            variant="subtle" 
-            icon="i-lucide-download" 
+          <UButton
+            color="neutral"
+            variant="subtle"
+            icon="i-lucide-download"
             :loading="isDownloading"
             :disabled="isDownloading"
-            @click="downloadCSV" 
+            @click="downloadCSV"
           />
         </div>
       </div>

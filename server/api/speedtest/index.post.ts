@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
           download: result.download.bandwidth,
           upload: result.upload.bandwidth,
           latency: result.ping.latency,
-          ip: result.server.ip,
+          ip: result.interface.externalIp,
           isp: result.isp,
           timestamp: new Date().toISOString(),
           url: result.result.url,

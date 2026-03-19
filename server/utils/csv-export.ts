@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { setHeader, createError } from 'h3'
+import { createError, setHeader } from 'h3'
 
 export interface CsvExportOptions<T = any> {
   filename: string
@@ -54,22 +54,25 @@ export function exportToCsv<T = any>(
       try {
         const values = options.formatRow(row)
         // Escape CSV values and wrap in quotes to handle commas and special characters
-        const escapedValues = values.map(value => {
-          if (value === null || value === undefined) return '""'
+        const escapedValues = values.map((value) => {
+          if (value === null || value === undefined)
+            return '""'
           const stringValue = String(value).replace(/"/g, '""') // Escape quotes
           return `"${stringValue}"`
         })
         event.node.res.write(`${escapedValues.join(',')}\n`)
-      } catch (rowError) {
+      }
+      catch (rowError) {
         console.error(`Error formatting CSV row ${index}:`, rowError)
         // Skip malformed rows instead of failing the entire export
       }
     })
 
     event.node.res.end()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('CSV export error:', error)
-    
+
     // Only send error response if headers haven't been sent yet
     if (!event.node.res.headersSent) {
       throw createError({

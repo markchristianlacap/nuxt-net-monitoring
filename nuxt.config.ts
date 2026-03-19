@@ -55,4 +55,14 @@ export default defineNuxtConfig({
     preference: 'dark',
     fallback: 'dark',
   },
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        '@internationalized/date',
+      ],
+    },
+  },
+
 })

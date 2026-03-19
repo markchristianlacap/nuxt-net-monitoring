@@ -40,7 +40,8 @@ export function useDataTable(apiEndpoint: string, csvFilename: string) {
    */
   function downloadCSV() {
     // Prevent multiple downloads
-    if (isDownloading.value) return
+    if (isDownloading.value)
+      return
 
     // Clear any existing timeout
     if (downloadTimeout) {
@@ -69,9 +70,11 @@ export function useDataTable(apiEndpoint: string, csvFilename: string) {
 
         // Clean up the element
         a.remove()
-      } catch (error) {
+      }
+      catch (error) {
         console.error('CSV download failed:', error)
-      } finally {
+      }
+      finally {
         // Reset loading state after a delay to prevent rapid re-clicks
         setTimeout(() => {
           isDownloading.value = false

@@ -28,7 +28,8 @@ export default defineEventHandler(async (event) => {
     })
 
     // Note: exportToCsv handles the response, so we don't return anything
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Bandwidth CSV export error:', error)
     throw createError({
       statusCode: 500,

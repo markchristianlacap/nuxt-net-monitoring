@@ -23,6 +23,7 @@ logs
 .env.*
 !.env.example
 !.env.docker.example
+network.config.json
 
 # local database
 *.db

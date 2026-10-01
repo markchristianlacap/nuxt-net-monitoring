@@ -1,6 +1,6 @@
 # Build Stage 1
 
-FROM node:lts-bullseye AS build
+FROM node:lts-bookworm AS build
 WORKDIR /app
 
 # Install dependencies

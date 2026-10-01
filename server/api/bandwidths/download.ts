@@ -17,8 +17,9 @@ export default defineEventHandler(async (event) => {
 
     exportToCsv(event, result, {
       filename: 'bandwidths.csv',
-      headers: ['host', 'interface', 'inMbps', 'outMbps', 'timestamp'],
+      headers: ['displayName', 'host', 'interface', 'inMbps', 'outMbps', 'timestamp'],
       formatRow: row => [
+        row.displayName || row.host || '',
         row.host || '',
         row.interface || '',
         row.inMbps?.toString() || '0',

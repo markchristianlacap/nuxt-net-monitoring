@@ -23,6 +23,7 @@ export interface PingTable {
 export interface BandwidthTable {
   id: Generated<number>
   host: string
+  displayName: string | null
   interface: string
   inMbps: number
   outMbps: number

@@ -1,13 +1,18 @@
+import type { SnmpDeviceConfig } from './network-config'
 import { Buffer } from 'node:buffer'
 import snmp from 'net-snmp'
 import { getNetworkConfig } from './network-config'
 
-const { snmp: snmpConfig } = getNetworkConfig()
-const HOST = snmpConfig.host
-const COMMUNITY = snmpConfig.community
-const INTERFACES = snmpConfig.interfaces.map(i => i.trim()).filter(Boolean)
+interface DeviceContext {
+  config: SnmpDeviceConfig
+  displayName: string
+  session: snmp.Session
+  sessionClosed: boolean
+  interfaces: DeviceInterface[] | null
+  cacheTimestamp: number
+  bandwidthState: Map<number, { inBytes: bigint, outBytes: bigint, time: number }>
+}
 
-// SNMP OIDs used for interface data
 const OIDS = {
   ifIndex: '1.3.6.1.2.1.2.2.1.1',
   ifName: '1.3.6.1.2.1.31.1.1.1.1',
@@ -19,45 +24,81 @@ const OIDS = {
   ipAdEntIfIndex: '1.3.6.1.2.1.4.20.1.2',
 }
 
-let SESSION: snmp.Session | null = null
+const contexts = new Map<string, DeviceContext>()
 
-export function getDeviceSession(): snmp.Session {
-  if (!SESSION) {
-    SESSION = snmp.createSession(HOST, COMMUNITY, {
-      version: snmp.Version2c,
-      retries: 10,
-    })
-  }
-  return SESSION
+function createSession(context: DeviceContext): snmp.Session {
+  const session = snmp.createSession(context.config.host, context.config.community, {
+    version: snmp.Version2c,
+    timeout: 1_000,
+    retries: 1,
+  })
+  context.sessionClosed = false
+  session.on('close', () => {
+    context.sessionClosed = true
+    invalidateDeviceState(context)
+  })
+  session.on('error', (error) => {
+    console.error(`SNMP session error (${context.config.host}):`, error)
+  })
+  return session
 }
 
-const CACHE_TTL = 30_000
-let INTERFACES_INFO: DeviceInterface[] | null = null
-let CACHE_TIMESTAMP = 0
+function invalidateDeviceState(context: DeviceContext) {
+  context.interfaces = null
+  context.cacheTimestamp = 0
+  context.bandwidthState.clear()
+}
 
-async function walk(oid: string, handler: (index: number, value: any, oid?: string) => void): Promise<void> {
-  const session = getDeviceSession()
+function getDeviceContext(config: SnmpDeviceConfig): DeviceContext {
+  const key = config.host.trim().toLowerCase()
+  let context = contexts.get(key)
+  if (!context) {
+    context = {
+      config,
+      displayName: config.displayName?.trim() || config.host,
+      session: undefined as unknown as snmp.Session,
+      sessionClosed: false,
+      interfaces: null,
+      cacheTimestamp: 0,
+      bandwidthState: new Map(),
+    }
+    context.session = createSession(context)
+    contexts.set(key, context)
+  }
+  else {
+    context.config = config
+    context.displayName = config.displayName?.trim() || config.host
+    if (context.sessionClosed)
+      context.session = createSession(context)
+  }
+  return context
+}
+
+function getContexts(): DeviceContext[] {
+  return getNetworkConfig().snmp.devices.map(getDeviceContext)
+}
+
+function walk(context: DeviceContext, oid: string, handler: (index: number, value: any) => void): Promise<void> {
   return new Promise((resolve, reject) => {
-    session.subtree(oid, (varbinds) => {
+    context.session.subtree(oid, (varbinds) => {
       for (const vb of Array.isArray(varbinds) ? varbinds : [varbinds]) {
         if (!vb.oid)
-          return
-        const idx = Number(vb.oid.split('.').pop())
-        if (Number.isFinite(idx))
-          handler(idx, vb.value, vb.oid)
+          continue
+        const index = Number(vb.oid.split('.').pop())
+        if (Number.isFinite(index))
+          handler(index, vb.value)
       }
     }, err => (err ? reject(err) : resolve()))
   })
 }
 
-async function getIpAddresses(): Promise<Record<number, string>> {
+async function getIpAddresses(context: DeviceContext): Promise<Record<number, string>> {
   const ipMap: Record<number, string> = {}
-  const session = getDeviceSession()
   return new Promise((resolve, reject) => {
-    session.subtree(OIDS.ipAdEntIfIndex, (varbinds) => {
+    context.session.subtree(OIDS.ipAdEntIfIndex, (varbinds) => {
       for (const vb of Array.isArray(varbinds) ? varbinds : [varbinds]) {
         if (!vb.oid)
-          return
+          continue
         const ip = vb.oid.split('.').slice(-4).join('.')
         const ifIndex = Number(vb.value)
         if (ip && ifIndex)
@@ -66,56 +107,69 @@ async function getIpAddresses(): Promise<Record<number, string>> {
     }, err => (err ? reject(err) : resolve(ipMap)))
   })
 }
-export async function getInterfaces(): Promise<DeviceInterface[] | null> {
+
+async function getDeviceInterfaces(context: DeviceContext): Promise<DeviceInterface[]> {
   const now = Date.now()
-  if (INTERFACES_INFO && now - CACHE_TIMESTAMP < CACHE_TTL)
-    return INTERFACES_INFO
+  if (context.interfaces && now - context.cacheTimestamp < 30_000)
+    return context.interfaces
 
   const data: Record<number, Partial<DeviceInterface>> = {}
-  try {
-    await Promise.all([
-      walk(OIDS.ifIndex, (i, v) => (data[i] = { index: Number(v) })),
-      walk(OIDS.ifName, (i, v) => {
-        if (!data[i])
-          data[i] = {}
-        data[i].name = v.toString()
-      }),
-      walk(OIDS.ifDescr, (i, v) => {
-        if (!data[i])
-          data[i] = {}
-        data[i].description = v.toString()
-      }),
-      walk(OIDS.ifOperStatus, (i, v) => {
-        if (!data[i])
-          data[i] = {}
-        const map: Record<number, DeviceInterface['status']> = { 1: 'up', 2: 'down', 3: 'testing' }
-        data[i].status = map[v as number] || 'unknown'
-      }),
-      walk(OIDS.ifSpeed, (i, v) => {
-        if (!data[i])
-          data[i] = {}
-        data[i].speed = Number(v)
-      }),
-    ])
-    const ipMap = await getIpAddresses()
-    const all = Object.values(data)
-      .filter(i => i.name)
-      .map(i => ({
-        ...i,
-        ip: ipMap[i.index!],
-      })) as DeviceInterface[]
-    const filtered = INTERFACES.length ? all.filter(i => INTERFACES.includes(i.name)) : all
-    INTERFACES_INFO = filtered
-    CACHE_TIMESTAMP = now
-    return filtered
-  }
-  catch (e) {
-    console.error('getInterfaces error:', e)
-    return null
-  }
+  await Promise.all([
+    walk(context, OIDS.ifIndex, (index, value) => {
+      data[index] ??= {}
+      data[index].index = Number(value)
+    }),
+    walk(context, OIDS.ifName, (index, value) => {
+      data[index] ??= {}
+      data[index].name = value.toString()
+    }),
+    walk(context, OIDS.ifDescr, (index, value) => {
+      data[index] ??= {}
+      data[index].description = value.toString()
+    }),
+    walk(context, OIDS.ifOperStatus, (index, value) => {
+      data[index] ??= {}
+      const statusMap: Record<number, DeviceInterface['status']> = { 1: 'up', 2: 'down', 3: 'testing' }
+      data[index].status = statusMap[value as number] || 'unknown'
+    }),
+    walk(context, OIDS.ifSpeed, (index, value) => {
+      data[index] ??= {}
+      data[index].speed = Number(value)
+    }),
+  ])
+
+  const ipMap = await getIpAddresses(context)
+  const filter = context.config.interfaces?.map(name => name.trim()).filter(Boolean) ?? []
+  context.interfaces = Object.values(data)
+    .filter((iface): iface is Partial<DeviceInterface> & { index: number, name: string } => !!iface.name && iface.index !== undefined)
+    .map(iface => ({
+      host: context.config.host,
+      displayName: context.displayName,
+      index: iface.index,
+      name: iface.name,
+      description: iface.description ?? '',
+      status: iface.status ?? 'unknown',
+      speed: iface.speed ?? 0,
+      ip: ipMap[iface.index] ?? '',
+    }))
+    .filter(iface => filter.length === 0 || filter.includes(iface.name))
+  context.cacheTimestamp = now
+  return context.interfaces
 }
 
-const BANDWIDTH_STATE: Record<string, { inBytes: bigint, outBytes: bigint, time: number }> = {}
+export async function getInterfaces(): Promise<DeviceInterface[]> {
+  const results = await Promise.all(getContexts().map(async (context) => {
+    try {
+      return await getDeviceInterfaces(context)
+    }
+    catch (error) {
+      invalidateDeviceState(context)
+      console.error(`getInterfaces(${context.config.host}) error:`, error)
+      return []
+    }
+  }))
+  return results.flat()
+}
 
 function bufferToUint64(buf: Buffer): bigint {
   if (!Buffer.isBuffer(buf))
@@ -125,13 +179,12 @@ function bufferToUint64(buf: Buffer): bigint {
   return buf.readBigUint64BE(0)
 }
 
-async function snmpGet(oids: string[]): Promise<{ inBytes: bigint, outBytes: bigint }> {
-  const session = getDeviceSession()
+function snmpGet(context: DeviceContext, oids: string[]): Promise<{ inBytes: bigint, outBytes: bigint }> {
   return new Promise((resolve, reject) => {
-    session.get(oids, (err, vbs) => {
-      if (err || !Array.isArray(vbs))
+    context.session.get(oids, (err, varbinds) => {
+      if (err || !Array.isArray(varbinds))
         return reject(err || new Error('Invalid SNMP response'))
-      const bytes = vbs.map((vb) => {
+      const bytes = varbinds.map((vb) => {
         if (!vb?.value)
           return 0n
         if (vb.value instanceof Buffer)
@@ -143,49 +196,50 @@ async function snmpGet(oids: string[]): Promise<{ inBytes: bigint, outBytes: big
           return 0n
         }
       })
-      const inBytes = bytes[0] ?? 0n
-      const outBytes = bytes[1] ?? 0n
-      resolve({ inBytes, outBytes })
+      resolve({ inBytes: bytes[0] ?? 0n, outBytes: bytes[1] ?? 0n })
     })
   })
 }
 
-export async function getBandwidth(iface: string): Promise<BandwidthResult | null> {
-  try {
-    const index = INTERFACES_INFO?.find(i => i.name === iface)?.index
-    if (!index)
-      throw new Error(`Interface ${iface} not found`)
+export async function getBandwidth(host: string, iface: string): Promise<BandwidthResult | null> {
+  const context = getContexts().find(device => device.config.host.trim().toLowerCase() === host.trim().toLowerCase())
+  if (!context)
+    return null
 
-    const { inBytes, outBytes } = await snmpGet([
+  try {
+    const deviceInterfaces = await getDeviceInterfaces(context)
+    const index = deviceInterfaces.find(deviceInterface => deviceInterface.name === iface)?.index
+    if (index === undefined)
+      throw new Error(`Interface ${iface} not found on ${host}`)
+
+    const { inBytes, outBytes } = await snmpGet(context, [
       `${OIDS.ifHCIn}.${index}`,
       `${OIDS.ifHCOut}.${index}`,
     ])
-
     const now = Date.now()
+    const previous = context.bandwidthState.get(index)
+    context.bandwidthState.set(index, { inBytes, outBytes, time: now })
+    if (!previous)
+      return null
 
-    const prev = BANDWIDTH_STATE[iface]
-    if (!prev) {
-      BANDWIDTH_STATE[iface] = { inBytes, outBytes, time: now }
-      return null // first read → no diff yet
-    }
-
-    const timeDiff = (now - prev.time) / 1000
-    const diffIn = inBytes - prev.inBytes
-    const diffOut = outBytes - prev.outBytes
+    const timeDiff = (now - previous.time) / 1000
+    const diffIn = inBytes - previous.inBytes
+    const diffOut = outBytes - previous.outBytes
     const validIn = diffIn >= 0n ? diffIn : inBytes
     const validOut = diffOut >= 0n ? diffOut : outBytes
-    BANDWIDTH_STATE[iface] = { inBytes, outBytes, time: now }
 
     return {
-      host: HOST,
+      host: context.config.host,
+      displayName: context.displayName,
       interface: iface,
       inMbps: Number(validIn * 8n) / (timeDiff * 1_000_000),
       outMbps: Number(validOut * 8n) / (timeDiff * 1_000_000),
       timestamp: new Date(now).toISOString(),
     }
   }
-  catch (e) {
-    console.error(`getBandwidth(${iface}) error:`, e)
+  catch (error) {
+    invalidateDeviceState(context)
+    console.error(`getBandwidth(${host}, ${iface}) error:`, error)
     return null
   }
 }

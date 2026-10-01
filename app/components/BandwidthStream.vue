@@ -1,5 +1,7 @@
 <script setup lang="ts">
 interface InterfaceStats {
+  host: string
+  displayName: string
   timestamps: number[]
   inData: number[]
   outData: number[]
@@ -17,8 +19,16 @@ const interfaceInfo = await useFetch('/api/interfaces')
 const interfaces = ref<Map<string, InterfaceStats>>(new Map())
 const maxPoints = 50
 let eventSource: EventSource | null = null
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let reconnectAttempt = 0
+let streamActive = false
 
 const colorPalette = [...chartBaseColors].sort(() => Math.random() - 0.5)
+
+function getInterfaceLabel(stats: InterfaceStats) {
+  const device = stats.displayName !== stats.host ? `${stats.displayName} (${stats.host})` : stats.host
+  return `${device} / ${stats.name}`
+}
 
 const summary = computed(() => {
   const ifaceList = Array.from(interfaces.value.values())
@@ -61,7 +71,7 @@ const option = computed<ECOption>(() => {
       },
     },
     legend: {
-      data: ifaceList.flatMap(([iface]) => [`${iface} 📥 Download`, `${iface} 📤 Upload`]),
+      data: ifaceList.flatMap(([, stats]) => [`${getInterfaceLabel(stats)} 📥 Download`, `${getInterfaceLabel(stats)} 📤 Upload`]),
       textStyle: { color: '#94a3b8', fontWeight: 500 },
       top: 10,
     },
@@ -75,14 +85,14 @@ const option = computed<ECOption>(() => {
       splitLine: { lineStyle: { color: '#334155' } },
       axisLabel: { color: '#cbd5e1', fontSize: 11 },
     },
-    series: ifaceList.flatMap(([iface, stats], index) => {
+    series: ifaceList.flatMap(([, stats], index) => {
       const colorIndex = index % colorPalette.length
       const colors = colorPalette[colorIndex] ?? colorPalette[0]!
       const inSeries = stats.timestamps.map((t, i) => [t, stats.inData[i]])
       const outSeries = stats.timestamps.map((t, i) => [t, stats.outData[i]])
       return [
         {
-          name: `${iface} 📥 Download`,
+          name: `${getInterfaceLabel(stats)} 📥 Download`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -91,7 +101,7 @@ const option = computed<ECOption>(() => {
           areaStyle: { color: colors.area },
         },
         {
-          name: `${iface} 📤 Upload`,
+          name: `${getInterfaceLabel(stats)} 📤 Upload`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -104,23 +114,41 @@ const option = computed<ECOption>(() => {
   }
 })
 
-function startStream() {
-  if (eventSource)
-    eventSource.close()
-  interfaces.value.clear()
-
+function connectStream() {
+  if (!streamActive)
+    return
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+  eventSource?.close()
   eventSource = new EventSource('/api/bandwidths/stream')
+  eventSource.onopen = () => {
+    reconnectAttempt = 0
+  }
   eventSource.onmessage = (evt) => {
-    const data = JSON.parse(evt.data)
+    let data: BandwidthResult
+    try {
+      data = JSON.parse(evt.data)
+    }
+    catch (error) {
+      console.error('Invalid bandwidth stream message:', error)
+      return
+    }
     const iface = data.interface
-    if (!interfaces.value.has(iface)) {
-      const info = interfaceInfo.data.value?.filter(i => i.name === iface)?.[0] || {
+    const key = `${data.host}\u0000${iface}`
+    if (!interfaces.value.has(key)) {
+      const info = interfaceInfo.data.value?.find(i => i.host === data.host && i.name === iface) || {
+        host: data.host,
+        displayName: data.displayName || data.host,
         name: iface,
         speed: 0,
         ip: '',
         status: 'unknown',
       }
-      interfaces.value.set(iface, {
+      interfaces.value.set(key, {
+        host: data.host,
+        displayName: data.displayName || info.displayName || data.host,
         timestamps: [],
         inData: [],
         outData: [],
@@ -134,7 +162,7 @@ function startStream() {
         status: info.status,
       })
     }
-    const stats = interfaces.value.get(iface)!
+    const stats = interfaces.value.get(key)!
     const timestamp = new Date(data.timestamp).getTime()
     const inMbps = Math.round(data.inMbps * 100) / 100
     const outMbps = Math.round(data.outMbps * 100) / 100
@@ -155,11 +183,39 @@ function startStream() {
     interfaces.value = new Map(interfaces.value)
   }
 
-  eventSource.onerror = () => console.warn('SSE disconnected')
+  eventSource.onerror = () => {
+    eventSource?.close()
+    eventSource = null
+    if (!streamActive || reconnectTimer)
+      return
+
+    const delay = Math.min(1_000 * 2 ** reconnectAttempt, 30_000)
+    reconnectAttempt++
+    reconnectTimer = setTimeout(connectStream, delay)
+  }
 }
 
-onMounted(startStream)
-onBeforeUnmount(() => eventSource?.close())
+function startStream() {
+  streamActive = true
+  connectStream()
+}
+
+function reconnectWhenOnline() {
+  reconnectAttempt = 0
+  connectStream()
+}
+
+onMounted(() => {
+  startStream()
+  window.addEventListener('online', reconnectWhenOnline)
+})
+onBeforeUnmount(() => {
+  streamActive = false
+  window.removeEventListener('online', reconnectWhenOnline)
+  if (reconnectTimer)
+    clearTimeout(reconnectTimer)
+  eventSource?.close()
+})
 </script>
 
 <template>
@@ -175,10 +231,13 @@ onBeforeUnmount(() => eventSource?.close())
     </div>
     <!-- Interface Cards -->
     <div v-if="interfaces.size > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-      <div v-for="([iface, stats], index) in Array.from(interfaces.entries())" :key="iface" class="flex flex-col bg-slate-800/60 px-4 py-3 rounded-xl shadow-md border border-slate-700">
+      <div v-for="([key, stats], index) in Array.from(interfaces.entries())" :key="key" class="flex flex-col bg-slate-800/60 px-4 py-3 rounded-xl shadow-md border border-slate-700">
         <div class="flex items-center gap-2 mb-2">
           <span class="text-xl">📡</span>
-          <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="text-slate-200 font-semibold text-sm truncate">{{ iface }}</span>
+          <div class="min-w-0">
+            <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="text-slate-200 font-semibold text-sm truncate">{{ getInterfaceLabel(stats) }}</span>
+            <span v-if="stats.displayName !== stats.host" class="block text-slate-500 text-xs truncate">{{ stats.host }}</span>
+          </div>
           <span class="text-slate-400 text-xs font-medium">
             Status:
           </span>

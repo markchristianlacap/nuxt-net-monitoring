@@ -1,5 +1,6 @@
 export interface BandwidthResult {
   host: string
+  displayName: string
   interface: string
   inMbps: number
   outMbps: number
@@ -7,6 +8,8 @@ export interface BandwidthResult {
 }
 
 export interface DeviceInterface {
+  host: string
+  displayName: string
   index: number
   name: string
   description: string

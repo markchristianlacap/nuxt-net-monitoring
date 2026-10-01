@@ -34,21 +34,25 @@ const option = computed<ECOption>(() => {
     }
   }
 
-  // Group data by interface
-  const interfaceMap = new Map<string, Array<{ time: number, download: number, upload: number }>>()
+  // Group by device host and interface so duplicate interface names stay distinct.
+  const interfaceMap = new Map<string, { label: string, data: Array<{ time: number, download: number, upload: number }> }>()
   chartData.value.forEach((item: any) => {
-    const iface = item.interface || item.host
+    const key = `${item.host}\u0000${item.interface}`
+    const deviceLabel = item.displayName && item.displayName !== item.host
+      ? `${item.displayName} (${item.host})`
+      : item.host
+    const label = `${deviceLabel} / ${item.interface || item.host}`
     const time = new Date(item.time_bucket).getTime()
     const download = Number(item.avg_download)
     const upload = Number(item.avg_upload)
 
-    if (!interfaceMap.has(iface)) {
-      interfaceMap.set(iface, [])
+    if (!interfaceMap.has(key)) {
+      interfaceMap.set(key, { label, data: [] })
     }
-    interfaceMap.get(iface)!.push({ time, download, upload })
+    interfaceMap.get(key)!.data.push({ time, download, upload })
   })
 
-  const interfaces = Array.from(interfaceMap.entries())
+  const interfaces = Array.from(interfaceMap.values())
 
   return {
     backgroundColor: 'transparent',
@@ -73,7 +77,7 @@ const option = computed<ECOption>(() => {
       },
     },
     legend: {
-      data: interfaces.flatMap(([iface]) => [`${iface} 📥 Download`, `${iface} 📤 Upload`]),
+      data: interfaces.flatMap(({ label }) => [`${label} 📥 Download`, `${label} 📤 Upload`]),
       textStyle: { color: '#94a3b8', fontWeight: 500 },
       top: 10,
     },
@@ -98,7 +102,7 @@ const option = computed<ECOption>(() => {
       splitLine: { lineStyle: { color: '#334155' } },
       axisLabel: { color: '#cbd5e1', fontSize: 11 },
     },
-    series: interfaces.flatMap(([iface, data], index) => {
+    series: interfaces.flatMap(({ label, data }, index) => {
       const colorIndex = index % colorPalette.length
       const colors = colorPalette[colorIndex] ?? colorPalette[0]!
 
@@ -107,7 +111,7 @@ const option = computed<ECOption>(() => {
 
       return [
         {
-          name: `${iface} 📥 Download`,
+          name: `${label} 📥 Download`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -121,7 +125,7 @@ const option = computed<ECOption>(() => {
           },
         },
         {
-          name: `${iface} 📤 Upload`,
+          name: `${label} 📤 Upload`,
           type: 'line',
           showSymbol: false,
           smooth: true,

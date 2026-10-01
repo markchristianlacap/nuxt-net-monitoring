@@ -1,8 +1,18 @@
 {
   "snmp": {
-    "host": "192.168.1.1",
-    "community": "your-snmp-community-string",
-    "interfaces": ["eth0", "eth1"]
+    "devices": [
+      {
+        "host": "192.168.1.1",
+        "displayName": "Main Router",
+        "community": "your-snmp-community-string",
+        "interfaces": ["eth0", "eth1"]
+      },
+      {
+        "host": "192.168.1.2",
+        "community": "your-snmp-community-string",
+        "interfaces": []
+      }
+    ]
   },
   "ping": {
     "hosts": ["8.8.8.8", "1.1.1.1"]

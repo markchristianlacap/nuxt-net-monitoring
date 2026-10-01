@@ -4,9 +4,7 @@ import process from 'node:process'
 
 export interface NetworkConfig {
   snmp: {
-    host: string
-    community: string
-    interfaces: string[]
+    devices: SnmpDeviceConfig[]
   }
   ping: {
     hosts: string[]
@@ -14,6 +12,13 @@ export interface NetworkConfig {
   speedtest: {
     frequencySeconds: number
   }
+}
+
+export interface SnmpDeviceConfig {
+  host: string
+  community: string
+  displayName?: string
+  interfaces?: string[]
 }
 
 let networkConfig: NetworkConfig | undefined
@@ -38,10 +43,20 @@ export function getNetworkConfig(): NetworkConfig {
   const config = parsed as Partial<NetworkConfig>
   if (
     !config.snmp
-    || typeof config.snmp.host !== 'string'
-    || typeof config.snmp.community !== 'string'
-    || !Array.isArray(config.snmp.interfaces)
-    || !config.snmp.interfaces.every(value => typeof value === 'string')
+    || !Array.isArray(config.snmp.devices)
+    || config.snmp.devices.length === 0
+    || !config.snmp.devices.every(device => (
+      !!device
+      && typeof device.host === 'string'
+      && device.host.trim().length > 0
+      && typeof device.community === 'string'
+      && device.community.trim().length > 0
+      && (device.displayName === undefined || typeof device.displayName === 'string')
+      && (device.interfaces === undefined || (
+        Array.isArray(device.interfaces)
+        && device.interfaces.every(value => typeof value === 'string')
+      ))
+    ))
     || !config.ping
     || !Array.isArray(config.ping.hosts)
     || !config.ping.hosts.every(value => typeof value === 'string')
@@ -52,6 +67,10 @@ export function getNetworkConfig(): NetworkConfig {
   ) {
     throw new TypeError(`${configPath} has an invalid structure; see network.config.example.json`)
   }
+
+  const hosts = config.snmp.devices.map(device => device.host.trim().toLowerCase())
+  if (new Set(hosts).size !== hosts.length)
+    throw new TypeError(`${configPath} cannot contain duplicate SNMP device hosts`)
 
   networkConfig = config as NetworkConfig
   return networkConfig

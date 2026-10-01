@@ -8,13 +8,14 @@ export default defineEventHandler(async (event) => {
     .select([
       sql<string>`DATE_TRUNC('hour', timestamp)`.as('time_bucket'),
       'host',
+      'displayName',
       'interface',
       sql<number>`AVG("inMbps")`.as('avg_download'),
       sql<number>`AVG("outMbps")`.as('avg_upload'),
       sql<number>`MAX("inMbps")`.as('max_download'),
       sql<number>`MAX("outMbps")`.as('max_upload'),
     ])
-    .groupBy(['time_bucket', 'host', 'interface'])
+    .groupBy(['time_bucket', 'host', 'displayName', 'interface'])
     .orderBy('time_bucket', 'asc')
 
   baseQuery = applyDateRangeFilter(baseQuery, query)

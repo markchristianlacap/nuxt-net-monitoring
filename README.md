@@ -17,7 +17,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
   - [Manual Installation](#manual-installation)
 - [Usage](#-usage)
 - [Configuration](#-configuration)
-  - [SNMP Interface Setup](#snmp-interface-configuration)
+  - [SNMP Device and Interface Configuration](#snmp-device-and-interface-configuration)
   - [Multiple Ping Hosts](#multiple-ping-hosts)
 - [Tech Stack](#️-tech-stack)
 - [Architecture](#️-architecture)
@@ -272,21 +272,33 @@ The homepage displays real-time monitoring with two tabs:
 
 ## 🔧 Configuration
 
-### SNMP Interface Configuration
+### SNMP Device and Interface Configuration
 
 **Compatible with pfSense and OPNsense firewalls** - both use standard SNMP v2c protocol.
 
-Configure the SNMP target and interfaces in `network.config.json`:
+Configure one or more SNMP devices in `network.config.json`. Each device can have an optional display name and its own interface filter. Omit `interfaces` or set it to an empty array to monitor all interfaces:
 
 ```json
 {
   "snmp": {
-    "host": "192.168.1.1",
-    "community": "your-snmp-community-string",
-    "interfaces": ["eth0", "eth1"]
+    "devices": [
+      {
+        "host": "192.168.1.1",
+        "displayName": "Main Router",
+        "community": "your-snmp-community-string",
+        "interfaces": ["eth0", "eth1"]
+      },
+      {
+        "host": "192.168.1.2",
+        "community": "another-community-string",
+        "interfaces": ["wan"]
+      }
+    ]
   }
 }
 ```
+
+`displayName` is optional; when omitted, the device host is used. `network.config.json` must use the `snmp.devices` structure.
 
 **SNMP OIDs Used:**
 - Interface Index: `1.3.6.1.2.1.2.2.1.1`
@@ -312,10 +324,10 @@ snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.31.1.1.1.1
 ```
 
 **Interface Selection:**
-- Specify interface names in the `snmp.interfaces` array to monitor specific interfaces
+- Specify interface names in each `snmp.devices[].interfaces` array to monitor specific interfaces on that device
 - Common names: `eth0`, `eth1`, `em0`, `igb0`, `lan`, `wan`
 
-The application automatically handles 64-bit counter values, converts to Mbps, maintains separate tracking per interface, and provides color-coded visualization.
+The application automatically handles 64-bit counter values, converts to Mbps, maintains separate tracking per device/interface pair, and provides color-coded visualization. Interfaces with the same name on different devices remain distinct.
 
 ### Multiple Ping Hosts
 
@@ -394,13 +406,13 @@ The application runs three background monitoring processes via Nitro plugins:
 2. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
    - Uses precise timing helper (`runEverySecond`) for consistent 1-second intervals
    - Auto-discovers and caches interface information for 30 seconds
-   - Monitors **multiple interfaces** configured in `network.config.json`'s `snmp.interfaces` array
-   - Queries SNMP device using net-snmp library with session management
+   - Monitors interfaces configured for every device in `network.config.json`'s `snmp.devices` array
+   - Queries each SNMP device using an independent net-snmp session
    - Reads 64-bit interface counters (ifHCIn/ifHCOut) via SNMP OIDs
    - Calculates bandwidth delta between readings (handles counter wraparound)
    - Converts bytes to Mbps: `(bytes * 8) / (timeDiff * 1,000,000)`
    - Streams real-time bandwidth data via events to frontend
-   - Stores 60-second averages in `bandwidths` table with interface identification
+   - Stores 60-second averages in `bandwidths` table with host, display name, and interface identification
 
 3. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
    - Runs Ookla Speedtest CLI at configurable intervals using `runEveryInterval` timing helper
@@ -445,7 +457,7 @@ This approach provides real-time monitoring responsiveness while efficiently man
 All data is stored in PostgreSQL using Kysely ORM:
 
 - **pings**: `id`, `host`, `status`, `latency`, `timestamp`
-- **bandwidths**: `id`, `host`, `interface`, `inMbps`, `outMbps`, `timestamp`
+- **bandwidths**: `id`, `host`, `displayName`, `interface`, `inMbps`, `outMbps`, `timestamp`
 - **speedtest_results**: `id`, `download`, `upload`, `latency`, `isp`, `ip`, `url`, `timestamp`
 
 ---

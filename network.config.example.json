@@ -1,0 +1,13 @@
+{
+  "snmp": {
+    "host": "192.168.1.1",
+    "community": "your-snmp-community-string",
+    "interfaces": ["eth0", "eth1"]
+  },
+  "ping": {
+    "hosts": ["8.8.8.8", "1.1.1.1"]
+  },
+  "speedtest": {
+    "frequencySeconds": 3600
+  }
+}

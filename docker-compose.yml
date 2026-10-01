@@ -28,6 +28,8 @@ services:
       - '3000:3000'
     env_file:
       - .env.docker
+    volumes:
+      - ./network.config.json:/app/network.config.json:ro
     environment:
       # Override DB_HOST to use the postgres service name
       NUXT_DB_HOST: postgres

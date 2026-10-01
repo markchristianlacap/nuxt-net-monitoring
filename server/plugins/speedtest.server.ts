@@ -1,8 +1,8 @@
 import { db } from '../db'
+import { getNetworkConfig } from '../utils/network-config'
 
 export default defineNitroPlugin(async () => {
-  const config = useRuntimeConfig()
-  const frequencySeconds = Number.parseInt(config.SPEEDTEST_FREQUENCY || '3600', 10)
+  const { frequencySeconds } = getNetworkConfig().speedtest
 
   runEveryInterval(frequencySeconds, async () => {
     const res = await runSpeedtest()

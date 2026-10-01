@@ -33,8 +33,8 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 ## 🎯 Features
 
 ### Real-Time Monitoring
-* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals. Supports multiple hosts via comma-separated `NUXT_PING_HOST`. Each host runs in its own process. Live data streamed via SSE, 60-second averages saved to database
-* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic. Supports multiple interfaces via comma-separated `NUXT_SNMP_INTERFACES`. Auto-discovers interface details, monitors 64-bit counters. Data collected every second, averaged and saved every 60 seconds
+* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals. Supports multiple hosts configured in `network.config.json`. Each host runs in its own process. Live data streamed via SSE, 60-second averages saved to database
+* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic. Supports multiple interfaces configured in `network.config.json`. Auto-discovers interface details, monitors 64-bit counters. Data collected every second, averaged and saved every 60 seconds
 * **Live Streaming**: Server-sent events (SSE) for real-time data updates without page refresh
 
 ### Speed Test Integration
@@ -86,26 +86,31 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
 2. **Configure Environment Variables**
 
-   Create a `.env.docker` file from the example:
+   Create the database/auth environment file and network settings file from the examples:
    ```bash
    cp .env.docker.example .env.docker
+   cp network.config.example.json network.config.json
    ```
 
-   Edit `.env.docker` with your configuration:
+   Edit `network.config.json` with your SNMP, ping, and speedtest settings. For example:
+   ```json
+   {
+     "snmp": {
+       "host": "192.168.1.1",
+       "community": "your-snmp-community-string",
+       "interfaces": ["eth0", "eth1"]
+     },
+     "ping": {
+       "hosts": ["8.8.8.8", "1.1.1.1"]
+     },
+     "speedtest": {
+       "frequencySeconds": 3600
+     }
+   }
+   ```
+
+   Edit `.env.docker` with your database and Basic Auth credentials:
    ```env
-   # SNMP Configuration must be v2c
-   NUXT_SNMP_HOST=192.168.1.1
-   NUXT_SNMP_COMMUNITY=your-snmp-community-string
-   NUXT_SNMP_INTERFACES=eth0,eth1
-
-   # Ping Targets
-   NUXT_PING_HOST=8.8.8.8,1.1.1.1
-
-   # Speed Test Configuration
-   # Frequency in seconds (default: 3600 = 1 hour)
-   # Examples: 1800 = 30 minutes, 3600 = 1 hour, 7200 = 2 hours
-   NUXT_SPEEDTEST_FREQUENCY=3600
-
    # Database Configuration
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
@@ -117,7 +122,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
    NUXT_PASS=your-secure-password
    ```
 
-   > **Note**: `NUXT_DB_HOST` is automatically set to `postgres` in docker-compose.yml.
+   > **Note**: `NUXT_DB_HOST` is automatically set to `postgres` in docker-compose.yml. Network settings are read from `network.config.json`.
 
 3. **Start the Application**
    ```bash
@@ -176,26 +181,14 @@ For development or custom setups, you can install and run the application manual
 
 3. **Configure Environment Variables**
 
-   Create a `.env` file:
+   Create the `.env` and network configuration files:
    ```bash
    cp .env.example .env
+   cp network.config.example.json network.config.json
    ```
 
-   Edit `.env` with your configuration:
+   Configure `network.config.json` as shown above, then edit `.env` with database and Basic Auth credentials:
    ```env
-   # SNMP Configuration must be v2c
-   NUXT_SNMP_COMMUNITY=your-snmp-community-string
-   NUXT_SNMP_HOST=192.168.1.1
-   NUXT_SNMP_INTERFACES=eth0,eth1
-
-   # Ping Targets
-   NUXT_PING_HOST=8.8.8.8,1.1.1.1
-
-   # Speed Test Configuration
-   # Frequency in seconds (default: 3600 = 1 hour)
-   # Examples: 1800 = 30 minutes, 3600 = 1 hour, 7200 = 2 hours
-   NUXT_SPEEDTEST_FREQUENCY=3600
-
    # PostgreSQL Database
    NUXT_DB_HOST=localhost
    NUXT_DB_PORT=5432
@@ -283,10 +276,16 @@ The homepage displays real-time monitoring with two tabs:
 
 **Compatible with pfSense and OPNsense firewalls** - both use standard SNMP v2c protocol.
 
-Configure interfaces in your `.env` file:
+Configure the SNMP target and interfaces in `network.config.json`:
 
-```env
-NUXT_SNMP_INTERFACES=eth0,eth1  # Monitor specific interfaces (comma-separated)
+```json
+{
+  "snmp": {
+    "host": "192.168.1.1",
+    "community": "your-snmp-community-string",
+    "interfaces": ["eth0", "eth1"]
+  }
+}
 ```
 
 **SNMP OIDs Used:**
@@ -313,29 +312,35 @@ snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.31.1.1.1.1
 ```
 
 **Interface Selection:**
-- Specify interface names (comma-separated) to monitor specific interfaces
+- Specify interface names in the `snmp.interfaces` array to monitor specific interfaces
 - Common names: `eth0`, `eth1`, `em0`, `igb0`, `lan`, `wan`
 
 The application automatically handles 64-bit counter values, converts to Mbps, maintains separate tracking per interface, and provides color-coded visualization.
 
 ### Multiple Ping Hosts
 
-Configure multiple hosts in your `.env` file:
+Configure multiple hosts in the `ping.hosts` array in `network.config.json`:
 
-```env
-NUXT_PING_HOST=8.8.8.8,1.1.1.1,google.com,192.168.1.1
+```json
+{
+  "ping": {
+    "hosts": ["8.8.8.8", "1.1.1.1", "google.com", "192.168.1.1"]
+  }
+}
 ```
 
 Features: Independent monitoring per host, color-coded visualization, individual statistics, overall summary with total/online/offline hosts.
 
 ### Speed Test Frequency
 
-Configure the frequency of automated speed tests in your `.env` file:
+Configure the frequency of automated speed tests in `network.config.json`:
 
-```env
-# Speed Test Configuration
-# Frequency in seconds (default: 3600 = 1 hour)
-NUXT_SPEEDTEST_FREQUENCY=3600
+```json
+{
+  "speedtest": {
+    "frequencySeconds": 3600
+  }
+}
 ```
 
 **Common Frequency Values:**
@@ -378,7 +383,7 @@ The application runs three background monitoring processes via Nitro plugins:
 
 1. **Ping Monitor** (`server/plugins/ping.server.ts`)
    - Spawns independent `ping` processes for **each configured host** on server startup
-   - Monitors all hosts in `NUXT_PING_HOST` (comma-separated) with 1-second intervals
+   - Monitors all hosts in `network.config.json`'s `ping.hosts` array with 1-second intervals
    - Each host runs in its own child process with separate stdout monitoring
    - Parses latency from ping output using regex pattern matching (`time=([\d.]+) ms`)
    - Streams real-time data via events system and SSE to frontend
@@ -389,7 +394,7 @@ The application runs three background monitoring processes via Nitro plugins:
 2. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
    - Uses precise timing helper (`runEverySecond`) for consistent 1-second intervals
    - Auto-discovers and caches interface information for 30 seconds
-   - Monitors **multiple interfaces** configured in `NUXT_SNMP_INTERFACES` (comma-separated)
+   - Monitors **multiple interfaces** configured in `network.config.json`'s `snmp.interfaces` array
    - Queries SNMP device using net-snmp library with session management
    - Reads 64-bit interface counters (ifHCIn/ifHCOut) via SNMP OIDs
    - Calculates bandwidth delta between readings (handles counter wraparound)
@@ -399,7 +404,7 @@ The application runs three background monitoring processes via Nitro plugins:
 
 3. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
    - Runs Ookla Speedtest CLI at configurable intervals using `runEveryInterval` timing helper
-   - Frequency configured via `NUXT_SPEEDTEST_FREQUENCY` environment variable (default: 3600 seconds/1 hour)
+   - Frequency configured via `network.config.json`'s `speedtest.frequencySeconds` (default: 3600 seconds/1 hour)
    - Executes `speedtest -f jsonl --accept-license` command
    - Implements retry logic with exponential backoff (3 attempts, 1s base delay)
    - Parses JSONL output to extract final result object

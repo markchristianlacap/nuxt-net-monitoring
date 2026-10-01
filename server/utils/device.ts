@@ -1,10 +1,11 @@
 import { Buffer } from 'node:buffer'
 import snmp from 'net-snmp'
+import { getNetworkConfig } from './network-config'
 
-const config = useRuntimeConfig()
-const HOST = config.SNMP_HOST
-const COMMUNITY = config.SNMP_COMMUNITY
-const INTERFACES = config.SNMP_INTERFACES?.split(',').map((i: string) => i.trim()) || []
+const { snmp: snmpConfig } = getNetworkConfig()
+const HOST = snmpConfig.host
+const COMMUNITY = snmpConfig.community
+const INTERFACES = snmpConfig.interfaces.map(i => i.trim()).filter(Boolean)
 
 // SNMP OIDs used for interface data
 const OIDS = {

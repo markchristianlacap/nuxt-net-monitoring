@@ -1,13 +1,12 @@
 import { spawn } from 'node:child_process'
 import { db } from '../db'
+import { getNetworkConfig } from '../utils/network-config'
 
 export default defineNitroPlugin(async () => {
-  const config = useRuntimeConfig()
-  const pingHostsConfig = config.PING_HOST
-  const hosts = pingHostsConfig.split(',').map(h => h.trim()).filter(Boolean)
+  const hosts = getNetworkConfig().ping.hosts.map(host => host.trim()).filter(Boolean)
 
   if (hosts.length === 0) {
-    console.warn('No ping hosts configured in NUXT_PING_HOST')
+    console.warn('No ping hosts configured in network.config.json')
     return
   }
 

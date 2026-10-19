@@ -18,14 +18,18 @@ export function createTimestampColumn<T extends { timestamp: string }>(): TableC
   return {
     accessorKey: 'timestamp',
     header: 'Date',
-    cell: ({ row }) =>
-      new Date(row.getValue('timestamp')).toLocaleString('en-US', {
-        day: 'numeric',
-        month: 'short',
+    cell: ({ row }) => {
+      const date = new Date(row.getValue('timestamp'))
+      return `${date.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
         hour12: true,
-      }),
+      })} ${date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })}`
+    },
   }
 }
 

@@ -44,15 +44,18 @@ useSeoMeta({
   twitterImage: 'https://ui.nuxt.com/assets/templates/nuxt/starter-light.png',
   twitterCard: 'summary_large_image',
 })
+useHead({
+  link: [
+    { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' },
+  ],
+})
 </script>
 
 <template>
   <UApp>
-    <UHeader v-if="!isAuthPage">
+    <UHeader v-if="!isAuthPage" :title="title">
       <template #title>
-        <div class="text-primary">
-          {{ title }}
-        </div>
+        <BrandLogo :title="title" />
       </template>
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />

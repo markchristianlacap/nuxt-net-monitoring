@@ -63,6 +63,7 @@ async function saveSettings() {
         },
       },
     })
+    await refreshNuxtData('app-features')
     await navigateTo('/')
   }
   catch (error: any) {

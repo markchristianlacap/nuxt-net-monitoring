@@ -6,7 +6,9 @@ const description = 'Nuxt Net Monitoring - Real-time Latency Monitor, PfSense, a
 
 const route = useRoute()
 const isAuthPage = computed(() => ['/login', '/setup'].includes(route.path))
-const { data: featureData } = await useFetch<{ features: { ping: boolean, bandwidth: boolean, speedtest: boolean } }>('/api/features')
+const { data: featureData } = await useFetch<{ features: { ping: boolean, bandwidth: boolean, speedtest: boolean } }>('/api/features', {
+  key: 'app-features',
+})
 
 const items = computed<NavigationMenuItem[]>(() => {
   const features = featureData.value?.features

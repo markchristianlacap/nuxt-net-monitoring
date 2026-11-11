@@ -1,5 +1,3 @@
-import type { Kysely, SelectQueryBuilder } from 'kysely'
-
 export interface PaginationParams {
   page?: number
   limit?: number
@@ -13,19 +11,19 @@ export interface PaginatedResult<T> {
   totalPages: number
 }
 
-export async function paginate<T, DB>(
-  db: Kysely<DB>,
-  query: SelectQueryBuilder<DB, any, T>,
+export async function paginate<T>(
+  queries: {
+    fetchData: (limit: number, offset: number) => Promise<T[]>
+    fetchTotal: () => Promise<{ total: number }[]>
+  },
   { page = 1, limit = 10 }: PaginationParams,
 ): Promise<PaginatedResult<T>> {
   const offset = (page - 1) * limit
-  const { count } = await query
-    .clearSelect()
-    .clearOrderBy()
-    .select(db.fn.countAll().as('count'))
-    .executeTakeFirst() as { count: number }
-  const data = await query.limit(limit).offset(offset).execute()
-  const total = Number(count)
+  const [data, countResult] = await Promise.all([
+    queries.fetchData(limit, offset),
+    queries.fetchTotal(),
+  ])
+  const total = Number(countResult[0]?.total ?? 0)
   const totalPages = Math.ceil(total / limit)
 
   return { data, total, page, limit, totalPages }

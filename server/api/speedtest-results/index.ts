@@ -1,17 +1,20 @@
+import { and, count, desc } from 'drizzle-orm'
 import { db } from '~~/server/db'
+import { speedtestResults } from '~~/server/db/schema/speedtest-results'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const page = Number(query.page) || 1
   const limit = Number(query.limit) || 10
 
-  let baseQuery = db.selectFrom('speedtest_results')
-    .selectAll()
-    .orderBy('timestamp', 'desc')
+  const where = and(...dateRangeConditions(speedtestResults.timestamp, query))
 
-  baseQuery = applyDateRangeFilter(baseQuery, query)
-
-  const result = await paginate(db, baseQuery, { page, limit })
+  const result = await paginate({
+    fetchData: (pageLimit, offset) => db.select().from(speedtestResults).where(where).orderBy(desc(speedtestResults.timestamp)).limit(pageLimit).offset(offset),
+    fetchTotal: () => db.select({
+      total: count(),
+    }).from(speedtestResults).where(where),
+  }, { page, limit })
 
   return result
 })

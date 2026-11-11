@@ -26,7 +26,9 @@ let streamActive = false
 const colorPalette = [...chartBaseColors].sort(() => Math.random() - 0.5)
 
 function getInterfaceLabel(stats: InterfaceStats) {
-  const device = stats.displayName !== stats.host ? `${stats.displayName} (${stats.host})` : stats.host
+  const device = stats.displayName !== stats.host
+    ? `${stats.displayName} (${stats.host})`
+    : stats.host
   return `${device} / ${stats.name}`
 }
 
@@ -46,7 +48,12 @@ const option = computed<ECOption>(() => {
   if (ifaceList.length === 0) {
     return {
       backgroundColor: 'transparent',
-      title: { text: 'Waiting for bandwidth data...', left: 'center', top: 'middle', textStyle: { color: '#94a3b8' } },
+      title: {
+        text: 'Waiting for bandwidth data...',
+        left: 'center',
+        top: 'middle',
+        textStyle: { color: '#94a3b8' },
+      },
     }
   }
 
@@ -75,14 +82,28 @@ const option = computed<ECOption>(() => {
       textStyle: { color: '#94a3b8', fontWeight: 500 },
       top: 10,
     },
-    grid: { top: 60, left: 50, right: 20, bottom: 40 },
-    xAxis: { type: 'time', axisLine: { lineStyle: { color: '#475569' } } },
+    grid: {
+      top: 60,
+      left: 50,
+      right: 20,
+      bottom: 40,
+    },
+    xAxis: {
+      type: 'time',
+      axisLine: {
+        lineStyle: { color: '#475569' },
+      },
+    },
     yAxis: {
       type: 'value',
       name: 'MB/s',
       nameTextStyle: { color: '#cbd5e1' },
-      axisLine: { lineStyle: { color: '#475569' } },
-      splitLine: { lineStyle: { color: '#334155' } },
+      axisLine: {
+        lineStyle: { color: '#475569' },
+      },
+      splitLine: {
+        lineStyle: { color: '#334155' },
+      },
       axisLabel: { color: '#cbd5e1', fontSize: 11 },
     },
     series: ifaceList.flatMap(([, stats], index) => {
@@ -107,7 +128,9 @@ const option = computed<ECOption>(() => {
           smooth: true,
           data: outSeries,
           lineStyle: { width: 3, color: colors.secondary },
-          areaStyle: { color: colors.area.replace('0.25', '0') },
+          areaStyle: {
+            color: colors.area.replace('0.25', '0'),
+          },
         },
       ]
     }),

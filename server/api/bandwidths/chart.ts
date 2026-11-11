@@ -1,26 +1,27 @@
-import { sql } from 'kysely'
+import { and, asc, max, sql } from 'drizzle-orm'
 import { db } from '~~/server/db'
+import { bandwidths } from '~~/server/db/schema/bandwidths'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
-  let baseQuery = db.selectFrom('bandwidths')
-    .select([
-      sql<string>`DATE_TRUNC('hour', timestamp)`.as('time_bucket'),
-      'host',
-      'displayName',
-      'interface',
-      sql<number>`AVG("inMbps")`.as('avg_download'),
-      sql<number>`AVG("outMbps")`.as('avg_upload'),
-      sql<number>`MAX("inMbps")`.as('max_download'),
-      sql<number>`MAX("outMbps")`.as('max_upload'),
-    ])
-    .groupBy(['time_bucket', 'host', 'displayName', 'interface'])
-    .orderBy('time_bucket', 'asc')
+  const timeBucket = sql<Date>`DATE_TRUNC('hour', ${bandwidths.timestamp})`
+  const where = and(...dateRangeConditions(bandwidths.timestamp, query))
 
-  baseQuery = applyDateRangeFilter(baseQuery, query)
-
-  const data = await baseQuery.execute()
+  const data = await db.select({
+    time_bucket: timeBucket,
+    host: bandwidths.host,
+    displayName: bandwidths.displayName,
+    interface: bandwidths.interface,
+    avg_download: sql<number | null>`AVG(${bandwidths.inMbps})`,
+    avg_upload: sql<number | null>`AVG(${bandwidths.outMbps})`,
+    max_download: max(bandwidths.inMbps),
+    max_upload: max(bandwidths.outMbps),
+  })
+    .from(bandwidths)
+    .where(where)
+    .groupBy(timeBucket, bandwidths.host, bandwidths.displayName, bandwidths.interface)
+    .orderBy(asc(timeBucket))
 
   return data
 })

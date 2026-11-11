@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { bandwidths } from '../db/schema/bandwidths'
 
 export default defineNitroPlugin(async () => {
   const results = new Map<string, BandwidthResult[]>()
@@ -12,14 +13,14 @@ export default defineNitroPlugin(async () => {
       return
     const avgIn = records.reduce((a, b) => a + b.inMbps, 0) / records.length
     const avgOut = records.reduce((a, b) => a + b.outMbps, 0) / records.length
-    await db.insertInto('bandwidths').values({
+    await db.insert(bandwidths).values({
       inMbps: avgIn,
       outMbps: avgOut,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       displayName: records[0]!.displayName,
       interface: iface,
       host: records[0]!.host,
-    }).execute()
+    })
     results.set(key, [])
   }
 

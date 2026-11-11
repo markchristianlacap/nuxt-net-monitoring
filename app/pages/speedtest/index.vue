@@ -14,7 +14,9 @@ const currentDownload = computed(() => downloads.value.at(-1) || 0)
 const currentUpload = computed(() => uploads.value.at(-1) || 0)
 
 function pushData(type: 'download' | 'upload', value: number) {
-  const arr = type === 'download' ? downloads.value : uploads.value
+  const arr = type === 'download'
+    ? downloads.value
+    : uploads.value
   arr.push(value)
   if (arr.length > maxPoints.value)
     arr.shift()
@@ -137,7 +139,12 @@ const option = computed(() => ({
     top: 40,
     textStyle: { color: '#e2e8f0', fontWeight: 500 },
   },
-  grid: { left: 40, right: 20, bottom: 30, top: 80 },
+  grid: {
+    left: 40,
+    right: 20,
+    bottom: 30,
+    top: 80,
+  },
   xAxis: {
     boundaryGap: false,
     show: false,
@@ -148,7 +155,9 @@ const option = computed(() => ({
     type: 'value',
     name: 'Mbps',
     axisLabel: { color: '#94a3b8' },
-    splitLine: { lineStyle: { color: '#334155' } },
+    splitLine: {
+      lineStyle: { color: '#334155' },
+    },
   },
   series: [
     {

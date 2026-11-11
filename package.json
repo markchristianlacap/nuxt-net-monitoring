@@ -8,14 +8,17 @@
     "dev": "nuxt dev",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.153",
     "@iconify-json/simple-icons": "^1.2.102",
+    "@internationalized/date": "^3.12.4",
     "@nuxt/ui": "^4.12.0",
-    "kysely": "^0.29.8",
+    "drizzle-orm": "^0.45.4",
     "net-snmp": "^3.29.2",
     "nuxt": "^4.6.4",
     "pg": "^8.23.1"
@@ -26,8 +29,9 @@
     "@types/net-snmp": "^3.23.0",
     "@types/node": "latest",
     "@types/pg": "^8.23.1",
+    "dotenv": "^18.0.10",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^10.14.0",
-    "kysely-ctl": "^0.22.0",
     "nuxt-echarts": "^1.1.0",
     "typescript": "6.0.3",
     "vue-tsc": "^3.3.14"

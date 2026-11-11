@@ -1,30 +1,32 @@
-import { sql } from 'kysely'
+import { and, asc, count, eq, max, min, sql } from 'drizzle-orm'
 import { db } from '~~/server/db'
+import { pings } from '~~/server/db/schema/pings'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const status = query.status as 'online' | 'offline' | null
 
-  let baseQuery = db.selectFrom('pings')
-    .select([
-      sql<string>`DATE_TRUNC('hour', timestamp)`.as('time_bucket'),
-      'host',
-      'status',
-      sql<number>`AVG(latency)`.as('avg_latency'),
-      sql<number>`MAX(latency)`.as('max_latency'),
-      sql<number>`MIN(latency)`.as('min_latency'),
-      sql<number>`COUNT(*)`.as('count'),
-    ])
-    .groupBy(['time_bucket', 'host', 'status'])
-    .orderBy('time_bucket', 'asc')
-
-  baseQuery = applyDateRangeFilter(baseQuery, query)
+  const timeBucket = sql<Date>`DATE_TRUNC('hour', ${pings.timestamp})`
+  const conditions = dateRangeConditions(pings.timestamp, query)
 
   if (status) {
-    baseQuery = baseQuery.where('status', '=', status)
+    conditions.push(eq(pings.status, status))
   }
+  const where = and(...conditions)
 
-  const data = await baseQuery.execute()
+  const data = await db.select({
+    time_bucket: timeBucket,
+    host: pings.host,
+    status: pings.status,
+    avg_latency: sql<number | null>`AVG(${pings.latency})`,
+    max_latency: max(pings.latency),
+    min_latency: min(pings.latency),
+    count: count(),
+  })
+    .from(pings)
+    .where(where)
+    .groupBy(timeBucket, pings.host, pings.status)
+    .orderBy(asc(timeBucket))
 
   return data
 })

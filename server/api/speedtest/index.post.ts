@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import { db } from '~~/server/db'
+import { speedtestResults } from '~~/server/db/schema/speedtest-results'
 
 export default defineEventHandler(async (event) => {
   const res = event.node.res
@@ -17,15 +18,15 @@ export default defineEventHandler(async (event) => {
       const payload = JSON.parse(data.toString())
       if (payload.type === 'result') {
         const result = payload as SpeedtestResult
-        await db.insertInto('speedtest_results').values({
+        await db.insert(speedtestResults).values({
           download: result.download.bandwidth,
           upload: result.upload.bandwidth,
           latency: result.ping.latency,
           ip: result.interface.externalIp,
           isp: result.isp,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date(),
           url: result.result.url,
-        }).execute()
+        })
       }
     }
     catch (error) {

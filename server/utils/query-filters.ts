@@ -1,4 +1,6 @@
-import type { SelectQueryBuilder } from 'kysely'
+import type { SQL } from 'drizzle-orm'
+import type { PgColumn } from 'drizzle-orm/pg-core'
+import { gte, lte } from 'drizzle-orm'
 
 export interface DateRangeQuery {
   start?: string
@@ -6,31 +8,27 @@ export interface DateRangeQuery {
 }
 
 /**
- * Apply date range filters to a query
- * @param query - The query builder to apply filters to
- * @param dateQuery - Object containing start and end date strings
- * @param timestampColumn - Name of the timestamp column (default: 'timestamp')
+ * Build timestamp predicates from optional date range query parameters.
  */
-export function applyDateRangeFilter<DB, TB extends keyof DB & string, O>(
-  query: SelectQueryBuilder<DB, TB, O>,
+export function dateRangeConditions(
+  timestampColumn: PgColumn,
   dateQuery: DateRangeQuery,
-  timestampColumn: string = 'timestamp',
-): SelectQueryBuilder<DB, TB, O> {
-  let filteredQuery = query
+): SQL[] {
+  const conditions: SQL[] = []
 
   if (dateQuery.start) {
     const start = new Date(dateQuery.start)
     if (!Number.isNaN(start.getTime())) {
-      filteredQuery = filteredQuery.where(timestampColumn as any, '>=', start as any)
+      conditions.push(gte(timestampColumn, start))
     }
   }
 
   if (dateQuery.end) {
     const end = new Date(dateQuery.end)
     if (!Number.isNaN(end.getTime())) {
-      filteredQuery = filteredQuery.where(timestampColumn as any, '<=', end as any)
+      conditions.push(lte(timestampColumn, end))
     }
   }
 
-  return filteredQuery
+  return conditions
 }

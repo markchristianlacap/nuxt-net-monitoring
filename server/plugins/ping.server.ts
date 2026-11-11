@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import { db } from '../db'
+import { pings as pingTable } from '../db/schema/pings'
 import { getNetworkConfig } from '../utils/network-config'
 
 export default defineNitroPlugin(async () => {
@@ -20,14 +21,16 @@ export default defineNitroPlugin(async () => {
       return
 
     const avgLatency = pings.reduce((a, b) => a + b.latency, 0) / pings.length
-    const status = avgLatency > 0 ? 'online' : 'offline'
+    const status = avgLatency > 0
+      ? 'online'
+      : 'offline'
 
-    await db.insertInto('pings').values({
+    await db.insert(pingTable).values({
       host,
       latency: Math.round(avgLatency * 100) / 100,
       status,
-      timestamp: new Date().toISOString(),
-    }).execute()
+      timestamp: new Date(),
+    })
     pingsPerHost.set(host, [])
   }
 
@@ -37,10 +40,14 @@ export default defineNitroPlugin(async () => {
 
     ping.stdout.on('data', async (data) => {
       const latencyMatch = data.toString().match(/time=([\d.]+) ms/)
-      const latency = latencyMatch ? Number.parseFloat(latencyMatch[1]) : 0
+      const latency = latencyMatch
+        ? Number.parseFloat(latencyMatch[1])
+        : 0
       const currentPing: PingResult = {
         host,
-        status: latency > 0 ? 'online' : 'offline',
+        status: latency > 0
+          ? 'online'
+          : 'offline',
         latency,
         timestamp: new Date().toISOString(),
       }

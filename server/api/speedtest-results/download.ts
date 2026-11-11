@@ -1,23 +1,33 @@
+import { and, desc } from 'drizzle-orm'
 import { db } from '~~/server/db'
+import { speedtestResults } from '~~/server/db/schema/speedtest-results'
 
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event)
 
-    let baseQuery = db.selectFrom('speedtest_results')
-      .selectAll()
-      .orderBy('timestamp', 'desc')
+    const where = and(...dateRangeConditions(speedtestResults.timestamp, {
+      start: query.start && query.start !== 'null'
+        ? query.start as string
+        : undefined,
+      end: query.end && query.end !== 'null'
+        ? query.end as string
+        : undefined,
+    }))
 
-    baseQuery = applyDateRangeFilter(baseQuery, {
-      start: query.start && query.start !== 'null' ? query.start as string : undefined,
-      end: query.end && query.end !== 'null' ? query.end as string : undefined,
-    })
-
-    const result = await baseQuery.execute()
+    const result = await db.select().from(speedtestResults).where(where).orderBy(desc(speedtestResults.timestamp))
 
     exportToCsv(event, result, {
       filename: 'speedtest-results.csv',
-      headers: ['isp', 'public_ip', 'download', 'upload', 'latency', 'timestamp', 'url'],
+      headers: [
+        'isp',
+        'public_ip',
+        'download',
+        'upload',
+        'latency',
+        'timestamp',
+        'url',
+      ],
       formatRow: row => [
         row.isp || '',
         row.ip || '',

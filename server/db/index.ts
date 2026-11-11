@@ -1,7 +1,7 @@
-import type { Database } from './types.js'
 import process from 'node:process'
-import { Kysely, PostgresDialect } from 'kysely'
+import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
+import * as schema from './schema/index.js'
 
 let host = process.env.NUXT_DB_HOST
 let user = process.env.NUXT_DB_USER
@@ -17,16 +17,12 @@ if (typeof useRuntimeConfig !== 'undefined') {
   port = config.DB_PORT
 }
 
-const dialect = new PostgresDialect({
-  pool: new Pool({
-    host,
-    user,
-    password,
-    database,
-    port: Number(port),
-  }),
+const pool = new Pool({
+  host,
+  user,
+  password,
+  database,
+  port: Number(port),
 })
 
-export const db = new Kysely<Database>({
-  dialect,
-})
+export const db = drizzle(pool, { schema })

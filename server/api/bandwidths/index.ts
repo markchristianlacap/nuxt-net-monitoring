@@ -1,17 +1,20 @@
+import { and, count, desc } from 'drizzle-orm'
 import { db } from '~~/server/db'
+import { bandwidths } from '~~/server/db/schema/bandwidths'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const page = Number(query.page) || 1
   const limit = Number(query.limit) || 10
 
-  let baseQuery = db.selectFrom('bandwidths')
-    .selectAll()
-    .orderBy('timestamp', 'desc')
+  const where = and(...dateRangeConditions(bandwidths.timestamp, query))
 
-  baseQuery = applyDateRangeFilter(baseQuery, query)
-
-  const result = await paginate(db, baseQuery, { page, limit })
+  const result = await paginate({
+    fetchData: (pageLimit, offset) => db.select().from(bandwidths).where(where).orderBy(desc(bandwidths.timestamp)).limit(pageLimit).offset(offset),
+    fetchTotal: () => db.select({
+      total: count(),
+    }).from(bandwidths).where(where),
+  }, { page, limit })
 
   return result
 })

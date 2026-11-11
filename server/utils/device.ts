@@ -81,14 +81,18 @@ function getContexts(): DeviceContext[] {
 function walk(context: DeviceContext, oid: string, handler: (index: number, value: any) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     context.session.subtree(oid, (varbinds) => {
-      for (const vb of Array.isArray(varbinds) ? varbinds : [varbinds]) {
+      for (const vb of Array.isArray(varbinds)
+        ? varbinds
+        : [varbinds]) {
         if (!vb.oid)
           continue
         const index = Number(vb.oid.split('.').pop())
         if (Number.isFinite(index))
           handler(index, vb.value)
       }
-    }, err => (err ? reject(err) : resolve()))
+    }, err => (err
+      ? reject(err)
+      : resolve()))
   })
 }
 
@@ -96,7 +100,9 @@ async function getIpAddresses(context: DeviceContext): Promise<Record<number, st
   const ipMap: Record<number, string> = {}
   return new Promise((resolve, reject) => {
     context.session.subtree(OIDS.ipAdEntIfIndex, (varbinds) => {
-      for (const vb of Array.isArray(varbinds) ? varbinds : [varbinds]) {
+      for (const vb of Array.isArray(varbinds)
+        ? varbinds
+        : [varbinds]) {
         if (!vb.oid)
           continue
         const ip = vb.oid.split('.').slice(-4).join('.')
@@ -104,7 +110,9 @@ async function getIpAddresses(context: DeviceContext): Promise<Record<number, st
         if (ip && ifIndex)
           ipMap[ifIndex] = ip
       }
-    }, err => (err ? reject(err) : resolve(ipMap)))
+    }, err => (err
+      ? reject(err)
+      : resolve(ipMap)))
   })
 }
 
@@ -174,8 +182,12 @@ export async function getInterfaces(): Promise<DeviceInterface[]> {
 function bufferToUint64(buf: Buffer): bigint {
   if (!Buffer.isBuffer(buf))
     return BigInt(buf)
-  if (buf.length < 8)
-    buf = Buffer.concat([Buffer.alloc(8 - buf.length), buf])
+  if (buf.length < 8) {
+    buf = Buffer.concat([
+      Buffer.alloc(8 - buf.length),
+      buf,
+    ])
+  }
   return buf.readBigUint64BE(0)
 }
 
@@ -225,8 +237,12 @@ export async function getBandwidth(host: string, iface: string): Promise<Bandwid
     const timeDiff = (now - previous.time) / 1000
     const diffIn = inBytes - previous.inBytes
     const diffOut = outBytes - previous.outBytes
-    const validIn = diffIn >= 0n ? diffIn : inBytes
-    const validOut = diffOut >= 0n ? diffOut : outBytes
+    const validIn = diffIn >= 0n
+      ? diffIn
+      : inBytes
+    const validOut = diffOut >= 0n
+      ? diffOut
+      : outBytes
 
     return {
       host: context.config.host,

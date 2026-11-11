@@ -62,7 +62,9 @@ const option = computed<ECOption>(() => {
         let content = `<div style="font-size:13px; line-height:1.8"><b>${timeStr}</b><br/>`
         params.forEach((param: any) => {
           if (param.data != null) {
-            const unit = param.seriesName.includes('Latency') ? ' ms' : ' Mbps'
+            const unit = param.seriesName.includes('Latency')
+              ? ' ms'
+              : ' Mbps'
             content += `${param.marker} ${param.seriesName}: <b style="color:${param.color}">${param.data[1].toFixed(2)}${unit}</b><br/>`
           }
         })
@@ -75,10 +77,17 @@ const option = computed<ECOption>(() => {
       textStyle: { color: '#94a3b8', fontWeight: 500 },
       top: 10,
     },
-    grid: { top: 60, left: 60, right: 80, bottom: 60 },
+    grid: {
+      top: 60,
+      left: 60,
+      right: 80,
+      bottom: 60,
+    },
     xAxis: {
       type: 'time',
-      axisLine: { lineStyle: { color: '#475569' } },
+      axisLine: {
+        lineStyle: { color: '#475569' },
+      },
       axisLabel: {
         color: '#cbd5e1',
         fontSize: 11,
@@ -93,15 +102,21 @@ const option = computed<ECOption>(() => {
         type: 'value',
         name: 'Speed (Mbps)',
         nameTextStyle: { color: '#cbd5e1' },
-        axisLine: { lineStyle: { color: '#475569' } },
-        splitLine: { lineStyle: { color: '#334155' } },
+        axisLine: {
+          lineStyle: { color: '#475569' },
+        },
+        splitLine: {
+          lineStyle: { color: '#334155' },
+        },
         axisLabel: { color: '#cbd5e1', fontSize: 11 },
       },
       {
         type: 'value',
         name: 'Latency (ms)',
         nameTextStyle: { color: '#cbd5e1' },
-        axisLine: { lineStyle: { color: '#475569' } },
+        axisLine: {
+          lineStyle: { color: '#475569' },
+        },
         splitLine: { show: false },
         axisLabel: { color: '#cbd5e1', fontSize: 11 },
       },

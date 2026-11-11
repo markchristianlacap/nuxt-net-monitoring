@@ -15,7 +15,11 @@ const { data } = await useFetch('/api/bandwidths', {
 const columns: TableColumn<any>[] = [
   createIdColumn(),
   createTimestampColumn(),
-  { accessorKey: 'displayName', header: 'Device', cell: ({ row }) => row.getValue('displayName') || row.original.host },
+  {
+    accessorKey: 'displayName',
+    header: 'Device',
+    cell: ({ row }) => row.getValue('displayName') || row.original.host,
+  },
   { accessorKey: 'host', header: 'Host' },
   { accessorKey: 'interface', header: 'Interface' },
   {

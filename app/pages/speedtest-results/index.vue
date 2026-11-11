@@ -35,7 +35,10 @@ const columns: TableColumn<any>[] = [
     accessorKey: 'url',
     header: 'Details',
     cell: ({ row }) =>
-      h('a', { href: row.getValue('url'), target: '_blank' }, h(UIcon, { name: 'i-lucide-external-link', class: 'text-primary' })),
+      h('a', {
+        href: row.getValue('url'),
+        target: '_blank',
+      }, h(UIcon, { name: 'i-lucide-external-link', class: 'text-primary' })),
   },
 ]
 </script>

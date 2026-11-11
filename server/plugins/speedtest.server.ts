@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { speedtestResults } from '../db/schema/speedtest-results'
 import { getNetworkConfig } from '../utils/network-config'
 
 export default defineNitroPlugin(async () => {
@@ -6,14 +7,14 @@ export default defineNitroPlugin(async () => {
 
   runEveryInterval(frequencySeconds, async () => {
     const res = await runSpeedtest()
-    await db.insertInto('speedtest_results').values({
+    await db.insert(speedtestResults).values({
       download: res.download.bandwidth,
       upload: res.upload.bandwidth,
       latency: res.ping.latency,
       ip: res.interface.externalIp,
       isp: res.isp,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       url: res.result.url,
-    }).execute()
+    })
   })
 })

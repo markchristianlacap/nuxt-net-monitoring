@@ -1,15 +1,13 @@
+import { and, asc } from 'drizzle-orm'
 import { db } from '~~/server/db'
+import { speedtestResults } from '~~/server/db/schema/speedtest-results'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
-  let baseQuery = db.selectFrom('speedtest_results')
-    .selectAll()
-    .orderBy('timestamp', 'asc')
+  const where = and(...dateRangeConditions(speedtestResults.timestamp, query))
 
-  baseQuery = applyDateRangeFilter(baseQuery, query)
-
-  const data = await baseQuery.execute()
+  const data = await db.select().from(speedtestResults).where(where).orderBy(asc(speedtestResults.timestamp))
 
   return data
 })

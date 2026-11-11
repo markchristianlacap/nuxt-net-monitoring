@@ -40,7 +40,12 @@ const option = computed<ECOption>(() => {
   if (hostList.length === 0) {
     return {
       backgroundColor: 'transparent',
-      title: { text: 'Waiting for ping data...', left: 'center', top: 'middle', textStyle: { color: '#94a3b8' } },
+      title: {
+        text: 'Waiting for ping data...',
+        left: 'center',
+        top: 'middle',
+        textStyle: { color: '#94a3b8' },
+      },
     }
   }
 
@@ -71,10 +76,17 @@ const option = computed<ECOption>(() => {
       textStyle: { color: '#94a3b8', fontWeight: 500 },
       top: 10,
     },
-    grid: { top: 60, left: 50, right: 20, bottom: 40 },
+    grid: {
+      top: 60,
+      left: 50,
+      right: 20,
+      bottom: 40,
+    },
     xAxis: {
       type: 'time',
-      axisLine: { lineStyle: { color: '#475569' } },
+      axisLine: {
+        lineStyle: { color: '#475569' },
+      },
       axisLabel: {
         color: '#cbd5e1',
         fontSize: 11,
@@ -85,8 +97,12 @@ const option = computed<ECOption>(() => {
       type: 'value',
       name: 'Latency (ms)',
       nameTextStyle: { color: '#cbd5e1' },
-      axisLine: { lineStyle: { color: '#475569' } },
-      splitLine: { lineStyle: { color: '#334155' } },
+      axisLine: {
+        lineStyle: { color: '#475569' },
+      },
+      splitLine: {
+        lineStyle: { color: '#334155' },
+      },
       axisLabel: { color: '#cbd5e1', fontSize: 11 },
     },
     series: hostList.map(([host, data], index) => {
@@ -125,7 +141,10 @@ const option = computed<ECOption>(() => {
             y2: 1,
             colorStops: [
               { offset: 0, color: colors.area },
-              { offset: 1, color: colors.area.replace('0.25', '0') },
+              {
+                offset: 1,
+                color: colors.area.replace('0.25', '0'),
+              },
             ],
           },
         },

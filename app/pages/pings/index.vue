@@ -23,7 +23,9 @@ const columns: TableColumn<any>[] = [
     header: 'Status',
     cell: ({ row }) => {
       const value = row.getValue('status') as string
-      const color = value === 'online' ? 'success' : 'error'
+      const color = value === 'online'
+        ? 'success'
+        : 'error'
       const label = value.charAt(0).toUpperCase() + value.slice(1)
       return h(UBadge, { variant: 'subtle', color, class: 'capitalize' }, () => label)
     },

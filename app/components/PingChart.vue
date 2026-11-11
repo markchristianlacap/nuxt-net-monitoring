@@ -79,10 +79,17 @@ const option = computed<ECOption>(() => {
       textStyle: { color: '#94a3b8', fontWeight: 500 },
       top: 10,
     },
-    grid: { top: 60, left: 60, right: 30, bottom: 60 },
+    grid: {
+      top: 60,
+      left: 60,
+      right: 30,
+      bottom: 60,
+    },
     xAxis: {
       type: 'time',
-      axisLine: { lineStyle: { color: '#475569' } },
+      axisLine: {
+        lineStyle: { color: '#475569' },
+      },
       axisLabel: {
         color: '#cbd5e1',
         fontSize: 11,
@@ -96,8 +103,12 @@ const option = computed<ECOption>(() => {
       type: 'value',
       name: 'Latency (ms)',
       nameTextStyle: { color: '#cbd5e1' },
-      axisLine: { lineStyle: { color: '#475569' } },
-      splitLine: { lineStyle: { color: '#334155' } },
+      axisLine: {
+        lineStyle: { color: '#475569' },
+      },
+      splitLine: {
+        lineStyle: { color: '#334155' },
+      },
       axisLabel: { color: '#cbd5e1', fontSize: 11 },
     },
     series: hosts.map(([host, data], index) => {

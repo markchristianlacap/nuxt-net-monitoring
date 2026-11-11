@@ -210,7 +210,7 @@ For development or custom setups, you can install and run the application manual
 
    Run migrations:
    ```bash
-   pnpm exec kysely migrate latest
+   pnpm run db:migrate
    ```
 
 5. **Run the Application**
@@ -375,7 +375,7 @@ The speed test will automatically run at the specified interval. You can still t
 
 ### Backend
 * **Runtime**: Nuxt Nitro server (Node.js)
-* **Database**: PostgreSQL with Kysely SQL query builder
+* **Database**: PostgreSQL with Drizzle ORM
 * **SNMP Library**: net-snmp for device communication
 * **Protocols**: ICMP Ping, SNMP v2c, HTTP Basic Authentication
 
@@ -454,7 +454,7 @@ This approach provides real-time monitoring responsiveness while efficiently man
 
 ### Database Schema
 
-All data is stored in PostgreSQL using Kysely ORM:
+All data is stored in PostgreSQL using Drizzle ORM:
 
 - **pings**: `id`, `host`, `status`, `latency`, `timestamp`
 - **bandwidths**: `id`, `host`, `displayName`, `interface`, `inMbps`, `outMbps`, `timestamp`
@@ -482,11 +482,11 @@ pnpm run typecheck
 # Lint code
 pnpm run lint
 
-# Run database migrations
-pnpm exec kysely migrate latest
+# Generate a migration after changing the Drizzle schema
+pnpm run db:generate
 
-# Rollback last migration
-pnpm exec kysely migrate down
+# Apply pending database migrations
+pnpm run db:migrate
 ```
 
 ### Docker Development
@@ -522,7 +522,7 @@ nuxt-net-monitoring/
 │   └── app.vue            # Root component with navigation
 ├── server/
 │   ├── api/               # API endpoints with SSE streaming
-│   ├── db/                # Database config, migrations, and types
+│   ├── db/                # Drizzle schema, client, and migrations
 │   ├── middleware/        # Server middleware (Basic Auth)
 │   ├── plugins/           # Background processes (ping, bandwidth, speedtest)
 │   └── utils/             # Utility functions (timing, SNMP, CSV export)
@@ -530,7 +530,7 @@ nuxt-net-monitoring/
 │   ├── types/             # TypeScript interfaces and types
 │   └── utils/             # Shared utility functions
 ├── nuxt.config.ts         # Nuxt configuration
-├── kysely.config.ts       # Database migration configuration
+├── drizzle.config.ts      # Database migration configuration
 ├── docker-compose.yml     # Docker deployment configuration
 └── .env                   # Environment variables
 ```
@@ -577,7 +577,7 @@ sudo apt-get install speedtest
 **Database Connection Failed**
 - Verify PostgreSQL is running and credentials are correct
 - Ensure database exists: `psql -U postgres -l`
-- Run migrations: `pnpm exec kysely migrate latest`
+- Run migrations: `pnpm run db:migrate`
 
 **Ping Not Working**
 - Check target host is reachable and `ping` command is available

@@ -18,8 +18,12 @@ const dateRange = ref<any | null>(null)
 
 // Initialize dateRange from props
 watchEffect(() => {
-  const start = props.start ? parseAbsolute(props.start, tz) : null
-  const end = props.end ? parseAbsolute(props.end, tz) : null
+  const start = props.start
+    ? parseAbsolute(props.start, tz)
+    : null
+  const end = props.end
+    ? parseAbsolute(props.end, tz)
+    : null
   dateRange.value = { start, end } as any
 })
 

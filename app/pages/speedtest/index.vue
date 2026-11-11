@@ -175,22 +175,25 @@ const statusText = computed(() => ({
   <main class="mx-auto mt-4 w-full max-w-5xl space-y-5 pb-8 sm:mt-6">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-2xl font-semibold text-slate-100 sm:text-3xl">
+        <h1 class="text-2xl font-semibold text-highlighted sm:text-3xl">
           Internet speed test
         </h1>
-        <p class="mt-1 text-sm text-slate-400">
+        <p class="mt-1 text-sm text-muted">
           Measure your connection in real time.
         </p>
       </div>
       <div class="flex gap-3 items-center">
-        <div>Select Interface</div>
-        <USelect
-          v-model="selectedInterface"
-          :items="interfaceItems"
-          placeholder="System default"
-          aria-label="Network interface"
-          :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
-        />
+        <UFormField label="Select interface" help="Choose the network interface to test.">
+          <USelect
+            v-model="selectedInterface"
+            :items="interfaceItems"
+            placeholder="System default"
+            aria-label="Network interface"
+            class="w-full"
+
+            :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
+          />
+        </UFormField>
         <UButton
           :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
           icon="i-lucide-play"
@@ -201,7 +204,7 @@ const statusText = computed(() => ({
       </div>
     </header>
 
-    <section class="grid gap-8 rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-xl sm:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(17rem,0.85fr)] lg:gap-10">
+    <section class="grid gap-8 rounded-2xl border border-default bg-elevated p-4 shadow-sm sm:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(17rem,0.85fr)] lg:gap-10">
       <div class="min-w-0">
         <SpeedtestGauge
           :value="activeSpeed"
@@ -214,15 +217,15 @@ const statusText = computed(() => ({
           <span
             class="h-2.5 w-2.5 rounded-full"
             :class="{
-              'bg-slate-500': status === 'idle',
-              'animate-pulse bg-amber-400': status === 'initializing' || status === 'ping',
-              'animate-pulse bg-blue-400': status === 'download',
-              'animate-pulse bg-green-400': status === 'upload',
-              'bg-green-400': status === 'complete',
-              'bg-red-400': status === 'error',
+              'bg-neutral-500': status === 'idle',
+              'animate-pulse bg-amber-500': status === 'initializing' || status === 'ping',
+              'animate-pulse bg-blue-600 dark:bg-blue-400': status === 'download',
+              'animate-pulse bg-green-600 dark:bg-green-400': status === 'upload',
+              'bg-green-600 dark:bg-green-400': status === 'complete',
+              'bg-red-600 dark:bg-red-400': status === 'error',
             }"
           />
-          <p class="text-sm font-medium text-slate-200">
+          <p class="text-sm font-medium text-toned">
             {{ statusText }}
           </p>
         </div>
@@ -232,54 +235,54 @@ const statusText = computed(() => ({
           :model-value="progress * 100"
           class="mt-4"
         />
-        <p v-if="errorMessage" class="mt-4 text-center text-sm text-red-300" role="alert">
+        <p v-if="errorMessage" class="mt-4 text-center text-sm text-red-700 dark:text-red-300" role="alert">
           {{ errorMessage }}
         </p>
       </div>
 
       <div class="min-w-0 self-center">
-        <h2 class="mb-2 text-base font-semibold text-slate-100">
+        <h2 class="mb-2 text-base font-semibold text-highlighted">
           Test metrics
         </h2>
-        <dl class="divide-y divide-slate-800 border-y border-slate-800">
+        <dl class="divide-y divide-muted border-y border-default">
           <div class="flex items-center justify-between gap-4 py-4">
-            <dt class="text-sm text-slate-400">
+            <dt class="text-sm text-muted">
               Download
             </dt>
-            <dd class="text-right text-lg font-semibold tabular-nums text-blue-300">
+            <dd class="text-right text-lg font-semibold tabular-nums text-blue-700 dark:text-blue-300">
               {{ downloadMeasured ? `${currentDownload.toFixed(2)} Mbps` : '—' }}
             </dd>
           </div>
           <div class="flex items-center justify-between gap-4 py-4">
-            <dt class="text-sm text-slate-400">
+            <dt class="text-sm text-muted">
               Upload
             </dt>
-            <dd class="text-right text-lg font-semibold tabular-nums text-green-300">
+            <dd class="text-right text-lg font-semibold tabular-nums text-green-700 dark:text-green-300">
               {{ uploadMeasured ? `${currentUpload.toFixed(2)} Mbps` : '—' }}
             </dd>
           </div>
           <div class="flex items-center justify-between gap-4 py-4">
-            <dt class="text-sm text-slate-400">
+            <dt class="text-sm text-muted">
               Latency
             </dt>
-            <dd class="text-right text-lg font-semibold tabular-nums text-slate-100">
+            <dd class="text-right text-lg font-semibold tabular-nums text-default">
               {{ latencyMeasured ? `${latency.toFixed(1)} ms` : '—' }}
             </dd>
           </div>
         </dl>
 
         <div class="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1">
-          <p class="min-w-0 text-slate-400">
-            <span class="block text-xs uppercase tracking-wide text-slate-500">Provider</span>
-            <span class="mt-1 block truncate text-slate-200">{{ isp || 'Not detected' }}</span>
+          <p class="min-w-0 text-muted">
+            <span class="block text-xs uppercase tracking-wide text-dimmed">Provider</span>
+            <span class="mt-1 block truncate text-default">{{ isp || 'Not detected' }}</span>
           </p>
-          <p class="min-w-0 text-slate-400">
-            <span class="block text-xs uppercase tracking-wide text-slate-500">Public IP</span>
-            <span class="mt-1 block break-all text-slate-200">{{ publicIp || '—' }}</span>
+          <p class="min-w-0 text-muted">
+            <span class="block text-xs uppercase tracking-wide text-dimmed">Public IP</span>
+            <span class="mt-1 block break-all text-default">{{ publicIp || '—' }}</span>
           </p>
-          <p class="min-w-0 text-slate-400 sm:col-span-2 lg:col-span-1">
-            <span class="block text-xs uppercase tracking-wide text-slate-500">Network interface</span>
-            <span class="mt-1 block break-all text-slate-200">{{ testedInterfaceName || selectedInterfaceLabel }}</span>
+          <p class="min-w-0 text-muted sm:col-span-2 lg:col-span-1">
+            <span class="block text-xs uppercase tracking-wide text-dimmed">Network interface</span>
+            <span class="mt-1 block break-all text-default">{{ testedInterfaceName || selectedInterfaceLabel }}</span>
           </p>
         </div>
 
@@ -288,7 +291,7 @@ const statusText = computed(() => ({
           :href="resultUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="mt-5 inline-flex items-center gap-1 text-sm text-blue-300 underline decoration-blue-300/40 underline-offset-4 hover:text-blue-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-300"
+          class="mt-5 inline-flex items-center gap-1 text-sm text-blue-700 underline decoration-blue-700/40 underline-offset-4 hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 dark:text-blue-300 dark:decoration-blue-300/40 dark:hover:text-blue-200 dark:focus-visible:outline-blue-300"
         >
           View shared result
           <UIcon name="i-lucide-arrow-up-right" aria-hidden="true" />

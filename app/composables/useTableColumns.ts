@@ -40,7 +40,7 @@ export function createRightAlignedColumn<T>(
   key: keyof T,
   header: string,
   formatter: (value: any) => string,
-  colorClass = 'text-slate-200',
+  colorClass = 'text-toned',
 ): TableColumn<T> {
   return {
     accessorKey: key as string,

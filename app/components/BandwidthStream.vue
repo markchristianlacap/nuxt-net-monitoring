@@ -24,6 +24,7 @@ let reconnectAttempt = 0
 let streamActive = false
 
 const colorPalette = [...chartBaseColors].sort(() => Math.random() - 0.5)
+const theme = useChartTheme()
 
 function getInterfaceLabel(stats: InterfaceStats) {
   const device = stats.displayName !== stats.host
@@ -44,6 +45,7 @@ const summary = computed(() => {
 })
 
 const option = computed<ECOption>(() => {
+  const chartTheme = theme.value
   const ifaceList = Array.from(interfaces.value.entries())
   if (ifaceList.length === 0) {
     return {
@@ -52,7 +54,7 @@ const option = computed<ECOption>(() => {
         text: 'Waiting for bandwidth data...',
         left: 'center',
         top: 'middle',
-        textStyle: { color: '#94a3b8' },
+        textStyle: { color: chartTheme.textMuted },
       },
     }
   }
@@ -61,9 +63,9 @@ const option = computed<ECOption>(() => {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#0f172a',
-      borderColor: '#334155',
-      textStyle: { color: '#f1f5f9' },
+      backgroundColor: chartTheme.backgroundElevated,
+      borderColor: chartTheme.border,
+      textStyle: { color: chartTheme.text },
       formatter(params: any) {
         if (!params || params.length === 0)
           return ''
@@ -79,7 +81,7 @@ const option = computed<ECOption>(() => {
     },
     legend: {
       data: ifaceList.flatMap(([, stats]) => [`${getInterfaceLabel(stats)} 📥 Download`, `${getInterfaceLabel(stats)} 📤 Upload`]),
-      textStyle: { color: '#94a3b8', fontWeight: 500 },
+      textStyle: { color: chartTheme.textMuted, fontWeight: 500 },
       top: 10,
     },
     grid: {
@@ -91,20 +93,21 @@ const option = computed<ECOption>(() => {
     xAxis: {
       type: 'time',
       axisLine: {
-        lineStyle: { color: '#475569' },
+        lineStyle: { color: chartTheme.border },
       },
+      axisLabel: { color: chartTheme.textMuted, fontSize: 11 },
     },
     yAxis: {
       type: 'value',
       name: 'MB/s',
-      nameTextStyle: { color: '#cbd5e1' },
+      nameTextStyle: { color: chartTheme.textToned },
       axisLine: {
-        lineStyle: { color: '#475569' },
+        lineStyle: { color: chartTheme.border },
       },
       splitLine: {
-        lineStyle: { color: '#334155' },
+        lineStyle: { color: chartTheme.borderMuted },
       },
-      axisLabel: { color: '#cbd5e1', fontSize: 11 },
+      axisLabel: { color: chartTheme.textMuted, fontSize: 11 },
     },
     series: ifaceList.flatMap(([, stats], index) => {
       const colorIndex = index % colorPalette.length
@@ -242,33 +245,33 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700">
+  <div class="rounded-2xl border border-default bg-elevated p-4 shadow-sm sm:p-6">
     <!-- Header -->
     <div class="text-center mb-4 sm:mb-6">
-      <h2 class="text-slate-200 text-2xl sm:text-3xl font-bold tracking-wide mb-1">
+      <h2 class="mb-1 text-2xl font-bold tracking-wide text-highlighted sm:text-3xl">
         Bandwidth Monitor
       </h2>
-      <p class="text-slate-400 text-xs sm:text-sm">
+      <p class="text-xs text-muted sm:text-sm">
         Live throughput monitoring - {{ summary.total }} interface(s)
       </p>
     </div>
     <!-- Interface Cards -->
     <div v-if="interfaces.size > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-      <div v-for="([key, stats], index) in Array.from(interfaces.entries())" :key="key" class="flex flex-col bg-slate-800/60 px-4 py-3 rounded-xl shadow-md border border-slate-700">
+      <div v-for="([key, stats], index) in Array.from(interfaces.entries())" :key="key" class="flex flex-col rounded-xl border border-default bg-muted px-4 py-3">
         <div class="flex items-center gap-2 mb-2">
           <span class="text-xl">📡</span>
           <div class="min-w-0">
-            <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="text-slate-200 font-semibold text-sm truncate">{{ getInterfaceLabel(stats) }}</span>
-            <span v-if="stats.displayName !== stats.host" class="block text-slate-500 text-xs truncate">{{ stats.host }}</span>
+            <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="truncate text-sm font-semibold text-highlighted">{{ getInterfaceLabel(stats) }}</span>
+            <span v-if="stats.displayName !== stats.host" class="block truncate text-xs text-dimmed">{{ stats.host }}</span>
           </div>
-          <span class="text-slate-400 text-xs font-medium">
+          <span class="text-xs font-medium text-muted">
             Status:
           </span>
           <span
             :class="{
-              'text-green-400': stats.status === 'up',
-              'text-red-400': stats.status === 'down',
-              'text-slate-400': stats.status === 'unknown',
+              'text-green-700 dark:text-green-400': stats.status === 'up',
+              'text-red-700 dark:text-red-400': stats.status === 'down',
+              'text-muted': stats.status === 'unknown',
             }" class="text-xs font-semibold uppercase"
           >
             {{ stats.status }}
@@ -276,35 +279,35 @@ onBeforeUnmount(() => {
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span class="text-slate-400">Speed:</span>
-            <span class="ml-1 font-bold text-slate-300">{{ stats.speed }} Mbps</span>
+            <span class="text-muted">Speed:</span>
+            <span class="ml-1 font-bold text-toned">{{ stats.speed }} Mbps</span>
           </div>
           <div>
-            <span class="text-slate-400">IP:</span>
-            <span class="ml-1 font-bold text-slate-300">{{ stats.ip }}</span>
+            <span class="text-muted">IP:</span>
+            <span class="ml-1 font-bold text-toned">{{ stats.ip }}</span>
           </div>
           <div>
-            <span class="text-slate-400">Download:</span>
-            <span class="ml-1 font-bold text-blue-300">{{ stats.currentDownload.toFixed(2) }} MB/s</span>
+            <span class="text-muted">Download:</span>
+            <span class="ml-1 font-bold text-blue-700 dark:text-blue-300">{{ stats.currentDownload.toFixed(2) }} MB/s</span>
           </div>
           <div>
-            <span class="text-slate-400">Upload:</span>
-            <span class="ml-1 font-bold text-red-300">{{ stats.currentUpload.toFixed(2) }} MB/s</span>
+            <span class="text-muted">Upload:</span>
+            <span class="ml-1 font-bold text-red-700 dark:text-red-300">{{ stats.currentUpload.toFixed(2) }} MB/s</span>
           </div>
           <div>
-            <span class="text-slate-400">Max Download:</span>
-            <span class="ml-1 font-bold text-blue-400">{{ stats.maxDownload.toFixed(2) }} MB/s</span>
+            <span class="text-muted">Max Download:</span>
+            <span class="ml-1 font-bold text-blue-700 dark:text-blue-400">{{ stats.maxDownload.toFixed(2) }} MB/s</span>
           </div>
           <div>
-            <span class="text-slate-400">Max Upload:</span>
-            <span class="ml-1 font-bold text-red-400">{{ stats.maxUpload.toFixed(2) }} MB/s</span>
+            <span class="text-muted">Max Upload:</span>
+            <span class="ml-1 font-bold text-red-700 dark:text-red-400">{{ stats.maxUpload.toFixed(2) }} MB/s</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Chart -->
-    <div class="bg-slate-800/50 rounded-xl sm:rounded-2xl p-2 sm:p-4 border border-slate-700 shadow-inner">
+    <div class="rounded-xl border border-default bg-muted p-2 sm:rounded-2xl sm:p-4">
       <VChart :option="option" autoresize :style="{ height: '400px' }" />
     </div>
   </div>

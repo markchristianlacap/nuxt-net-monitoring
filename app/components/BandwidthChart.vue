@@ -20,8 +20,10 @@ watch(() => [props.start, props.end], () => {
 }, { deep: true })
 
 const colorPalette = chartBaseColors
+const theme = useChartTheme()
 
 const option = computed<ECOption>(() => {
+  const chartTheme = theme.value
   if (!chartData.value || chartData.value.length === 0) {
     return {
       backgroundColor: 'transparent',
@@ -29,7 +31,7 @@ const option = computed<ECOption>(() => {
         text: 'No bandwidth data available for the selected period',
         left: 'center',
         top: 'middle',
-        textStyle: { color: '#94a3b8', fontSize: 14 },
+        textStyle: { color: chartTheme.textMuted, fontSize: 14 },
       },
     }
   }
@@ -58,9 +60,9 @@ const option = computed<ECOption>(() => {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#0f172a',
-      borderColor: '#334155',
-      textStyle: { color: '#f1f5f9' },
+      backgroundColor: chartTheme.backgroundElevated,
+      borderColor: chartTheme.border,
+      textStyle: { color: chartTheme.text },
       formatter(params: any) {
         if (!params || params.length === 0)
           return ''
@@ -78,7 +80,7 @@ const option = computed<ECOption>(() => {
     },
     legend: {
       data: interfaces.flatMap(({ label }) => [`${label} 📥 Download`, `${label} 📤 Upload`]),
-      textStyle: { color: '#94a3b8', fontWeight: 500 },
+      textStyle: { color: chartTheme.textMuted, fontWeight: 500 },
       top: 10,
     },
     grid: {
@@ -90,10 +92,10 @@ const option = computed<ECOption>(() => {
     xAxis: {
       type: 'time',
       axisLine: {
-        lineStyle: { color: '#475569' },
+        lineStyle: { color: chartTheme.border },
       },
       axisLabel: {
-        color: '#cbd5e1',
+        color: chartTheme.textMuted,
         fontSize: 11,
         formatter: (value: number) => {
           const date = new Date(value)
@@ -104,14 +106,14 @@ const option = computed<ECOption>(() => {
     yAxis: {
       type: 'value',
       name: 'Speed (Mbps)',
-      nameTextStyle: { color: '#cbd5e1' },
+      nameTextStyle: { color: chartTheme.textToned },
       axisLine: {
-        lineStyle: { color: '#475569' },
+        lineStyle: { color: chartTheme.border },
       },
       splitLine: {
-        lineStyle: { color: '#334155' },
+        lineStyle: { color: chartTheme.borderMuted },
       },
-      axisLabel: { color: '#cbd5e1', fontSize: 11 },
+      axisLabel: { color: chartTheme.textMuted, fontSize: 11 },
     },
     series: interfaces.flatMap(({ label, data }, index) => {
       const colorIndex = index % colorPalette.length
@@ -146,7 +148,7 @@ const option = computed<ECOption>(() => {
             color: colors.secondary,
           },
           areaStyle: {
-            color: 'rgba(0, 0, 0, 0.05)',
+            color: colors.area.replace('0.25', '0'),
           },
         },
       ]
@@ -156,8 +158,8 @@ const option = computed<ECOption>(() => {
 </script>
 
 <template>
-  <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 shadow-inner mb-4">
-    <h3 class="text-lg font-semibold text-slate-200 mb-3">
+  <div class="mb-4 rounded-xl border border-default bg-elevated p-4 shadow-sm">
+    <h3 class="mb-3 text-lg font-semibold text-highlighted">
       Bandwidth Summary
     </h3>
     <VChart :option="option" autoresize :style="{ height: '350px' }" />

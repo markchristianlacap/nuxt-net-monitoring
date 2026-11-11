@@ -7,12 +7,16 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const colorMode = useColorMode()
 const arcLength = Math.PI * 96
 const ratio = computed(() => Math.min(Math.max(props.value / Math.max(props.max, 1), 0), 1))
 const dashOffset = computed(() => arcLength * (1 - ratio.value))
-const strokeColor = computed(() => props.phase === 'upload'
-  ? '#4ade80'
-  : '#60a5fa')
+const strokeColor = computed(() => {
+  const isLight = colorMode.value === 'light'
+  if (props.phase === 'upload')
+    return isLight ? '#15803d' : '#4ade80'
+  return isLight ? '#2563eb' : '#60a5fa'
+})
 const tickMarks = computed(() => Array.from({ length: 11 }, (_, index) => {
   const angle = Math.PI - (Math.PI * index) / 10
   const outerRadius = 108
@@ -34,7 +38,7 @@ const tickMarks = computed(() => Array.from({ length: 11 }, (_, index) => {
       <path
         d="M 24 126 A 96 96 0 0 1 216 126"
         fill="none"
-        stroke="#334155"
+        stroke="var(--ui-border-accented)"
         stroke-width="13"
         stroke-linecap="round"
       />
@@ -45,7 +49,7 @@ const tickMarks = computed(() => Array.from({ length: 11 }, (_, index) => {
         :y1="tick.y1"
         :x2="tick.x2"
         :y2="tick.y2"
-        stroke="#64748b"
+        stroke="var(--ui-text-dimmed)"
         :stroke-width="index % 5 === 0 ? 2 : 1.25"
         stroke-linecap="round"
       />
@@ -59,16 +63,16 @@ const tickMarks = computed(() => Array.from({ length: 11 }, (_, index) => {
         :stroke-dashoffset="dashOffset"
         class="transition-[stroke-dashoffset] duration-200 ease-out"
       />
-      <text x="120" y="105" text-anchor="middle" class="fill-white text-[38px] font-semibold tabular-nums">
+      <text x="120" y="105" text-anchor="middle" fill="var(--ui-text)" class="text-[38px] font-semibold tabular-nums">
         {{ value.toFixed(1) }}
       </text>
-      <text x="120" y="128" text-anchor="middle" class="fill-slate-400 text-[11px] font-medium tracking-[0.16em] uppercase">
+      <text x="120" y="128" text-anchor="middle" fill="var(--ui-text-muted)" class="text-[11px] font-medium tracking-[0.16em] uppercase">
         Mbps · {{ label }}
       </text>
-      <text x="24" y="158" text-anchor="start" class="fill-slate-500 text-[10px] tabular-nums">
+      <text x="24" y="158" text-anchor="start" fill="var(--ui-text-dimmed)" class="text-[10px] tabular-nums">
         0
       </text>
-      <text x="216" y="158" text-anchor="end" class="fill-slate-500 text-[10px] tabular-nums">
+      <text x="216" y="158" text-anchor="end" fill="var(--ui-text-dimmed)" class="text-[10px] tabular-nums">
         {{ Math.round(max).toLocaleString() }}
       </text>
     </svg>

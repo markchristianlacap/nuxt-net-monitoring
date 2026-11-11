@@ -8,6 +8,7 @@ interface HostData {
 
 const hosts = ref<Map<string, HostData>>(new Map())
 const maxPoints = 60
+const theme = useChartTheme()
 let eventSource: EventSource | null = null
 const colorPalette = [...chartBaseColors].sort(() => Math.random() - 0.5)
 // Summary statistics
@@ -36,6 +37,7 @@ const summary = computed(() => {
 })
 
 const option = computed<ECOption>(() => {
+  const chartTheme = theme.value
   const hostList = Array.from(hosts.value.entries())
   if (hostList.length === 0) {
     return {
@@ -44,7 +46,7 @@ const option = computed<ECOption>(() => {
         text: 'Waiting for ping data...',
         left: 'center',
         top: 'middle',
-        textStyle: { color: '#94a3b8' },
+        textStyle: { color: chartTheme.textMuted },
       },
     }
   }
@@ -53,9 +55,9 @@ const option = computed<ECOption>(() => {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#0f172a',
-      borderColor: '#334155',
-      textStyle: { color: '#f1f5f9' },
+      backgroundColor: chartTheme.backgroundElevated,
+      borderColor: chartTheme.border,
+      textStyle: { color: chartTheme.text },
       formatter(params: any) {
         if (!params || params.length === 0)
           return ''
@@ -73,7 +75,7 @@ const option = computed<ECOption>(() => {
     },
     legend: {
       data: hostList.map(([host]) => `🏓 ${host}`),
-      textStyle: { color: '#94a3b8', fontWeight: 500 },
+      textStyle: { color: chartTheme.textMuted, fontWeight: 500 },
       top: 10,
     },
     grid: {
@@ -85,10 +87,10 @@ const option = computed<ECOption>(() => {
     xAxis: {
       type: 'time',
       axisLine: {
-        lineStyle: { color: '#475569' },
+        lineStyle: { color: chartTheme.border },
       },
       axisLabel: {
-        color: '#cbd5e1',
+        color: chartTheme.textMuted,
         fontSize: 11,
         formatter: (value: number) => new Date(value).toLocaleTimeString(),
       },
@@ -96,14 +98,14 @@ const option = computed<ECOption>(() => {
     yAxis: {
       type: 'value',
       name: 'Latency (ms)',
-      nameTextStyle: { color: '#cbd5e1' },
+      nameTextStyle: { color: chartTheme.textToned },
       axisLine: {
-        lineStyle: { color: '#475569' },
+        lineStyle: { color: chartTheme.border },
       },
       splitLine: {
-        lineStyle: { color: '#334155' },
+        lineStyle: { color: chartTheme.borderMuted },
       },
-      axisLabel: { color: '#cbd5e1', fontSize: 11 },
+      axisLabel: { color: chartTheme.textMuted, fontSize: 11 },
     },
     series: hostList.map(([host, data], index) => {
       const colorIndex = index % colorPalette.length
@@ -199,41 +201,41 @@ onBeforeUnmount(() => eventSource?.close())
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 bg-linear-to-b from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl border border-slate-700">
+  <div class="rounded-2xl border border-default bg-elevated p-4 shadow-sm sm:p-6">
     <!-- Header -->
     <div class="text-center mb-4 sm:mb-6">
-      <h2 class="text-slate-200 text-2xl sm:text-3xl font-bold tracking-wide mb-1">
+      <h2 class="mb-1 text-2xl font-bold tracking-wide text-highlighted sm:text-3xl">
         Latency Monitor
       </h2>
-      <p class="text-slate-400 text-xs sm:text-sm">
+      <p class="text-xs text-muted sm:text-sm">
         Live ping stream visualization - {{ hosts.size }} host{{ hosts.size !== 1 ? 's' : '' }}
       </p>
     </div>
 
     <!-- Overall Summary -->
     <div v-if="hosts.size > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-      <div class="flex flex-col items-center bg-gradient-to-br from-slate-800/80 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-slate-600/50">
-        <span class="text-slate-400 text-xs font-medium mb-1">Total Hosts</span>
-        <span class="text-2xl font-bold text-cyan-300">{{ summary.totalHosts }}</span>
+      <div class="flex flex-col items-center rounded-xl border border-default bg-muted px-4 py-3">
+        <span class="mb-1 text-xs font-medium text-muted">Total Hosts</span>
+        <span class="text-2xl font-bold text-cyan-700 dark:text-cyan-300">{{ summary.totalHosts }}</span>
       </div>
-      <div class="flex flex-col items-center bg-gradient-to-br from-green-900/30 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-green-700/50">
-        <span class="text-slate-400 text-xs font-medium mb-1">Online</span>
-        <span class="text-2xl font-bold text-green-400">{{ summary.onlineHosts }}</span>
+      <div class="flex flex-col items-center rounded-xl border border-green-200 bg-green-50 px-4 py-3 dark:border-green-800 dark:bg-green-950/30">
+        <span class="mb-1 text-xs font-medium text-muted">Online</span>
+        <span class="text-2xl font-bold text-green-700 dark:text-green-300">{{ summary.onlineHosts }}</span>
       </div>
-      <div class="flex flex-col items-center bg-gradient-to-br from-red-900/30 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-red-700/50">
-        <span class="text-slate-400 text-xs font-medium mb-1">Offline</span>
-        <span class="text-2xl font-bold text-red-400">{{ summary.offlineHosts }}</span>
+      <div class="flex flex-col items-center rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-800 dark:bg-red-950/30">
+        <span class="mb-1 text-xs font-medium text-muted">Offline</span>
+        <span class="text-2xl font-bold text-red-700 dark:text-red-300">{{ summary.offlineHosts }}</span>
       </div>
-      <div class="flex flex-col items-center bg-gradient-to-br from-slate-800/80 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-slate-600/50">
-        <span class="text-slate-400 text-xs font-medium mb-1">Avg Latency</span>
-        <span class="text-2xl font-bold text-cyan-300">
-          {{ summary.avgLatency.toFixed(1) }}<span class="text-xs text-slate-500 ml-1">ms</span>
+      <div class="flex flex-col items-center rounded-xl border border-default bg-muted px-4 py-3">
+        <span class="mb-1 text-xs font-medium text-muted">Avg Latency</span>
+        <span class="text-2xl font-bold text-cyan-700 dark:text-cyan-300">
+          {{ summary.avgLatency.toFixed(1) }}<span class="ml-1 text-xs text-dimmed">ms</span>
         </span>
       </div>
-      <div class="flex flex-col items-center bg-gradient-to-br from-amber-900/30 to-slate-800/40 px-4 py-3 rounded-xl shadow-md border border-amber-700/50">
-        <span class="text-slate-400 text-xs font-medium mb-1">Peak Latency</span>
-        <span class="text-2xl font-bold text-amber-300">
-          {{ summary.maxLatency.toFixed(1) }}<span class="text-xs text-slate-500 ml-1">ms</span>
+      <div class="flex flex-col items-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/30">
+        <span class="mb-1 text-xs font-medium text-muted">Peak Latency</span>
+        <span class="text-2xl font-bold text-amber-800 dark:text-amber-300">
+          {{ summary.maxLatency.toFixed(1) }}<span class="ml-1 text-xs text-dimmed">ms</span>
         </span>
       </div>
     </div>
@@ -243,31 +245,31 @@ onBeforeUnmount(() => eventSource?.close())
       <div
         v-for="([hostName, hostData], index) in Array.from(hosts.entries())"
         :key="hostName"
-        class="flex flex-col bg-slate-800/60 px-4 py-3 rounded-xl shadow-md border border-slate-700"
+        class="flex flex-col rounded-xl border border-default bg-muted px-4 py-3"
       >
         <div class="flex items-center gap-2 mb-2">
           <span class="text-xl">🏓</span>
-          <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="text-slate-200 font-semibold text-sm truncate" :title="hostName">{{ hostName }}</span>
+          <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="truncate text-sm font-semibold text-highlighted" :title="hostName">{{ hostName }}</span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span class="text-slate-400">Current:</span>
+            <span class="text-muted">Current:</span>
             <span
               class="ml-1 font-bold"
-              :class="(hostData.latencyData.at(-1) ?? 0) > 100 || (hostData.latencyData.at(-1) ?? 0) <= 0 ? 'text-red-400' : 'text-cyan-300'"
+              :class="(hostData.latencyData.at(-1) ?? 0) > 100 || (hostData.latencyData.at(-1) ?? 0) <= 0 ? 'text-red-700 dark:text-red-400' : 'text-cyan-700 dark:text-cyan-300'"
             >
               {{ (hostData.latencyData.at(-1) ?? 0).toFixed(2) }} ms
             </span>
           </div>
           <div>
-            <span class="text-slate-400">Max:</span>
-            <span class="ml-1 font-bold text-amber-300">{{ hostData.maxLatency.toFixed(2) }} ms</span>
+            <span class="text-muted">Max:</span>
+            <span class="ml-1 font-bold text-amber-800 dark:text-amber-300">{{ hostData.maxLatency.toFixed(2) }} ms</span>
           </div>
           <div class="col-span-2">
-            <span class="text-slate-400">Status:</span>
+            <span class="text-muted">Status:</span>
             <span
               class="ml-1 font-bold uppercase"
-              :class="hostData.status === 'offline' ? 'text-red-400' : hostData.status === 'online' ? 'text-green-400' : 'text-blue-300'"
+              :class="hostData.status === 'offline' ? 'text-red-700 dark:text-red-400' : hostData.status === 'online' ? 'text-green-700 dark:text-green-400' : 'text-blue-700 dark:text-blue-300'"
             >
               {{ hostData.status }}
             </span>
@@ -277,7 +279,7 @@ onBeforeUnmount(() => eventSource?.close())
     </div>
 
     <!-- Chart -->
-    <div class="bg-slate-800/50 rounded-xl sm:rounded-2xl p-2 sm:p-4 border border-slate-700 shadow-inner">
+    <div class="rounded-xl border border-default bg-muted p-2 sm:rounded-2xl sm:p-4">
       <VChart :option="option" autoresize :style="{ height: '400px' }" />
     </div>
   </div>

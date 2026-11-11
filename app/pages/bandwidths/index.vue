@@ -39,7 +39,7 @@ const columns: TableColumn<any>[] = [
 
 <template>
   <u-page>
-    <div class="container mx-auto mt-3 sm:mt-6 space-y-4 text-slate-100 px-2 sm:px-0">
+    <div class="container mx-auto mt-3 space-y-4 px-2 text-default sm:mt-6 sm:px-0">
       <div class="flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-3">
         <h2 class="text-xl sm:text-2xl font-bold tracking-tight flex-1">
           Bandwidth Monitoring
@@ -68,7 +68,7 @@ const columns: TableColumn<any>[] = [
         />
       </div>
 
-      <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-3 text-xs sm:text-sm text-slate-400">
+      <div class="mt-3 flex flex-col items-center justify-between gap-3 text-xs text-muted sm:flex-row sm:text-sm">
         <div>Total: {{ data?.total?.toLocaleString() ?? 0 }}</div>
         <u-pagination
           v-model:page="query.page"

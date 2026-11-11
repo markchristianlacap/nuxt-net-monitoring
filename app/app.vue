@@ -56,6 +56,7 @@ useSeoMeta({
       </template>
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />
+        <UColorModeSelect size="sm" aria-label="Color theme" />
         <u-button
           v-if="featureData?.features.speedtest"
           color="primary"

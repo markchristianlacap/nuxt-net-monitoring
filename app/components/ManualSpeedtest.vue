@@ -128,7 +128,7 @@ function handleEvent(event: SpeedtestEvent) {
       status.value = 'complete'
       break
     case 'error':
-      errorMessage.value = event.message || 'The test failed. Try another interface or use the system default.'
+      errorMessage.value = event.message || 'The test failed. Check the Speedtest CLI output and network connection.'
       status.value = 'error'
       break
   }

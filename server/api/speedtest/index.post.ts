@@ -6,6 +6,29 @@ interface SpeedtestRequestBody {
   interfaceName?: unknown
 }
 
+const RATE_LIMIT_PATTERN = /limit reached|too many requests received/i
+
+function getSpeedtestFailureMessage(interfaceName: string | null, code: number | null, output: string) {
+  if (RATE_LIMIT_PATTERN.test(output)) {
+    return 'Ookla has temporarily rate-limited the Speedtest CLI. Wait before trying again; changing the network interface will not resolve this limit.'
+  }
+
+  const interfaceLabel = interfaceName
+    ? `interface “${interfaceName}”`
+    : 'system default interface'
+  const detail = output
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .slice(-4)
+    .join(' ')
+    .slice(0, 400)
+
+  return detail
+    ? `Speedtest failed using the ${interfaceLabel}: ${detail}`
+    : `Speedtest failed using the ${interfaceLabel} (exit code ${code ?? 'unknown'}). Check the Speedtest CLI and network connection.`
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody<SpeedtestRequestBody>(event)
   const interfaceName = validateSpeedtestInterface(body?.interfaceName)
@@ -16,6 +39,7 @@ export default defineEventHandler(async (event) => {
   res.flushHeaders?.()
   let counter = 0
   let outputBuffer = ''
+  let stdoutDiagnostics = ''
   let stderr = ''
   let clientDisconnected = false
   let processError = false
@@ -38,13 +62,21 @@ export default defineEventHandler(async (event) => {
   const processLine = async (line: string) => {
     if (!line.trim())
       return
+
+    let payload: SpeedtestResult
+    try {
+      payload = JSON.parse(line) as SpeedtestResult
+    }
+    catch {
+      stdoutDiagnostics += `${line}\n`
+      return
+    }
+
     try {
       res.write(`id: ${++counter}\n`)
-      res.write(`data: ${line}\n\n`)
-
-      const payload = JSON.parse(line)
+      res.write(`data: ${JSON.stringify(payload)}\n\n`)
       if (payload.type === 'result') {
-        const result = payload as SpeedtestResult
+        const result = payload
         await db.insert(speedtestResults).values({
           download: result.download.bandwidth,
           upload: result.upload.bandwidth,
@@ -78,7 +110,13 @@ export default defineEventHandler(async (event) => {
     processError = true
     console.error('Unable to start speedtest:', error)
     if (!clientDisconnected) {
-      sendEvent({ type: 'error', message: 'Unable to start the Speedtest CLI.' })
+      const errorCode = (error as NodeJS.ErrnoException).code
+      sendEvent({
+        type: 'error',
+        message: errorCode === 'ENOENT'
+          ? 'The Speedtest CLI was not found in the application container.'
+          : `The Speedtest CLI could not start: ${error.message}`,
+      })
       res.end()
     }
   })
@@ -87,8 +125,12 @@ export default defineEventHandler(async (event) => {
       if (outputBuffer.trim())
         await processLine(outputBuffer)
       if (code !== 0 && !processError && !clientDisconnected) {
-        console.error(`Speedtest exited with code ${code}:`, stderr)
-        sendEvent({ type: 'error', message: 'Speedtest failed on the selected interface. Try another interface or use the system default.' })
+        const diagnostics = [stderr, stdoutDiagnostics].filter(Boolean).join('\n').trim()
+        console.error(`Speedtest exited with code ${code}:`, diagnostics || 'No CLI diagnostic output')
+        sendEvent({
+          type: 'error',
+          message: getSpeedtestFailureMessage(interfaceName, code, diagnostics),
+        })
       }
       if (!clientDisconnected)
         res.end()

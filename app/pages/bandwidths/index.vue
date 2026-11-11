@@ -9,6 +9,12 @@ query.limit = Number(useRoute().query.limit) || 10
 const { data } = await useFetch('/api/bandwidths', {
   query,
 })
+const { data: interfaceInfo } = await useFetch<DeviceInterface[]>('/api/interfaces')
+
+const tableData = computed(() => data.value?.data?.map((row: any) => ({
+  ...row,
+  interfaceLabel: interfaceInfo.value?.find(info => info.host === row.host && info.name === row.interface)?.alias?.trim() || '—',
+})))
 
 const columns: TableColumn<any>[] = [
   createIdColumn(),
@@ -20,6 +26,7 @@ const columns: TableColumn<any>[] = [
   },
   { accessorKey: 'host', header: 'Host' },
   { accessorKey: 'interface', header: 'Interface' },
+  { accessorKey: 'interfaceLabel', header: 'Interface Label' },
   {
     accessorKey: 'inMbps',
     header: () => h('div', { class: 'text-right' }, 'Download (Mbps)'),
@@ -59,7 +66,7 @@ const columns: TableColumn<any>[] = [
 
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <u-table
-          :data="data?.data"
+          :data="tableData"
           :columns="columns"
           class="min-w-[600px]"
           :class="TABLE_CLASSES"

@@ -285,10 +285,9 @@ Features: Independent monitoring per host, color-coded visualization, individual
 
 ### Speed Test Frequency
 
-Enable scheduled speed tests in **Settings**, choose a frequency from 60 seconds to 7 days, and optionally select the local interface used by scheduled runs. The live test page also lets you select an interface for each run. Available interfaces are those visible to the app process; in Docker, this usually means the container's interfaces, not every host adapter.
+Enable scheduled speed tests in **Settings**, choose a frequency from 1 hour to 7 days, and optionally select the local interface used by scheduled runs. The live test page also lets you select an interface for each run. Available interfaces are those visible to the app process; in Docker, this usually means the container's interfaces, not every host adapter.
 
 **Common Frequency Values:**
-- `1800` = 30 minutes
 - `3600` = 1 hour (default)
 - `7200` = 2 hours
 - `14400` = 4 hours

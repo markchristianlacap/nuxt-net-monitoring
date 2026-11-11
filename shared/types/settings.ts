@@ -1,4 +1,5 @@
 export const SYSTEM_DEFAULT_INTERFACE_VALUE = '__system_default__'
+export const MIN_SPEEDTEST_FREQUENCY_SECONDS = 3600
 
 export interface SnmpDeviceConfig {
   host: string
@@ -38,7 +39,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     devices: [],
   },
   speedtest: {
-    frequencySeconds: 3600,
+    frequencySeconds: MIN_SPEEDTEST_FREQUENCY_SECONDS,
     localInterfaceNames: [],
   },
 }

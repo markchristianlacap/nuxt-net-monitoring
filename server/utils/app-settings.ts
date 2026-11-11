@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { MIN_SPEEDTEST_FREQUENCY_SECONDS } from '../../shared/types/settings'
 import { db } from '../db'
 import { appSettings as appSettingsTable } from '../db/schema/app-settings'
 
@@ -59,6 +60,10 @@ export async function getAppSettings(): Promise<AppSettings> {
   else {
     localInterfaceNames = []
   }
+  const storedFrequencySeconds = storedSpeedtestConfig.frequencySeconds
+  const frequencySeconds = typeof storedFrequencySeconds === 'number' && Number.isInteger(storedFrequencySeconds)
+    ? Math.max(MIN_SPEEDTEST_FREQUENCY_SECONDS, storedFrequencySeconds)
+    : DEFAULT_APP_SETTINGS.speedtest.frequencySeconds
   settingsCache = {
     ...structuredClone(DEFAULT_APP_SETTINGS),
     ...storedSettings,
@@ -77,6 +82,7 @@ export async function getAppSettings(): Promise<AppSettings> {
     speedtest: {
       ...DEFAULT_APP_SETTINGS.speedtest,
       ...storedSpeedtestConfig,
+      frequencySeconds,
       localInterfaceNames,
     },
   }
@@ -172,8 +178,8 @@ export function normalizeAppSettings(input: unknown, previous: AppSettings): App
   if (localInterfaceNames.some(interfaceName => interfaceName.length > 255)) {
     throw createError({ statusCode: 400, statusMessage: 'Scheduled speed-test interface names must be at most 255 characters' })
   }
-  if (typeof frequencySeconds !== 'number' || !Number.isInteger(frequencySeconds) || frequencySeconds < 60 || frequencySeconds > 604800) {
-    throw createError({ statusCode: 400, statusMessage: 'Speed-test frequency must be between 60 and 604800 seconds' })
+  if (typeof frequencySeconds !== 'number' || !Number.isInteger(frequencySeconds) || frequencySeconds < MIN_SPEEDTEST_FREQUENCY_SECONDS || frequencySeconds > 604800) {
+    throw createError({ statusCode: 400, statusMessage: 'Speed-test frequency must be between 3600 and 604800 seconds' })
   }
   if (features.ping && pingHosts.length === 0) {
     throw createError({ statusCode: 400, statusMessage: 'Add at least one ping host or disable ping monitoring' })

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { MIN_SPEEDTEST_FREQUENCY_SECONDS } from '../../../shared/types/settings'
+
 definePageMeta({ middleware: 'auth' })
 
 interface AdminSettings extends AppSettings {
@@ -185,8 +187,8 @@ async function signOut() {
         </template>
         <div class="space-y-4">
           <USwitch v-model="settings.features.speedtest" label="Enable scheduled speed tests" />
-          <UFormField label="Frequency (seconds)" help="Between 60 seconds and 7 days.">
-            <UInput v-model.number="settings.speedtest.frequencySeconds" type="number" min="60" max="604800" class="w-full sm:max-w-xs" />
+          <UFormField label="Frequency (seconds)" help="Between 1 hour and 7 days.">
+            <UInput v-model.number="settings.speedtest.frequencySeconds" type="number" :min="MIN_SPEEDTEST_FREQUENCY_SECONDS" max="604800" class="w-full sm:max-w-xs" />
           </UFormField>
           <UFormField label="Scheduled test interfaces" help="Choose one or more adapters. Tests run one at a time in selection order; leave empty to use the system default.">
             <USelectMenu

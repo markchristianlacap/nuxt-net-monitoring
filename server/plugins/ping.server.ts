@@ -1,9 +1,6 @@
-import type { AppSettings } from '~~/shared/types/settings'
 import { spawn } from 'node:child_process'
 import { db } from '../db'
 import { pings as pingTable } from '../db/schema/pings'
-import { getAppSettings, subscribeToAppSettings } from '../utils/app-settings'
-import { runEveryMinute } from '../utils/helper'
 
 export default defineNitroPlugin(async () => {
   let stopAveraging: (() => void) | undefined

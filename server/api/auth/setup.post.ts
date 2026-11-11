@@ -1,7 +1,5 @@
-import { getHeader, getRequestIP, readBody } from 'h3'
 import { db } from '../../db'
 import { adminUsers } from '../../db/schema/admin-users'
-import { createAdminSession, hasAdminAccount, hashPassword } from '../../utils/auth'
 
 interface SetupBody {
   username?: string

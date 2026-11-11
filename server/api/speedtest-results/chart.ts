@@ -1,7 +1,6 @@
 import { and, asc } from 'drizzle-orm'
 import { db } from '~~/server/db'
 import { speedtestResults } from '~~/server/db/schema/speedtest-results'
-import { getSpeedtestInterfaceFilter } from '../../utils/speedtest-result-filter'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

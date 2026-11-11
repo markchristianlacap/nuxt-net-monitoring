@@ -1,5 +1,3 @@
-import type { SpeedtestScheduleStatus } from '~~/shared/types/speedtest-schedule'
-
 let status: SpeedtestScheduleStatus = {
   enabled: false,
   running: false,

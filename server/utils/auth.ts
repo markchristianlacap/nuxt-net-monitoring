@@ -4,7 +4,6 @@ import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } fr
 import process from 'node:process'
 import { promisify } from 'node:util'
 import { and, eq, gt, lt } from 'drizzle-orm'
-import { deleteCookie, getCookie, setCookie } from 'h3'
 import { db } from '../db'
 import { adminSessions } from '../db/schema/admin-sessions'
 import { adminUsers } from '../db/schema/admin-users'

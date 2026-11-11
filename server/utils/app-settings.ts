@@ -1,6 +1,4 @@
-import type { AppSettings, SnmpDeviceConfig } from '~~/shared/types/settings'
 import { eq } from 'drizzle-orm'
-import { DEFAULT_APP_SETTINGS } from '~~/shared/types/settings'
 import { db } from '../db'
 import { appSettings as appSettingsTable } from '../db/schema/app-settings'
 

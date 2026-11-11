@@ -1,4 +1,3 @@
-import type { AppSettings } from '~~/shared/types/settings'
 import { sql } from 'drizzle-orm'
 import { check, integer, jsonb, pgTable, timestamp } from 'drizzle-orm/pg-core'
 

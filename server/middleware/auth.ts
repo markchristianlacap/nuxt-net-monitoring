@@ -1,7 +1,3 @@
-import { sendRedirect } from 'h3'
-import { getAppSettings } from '../utils/app-settings'
-import { getAuthenticatedAdmin } from '../utils/auth'
-
 const PUBLIC_PATHS = new Set([
   '/login',
   '/setup',

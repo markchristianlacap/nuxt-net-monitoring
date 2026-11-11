@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { SpeedtestScheduleStatus as ScheduleStatus } from '~~/shared/types/speedtest-schedule'
-
-const status = ref<ScheduleStatus | null>(null)
+const status = ref<SpeedtestScheduleStatus | null>(null)
 const unavailable = ref(false)
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 let isRefreshing = false
@@ -12,7 +10,7 @@ async function refreshStatus() {
   isRefreshing = true
 
   try {
-    status.value = await $fetch<ScheduleStatus>('/api/speedtest/schedule-status')
+    status.value = await $fetch<SpeedtestScheduleStatus>('/api/speedtest/schedule-status')
     unavailable.value = false
   }
   catch {

@@ -21,7 +21,7 @@ Use these Conventional Commit types:
 - `test`: add or update tests
 - `chore`: maintenance
 
-# Nuxt Development Rules
+## Nuxt Development Rules
 
 ## Nuxt
 

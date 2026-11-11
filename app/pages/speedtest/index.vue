@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { SYSTEM_DEFAULT_INTERFACE_VALUE } from '~~/shared/types/settings'
-
 const currentDownload = ref(0)
 const currentUpload = ref(0)
 const peakSpeed = ref(0)

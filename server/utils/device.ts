@@ -1,7 +1,5 @@
-import type { SnmpDeviceConfig } from '~~/shared/types/settings'
 import { Buffer } from 'node:buffer'
 import snmp from 'net-snmp'
-import { getAppSettings } from './app-settings'
 
 interface DeviceContext {
   config: SnmpDeviceConfig

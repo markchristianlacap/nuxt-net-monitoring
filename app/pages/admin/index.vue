@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { AppSettings } from '~~/shared/types/settings'
-
 definePageMeta({ middleware: 'auth' })
 
 interface AdminSettings extends AppSettings {

@@ -1,9 +1,5 @@
-import type { AppSettings } from '~~/shared/types/settings'
 import { db } from '../db'
 import { bandwidths } from '../db/schema/bandwidths'
-import { getAppSettings, subscribeToAppSettings } from '../utils/app-settings'
-import { getBandwidth, getInterfaces, resetDeviceContexts } from '../utils/device'
-import { runEveryMinute, runEverySecond } from '../utils/helper'
 
 export default defineNitroPlugin(async () => {
   let stopPolling: (() => void) | undefined

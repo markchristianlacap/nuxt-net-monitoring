@@ -1,8 +1,6 @@
 import { spawn } from 'node:child_process'
-import { readBody } from 'h3'
 import { db } from '~~/server/db'
 import { speedtestResults } from '~~/server/db/schema/speedtest-results'
-import { validateSpeedtestInterface } from '~~/server/utils/speedtest-interfaces'
 
 interface SpeedtestRequestBody {
   interfaceName?: unknown

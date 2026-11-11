@@ -1,6 +1,3 @@
-import { getAppSettings, normalizeAppSettings, saveAppSettings } from '../../utils/app-settings'
-import { getAvailableSpeedtestInterfaces } from '../../utils/speedtest-interfaces'
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const previous = await getAppSettings()

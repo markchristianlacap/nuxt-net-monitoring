@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { createIdColumn, createTimestampColumn } from '~/composables/useTableColumns'
-import { DATA_COLORS, TABLE_CLASSES } from '~/constants/tableStyles'
 
 const UBadge = resolveComponent('UBadge')
 const { query, downloadCSV, isDownloading } = useDataTable('pings', 'pings.csv')

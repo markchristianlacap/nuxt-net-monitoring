@@ -1,8 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { getRequestIP, readBody } from 'h3'
 import { db } from '../../db'
 import { adminUsers } from '../../db/schema/admin-users'
-import { createAdminSession, verifyPassword } from '../../utils/auth'
 
 interface LoginBody {
   username?: string

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { createIdColumn, createTimestampColumn } from '~/composables/useTableColumns'
-import { DATA_COLORS, TABLE_CLASSES } from '~/constants/tableStyles'
 
 const { query, downloadCSV, isDownloading } = useDataTable('bandwidths', 'bandwidths.csv')
 

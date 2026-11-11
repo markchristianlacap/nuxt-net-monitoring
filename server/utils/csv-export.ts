@@ -1,5 +1,4 @@
 import type { H3Event } from 'h3'
-import { createError, setHeader } from 'h3'
 
 export interface CsvExportOptions<T = any> {
   filename: string

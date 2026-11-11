@@ -6,6 +6,9 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     'nuxt-echarts',
   ],
+  imports: {
+    dirs: ['~/constants'],
+  },
   devtools: {
     enabled: true,
   },

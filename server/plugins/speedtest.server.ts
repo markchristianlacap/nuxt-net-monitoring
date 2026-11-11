@@ -1,10 +1,5 @@
-import type { AppSettings } from '~~/shared/types/settings'
 import { db } from '../db'
 import { speedtestResults } from '../db/schema/speedtest-results'
-import { getAppSettings, subscribeToAppSettings } from '../utils/app-settings'
-import { runEveryInterval } from '../utils/helper'
-import { runSpeedtest } from '../utils/speedtest'
-import { updateSpeedtestScheduleStatus } from '../utils/speedtest-schedule-status'
 
 export default defineNitroPlugin(async () => {
   let stopScheduledTest: (() => void) | undefined

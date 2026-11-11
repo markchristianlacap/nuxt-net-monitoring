@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SYSTEM_DEFAULT_INTERFACE_VALUE } from '~~/shared/types/settings'
+
 const currentDownload = ref(0)
 const currentUpload = ref(0)
 const peakSpeed = ref(0)
@@ -10,19 +12,22 @@ const isp = ref('')
 const publicIp = ref('')
 const resultUrl = ref('')
 const errorMessage = ref('')
-const selectedInterface = ref<string | undefined>(undefined)
+const selectedInterface = ref(SYSTEM_DEFAULT_INTERFACE_VALUE)
 const testedInterfaceName = ref('')
 const status = ref<'idle' | 'initializing' | 'ping' | 'download' | 'upload' | 'complete' | 'error'>('idle')
 const progress = ref(0)
 let reader: ReadableStreamDefaultReader<string> | null = null
 const { data: availableInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/speedtest/interfaces')
 const interfaceItems = computed(() => [
+  { label: 'System default', value: SYSTEM_DEFAULT_INTERFACE_VALUE },
   ...(availableInterfaces.value ?? []).map(item => ({
     label: `${item.name} · ${item.ipAddress}`,
     value: item.name,
   })),
 ])
-const selectedInterfaceLabel = computed(() => selectedInterface.value ?? 'System default')
+const selectedInterfaceLabel = computed(() => selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
+  ? 'System default'
+  : selectedInterface.value)
 
 const activeSpeed = computed(() => status.value === 'upload'
   ? currentUpload.value
@@ -70,7 +75,11 @@ async function startStream() {
   try {
     const response = await $fetch<ReadableStream>('/api/speedtest', {
       method: 'POST',
-      body: { interfaceName: selectedInterface.value },
+      body: {
+        interfaceName: selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
+          ? null
+          : selectedInterface.value,
+      },
       responseType: 'stream',
     })
 

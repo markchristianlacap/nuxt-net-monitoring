@@ -83,6 +83,15 @@ function getRouterChartOption(router: RouterStats): ECOption {
       ? `${stats.name} (${alias})`
       : stats.name
   }
+  const legendLabels = new Map<string, string>()
+  const legendData = ifaceList.flatMap((stats) => {
+    const label = interfaceLabel(stats)
+    const downloadName = `${label} Download`
+    const uploadName = `${label} Upload`
+    legendLabels.set(downloadName, `${label} · Down`)
+    legendLabels.set(uploadName, `${label} · Up`)
+    return [downloadName, uploadName]
+  })
 
   return {
     backgroundColor: 'transparent',
@@ -105,12 +114,28 @@ function getRouterChartOption(router: RouterStats): ECOption {
       },
     },
     legend: {
-      data: ifaceList.flatMap(stats => [`${interfaceLabel(stats)} Download`, `${interfaceLabel(stats)} Upload`]),
-      textStyle: { color: chartTheme.textMuted, fontWeight: 500 },
-      top: 10,
+      type: 'scroll',
+      orient: 'horizontal',
+      data: legendData,
+      formatter(name: string) {
+        return legendLabels.get(name) ?? name
+      },
+      left: 50,
+      right: 20,
+      top: 8,
+      height: 44,
+      itemGap: 10,
+      itemWidth: 14,
+      itemHeight: 10,
+      pageButtonPosition: 'end',
+      pageIconSize: 12,
+      pageIconColor: chartTheme.textToned,
+      pageIconInactiveColor: chartTheme.border,
+      pageTextStyle: { color: chartTheme.textMuted, fontSize: 11 },
+      textStyle: { color: chartTheme.textMuted, fontSize: 11, fontWeight: 500 },
     },
     grid: {
-      top: 60,
+      top: 78,
       left: 50,
       right: 20,
       bottom: 40,

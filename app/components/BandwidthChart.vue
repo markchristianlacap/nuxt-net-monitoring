@@ -40,11 +40,14 @@ const option = computed<ECOption>(() => {
   }
 
   // Group by device host and interface so duplicate interface names stay distinct.
-  const interfaceMap = new Map<string, { label: string, data: Array<{ time: number, download: number, upload: number }> }>()
+  const interfaceMap = new Map<string, { label: string, legendLabel: string, data: Array<{ time: number, download: number, upload: number }> }>()
   chartData.value.forEach((item: any) => {
     const key = `${item.host}\u0000${item.interface}`
     const deviceLabel = item.displayName && item.displayName !== item.host
       ? `${item.displayName} (${item.host})`
+      : item.host
+    const compactDeviceLabel = item.displayName && item.displayName !== item.host
+      ? item.displayName
       : item.host
     const interfaceName = item.interface || item.host
     const alias = interfaceInfo.value?.find(i => i.host === item.host && i.name === item.interface)?.alias?.trim()
@@ -52,17 +55,26 @@ const option = computed<ECOption>(() => {
       ? `${interfaceName} (${alias})`
       : interfaceName
     const label = `${deviceLabel} / ${interfaceLabel}`
+    const legendLabel = `${compactDeviceLabel} / ${interfaceLabel}`
     const time = new Date(item.time_bucket).getTime()
     const download = Number(item.avg_download)
     const upload = Number(item.avg_upload)
 
     if (!interfaceMap.has(key)) {
-      interfaceMap.set(key, { label, data: [] })
+      interfaceMap.set(key, { label, legendLabel, data: [] })
     }
     interfaceMap.get(key)!.data.push({ time, download, upload })
   })
 
   const interfaces = Array.from(interfaceMap.values())
+  const legendLabels = new Map<string, string>()
+  const legendData = interfaces.flatMap(({ label, legendLabel }) => {
+    const downloadName = `${label} · Download`
+    const uploadName = `${label} · Upload`
+    legendLabels.set(downloadName, `${legendLabel} · Down`)
+    legendLabels.set(uploadName, `${legendLabel} · Up`)
+    return [downloadName, uploadName]
+  })
 
   return {
     backgroundColor: 'transparent',
@@ -87,12 +99,28 @@ const option = computed<ECOption>(() => {
       },
     },
     legend: {
-      data: interfaces.flatMap(({ label }) => [`${label} 📥 Download`, `${label} 📤 Upload`]),
-      textStyle: { color: chartTheme.textMuted, fontWeight: 500 },
-      top: 10,
+      type: 'scroll',
+      orient: 'horizontal',
+      data: legendData,
+      formatter(name: string) {
+        return legendLabels.get(name) ?? name
+      },
+      left: 60,
+      right: 30,
+      top: 8,
+      height: 44,
+      itemGap: 10,
+      itemWidth: 14,
+      itemHeight: 10,
+      pageButtonPosition: 'end',
+      pageIconSize: 12,
+      pageIconColor: chartTheme.textToned,
+      pageIconInactiveColor: chartTheme.border,
+      pageTextStyle: { color: chartTheme.textMuted, fontSize: 11 },
+      textStyle: { color: chartTheme.textMuted, fontSize: 11, fontWeight: 500 },
     },
     grid: {
-      top: 60,
+      top: 78,
       left: 60,
       right: 30,
       bottom: 60,
@@ -132,7 +160,7 @@ const option = computed<ECOption>(() => {
 
       return [
         {
-          name: `${label} 📥 Download`,
+          name: `${label} · Download`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -146,7 +174,7 @@ const option = computed<ECOption>(() => {
           },
         },
         {
-          name: `${label} 📤 Upload`,
+          name: `${label} · Upload`,
           type: 'line',
           showSymbol: false,
           smooth: true,

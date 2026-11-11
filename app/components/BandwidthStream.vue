@@ -15,6 +15,12 @@ interface InterfaceStats {
   status: 'up' | 'down' | 'testing' | 'unknown'
 }
 
+interface RouterStats {
+  host: string
+  displayName: string
+  interfaces: InterfaceStats[]
+}
+
 const interfaceInfo = await useFetch('/api/interfaces')
 const interfaces = ref<Map<string, InterfaceStats>>(new Map())
 const maxPoints = 50
@@ -33,15 +39,30 @@ function getInterfaceLabel(stats: InterfaceStats) {
   return `${device} / ${stats.name}`
 }
 
-const summary = computed(() => {
-  const ifaceList = Array.from(interfaces.value.values())
-  if (ifaceList.length === 0)
-    return { total: 0, maxDownload: 0, maxUpload: 0 }
+const routers = computed<RouterStats[]>(() => {
+  const routerMap = new Map<string, RouterStats>()
 
-  const total = ifaceList.length
-  const maxDownload = Math.max(...ifaceList.map(i => i.maxDownload))
-  const maxUpload = Math.max(...ifaceList.map(i => i.maxUpload))
-  return { total, maxDownload, maxUpload }
+  for (const stats of interfaces.value.values()) {
+    if (!routerMap.has(stats.host)) {
+      routerMap.set(stats.host, {
+        host: stats.host,
+        displayName: stats.displayName,
+        interfaces: [],
+      })
+    }
+
+    routerMap.get(stats.host)!.interfaces.push(stats)
+  }
+
+  return Array.from(routerMap.values())
+    .sort((a, b) => a.displayName.localeCompare(b.displayName))
+})
+
+const summary = computed(() => {
+  return {
+    routers: routers.value.length,
+    interfaces: interfaces.value.size,
+  }
 })
 
 const option = computed<ECOption>(() => {
@@ -73,14 +94,14 @@ const option = computed<ECOption>(() => {
         const timeStr = new Date(timestamp).toLocaleTimeString()
         let content = `<div style="font-size:13px; line-height:1.8"><b>${timeStr}</b><br/>`
         params.forEach((param: any) => {
-          content += `${param.marker} ${param.seriesName}: <b style="color:${param.color}">${param.data[1]} MB/s</b><br/>`
+          content += `${param.marker} ${param.seriesName}: <b style="color:${param.color}">${param.data[1]} Mbps</b><br/>`
         })
         content += '</div>'
         return content
       },
     },
     legend: {
-      data: ifaceList.flatMap(([, stats]) => [`${getInterfaceLabel(stats)} 📥 Download`, `${getInterfaceLabel(stats)} 📤 Upload`]),
+      data: ifaceList.flatMap(([, stats]) => [`${getInterfaceLabel(stats)} Download`, `${getInterfaceLabel(stats)} Upload`]),
       textStyle: { color: chartTheme.textMuted, fontWeight: 500 },
       top: 10,
     },
@@ -99,7 +120,7 @@ const option = computed<ECOption>(() => {
     },
     yAxis: {
       type: 'value',
-      name: 'MB/s',
+      name: 'Mbps',
       nameTextStyle: { color: chartTheme.textToned },
       axisLine: {
         lineStyle: { color: chartTheme.border },
@@ -116,7 +137,7 @@ const option = computed<ECOption>(() => {
       const outSeries = stats.timestamps.map((t, i) => [t, stats.outData[i]])
       return [
         {
-          name: `${getInterfaceLabel(stats)} 📥 Download`,
+          name: `${getInterfaceLabel(stats)} Download`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -125,7 +146,7 @@ const option = computed<ECOption>(() => {
           areaStyle: { color: colors.area },
         },
         {
-          name: `${getInterfaceLabel(stats)} 📤 Upload`,
+          name: `${getInterfaceLabel(stats)} Upload`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -252,58 +273,102 @@ onBeforeUnmount(() => {
         Bandwidth Monitor
       </h2>
       <p class="text-xs text-muted sm:text-sm">
-        Live throughput monitoring - {{ summary.total }} interface(s)
+        Live throughput monitoring · {{ summary.routers }} {{ summary.routers === 1 ? 'router' : 'routers' }} · {{ summary.interfaces }} {{ summary.interfaces === 1 ? 'interface' : 'interfaces' }}
       </p>
     </div>
-    <!-- Interface Cards -->
-    <div v-if="interfaces.size > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-      <div v-for="([key, stats], index) in Array.from(interfaces.entries())" :key="key" class="flex flex-col rounded-xl border border-default bg-muted px-4 py-3">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-xl">📡</span>
-          <div class="min-w-0">
-            <span :style="{ color: (colorPalette[index % colorPalette.length] ?? colorPalette[0]!).primary }" class="truncate text-sm font-semibold text-highlighted">{{ getInterfaceLabel(stats) }}</span>
-            <span v-if="stats.displayName !== stats.host" class="block truncate text-xs text-dimmed">{{ stats.host }}</span>
+    <!-- Router Cards -->
+    <div v-if="routers.length > 0" class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <UCard v-for="router in routers" :key="router.host" class="h-full">
+        <template #header>
+          <div class="flex min-w-0 items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="truncate text-base font-semibold text-highlighted">
+                {{ router.displayName }}
+              </h3>
+              <p v-if="router.displayName !== router.host" class="truncate text-xs text-muted">
+                {{ router.host }}
+              </p>
+            </div>
+            <span class="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-toned">
+              {{ router.interfaces.length }} {{ router.interfaces.length === 1 ? 'interface' : 'interfaces' }}
+            </span>
           </div>
-          <span class="text-xs font-medium text-muted">
-            Status:
-          </span>
-          <span
-            :class="{
-              'text-green-700 dark:text-green-400': stats.status === 'up',
-              'text-red-700 dark:text-red-400': stats.status === 'down',
-              'text-muted': stats.status === 'unknown',
-            }" class="text-xs font-semibold uppercase"
+        </template>
+
+        <div class="divide-y divide-default">
+          <section
+            v-for="stats in router.interfaces"
+            :key="`${stats.host}-${stats.name}`"
+            class="py-3 first:pt-0 last:pb-0"
           >
-            {{ stats.status }}
-          </span>
+            <div class="mb-2 flex min-w-0 items-center justify-between gap-3">
+              <h4 class="truncate text-sm font-semibold text-highlighted">
+                {{ stats.name }}
+              </h4>
+              <span
+                :class="{
+                  'text-green-700 dark:text-green-400': stats.status === 'up',
+                  'text-red-700 dark:text-red-400': stats.status === 'down',
+                  'text-muted': stats.status === 'unknown',
+                }"
+                class="shrink-0 text-xs font-semibold uppercase"
+              >
+                {{ stats.status }}
+              </span>
+            </div>
+            <dl class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+              <div>
+                <dt class="text-muted">
+                  Download
+                </dt>
+                <dd class="font-semibold tabular-nums text-blue-700 dark:text-blue-300">
+                  {{ stats.currentDownload.toFixed(2) }} Mbps
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  Upload
+                </dt>
+                <dd class="font-semibold tabular-nums text-red-700 dark:text-red-300">
+                  {{ stats.currentUpload.toFixed(2) }} Mbps
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  Interface speed
+                </dt>
+                <dd class="font-semibold tabular-nums text-toned">
+                  {{ stats.speed }} Mbps
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  IP address
+                </dt>
+                <dd class="truncate font-semibold text-toned" :title="stats.ip">
+                  {{ stats.ip || '—' }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  Peak download
+                </dt>
+                <dd class="font-semibold tabular-nums text-blue-700 dark:text-blue-400">
+                  {{ stats.maxDownload.toFixed(2) }} Mbps
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted">
+                  Peak upload
+                </dt>
+                <dd class="font-semibold tabular-nums text-red-700 dark:text-red-400">
+                  {{ stats.maxUpload.toFixed(2) }} Mbps
+                </dd>
+              </div>
+            </dl>
+          </section>
         </div>
-        <div class="grid grid-cols-2 gap-2 text-xs">
-          <div>
-            <span class="text-muted">Speed:</span>
-            <span class="ml-1 font-bold text-toned">{{ stats.speed }} Mbps</span>
-          </div>
-          <div>
-            <span class="text-muted">IP:</span>
-            <span class="ml-1 font-bold text-toned">{{ stats.ip }}</span>
-          </div>
-          <div>
-            <span class="text-muted">Download:</span>
-            <span class="ml-1 font-bold text-blue-700 dark:text-blue-300">{{ stats.currentDownload.toFixed(2) }} MB/s</span>
-          </div>
-          <div>
-            <span class="text-muted">Upload:</span>
-            <span class="ml-1 font-bold text-red-700 dark:text-red-300">{{ stats.currentUpload.toFixed(2) }} MB/s</span>
-          </div>
-          <div>
-            <span class="text-muted">Max Download:</span>
-            <span class="ml-1 font-bold text-blue-700 dark:text-blue-400">{{ stats.maxDownload.toFixed(2) }} MB/s</span>
-          </div>
-          <div>
-            <span class="text-muted">Max Upload:</span>
-            <span class="ml-1 font-bold text-red-700 dark:text-red-400">{{ stats.maxUpload.toFixed(2) }} MB/s</span>
-          </div>
-        </div>
-      </div>
+      </UCard>
     </div>
 
     <!-- Chart -->

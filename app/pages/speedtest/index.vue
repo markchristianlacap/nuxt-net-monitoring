@@ -1,34 +1,53 @@
 <script setup lang="ts">
-const maxPoints = ref(30)
-const downloads = ref<number[]>([])
-const uploads = ref<number[]>([])
+const currentDownload = ref(0)
+const currentUpload = ref(0)
+const peakSpeed = ref(0)
+const downloadMeasured = ref(false)
+const uploadMeasured = ref(false)
 const latency = ref(0)
+const latencyMeasured = ref(false)
 const isp = ref('')
 const publicIp = ref('')
 const resultUrl = ref('')
-const status = ref<'idle' | 'initializing' | 'ping' | 'download' | 'upload' | 'complete'>('idle')
+const errorMessage = ref('')
+const status = ref<'idle' | 'initializing' | 'ping' | 'download' | 'upload' | 'complete' | 'error'>('idle')
 const progress = ref(0)
 let reader: ReadableStreamDefaultReader<string> | null = null
 
-const currentDownload = computed(() => downloads.value.at(-1) || 0)
-const currentUpload = computed(() => uploads.value.at(-1) || 0)
+const activeSpeed = computed(() => status.value === 'upload'
+  ? currentUpload.value
+  : currentDownload.value)
+const gaugeMax = computed(() => {
+  const peak = Math.max(100, peakSpeed.value)
+  const increment = 10 ** Math.floor(Math.log10(peak)) / 2
+  return Math.ceil(peak / increment) * increment
+})
 
-function pushData(type: 'download' | 'upload', value: number) {
-  const arr = type === 'download'
-    ? downloads.value
-    : uploads.value
-  arr.push(value)
-  if (arr.length > maxPoints.value)
-    arr.shift()
+function updateSpeed(type: 'download' | 'upload', value: number) {
+  const speed = toMbps(value)
+  if (type === 'download') {
+    currentDownload.value = speed
+    downloadMeasured.value = true
+  }
+  else {
+    currentUpload.value = speed
+    uploadMeasured.value = true
+  }
+  peakSpeed.value = Math.max(peakSpeed.value, speed)
 }
 
 function resetState() {
-  downloads.value = []
-  uploads.value = []
+  currentDownload.value = 0
+  currentUpload.value = 0
+  peakSpeed.value = 0
+  downloadMeasured.value = false
+  uploadMeasured.value = false
   latency.value = 0
+  latencyMeasured.value = false
   resultUrl.value = ''
   isp.value = ''
   publicIp.value = ''
+  errorMessage.value = ''
   status.value = 'idle'
   progress.value = 0
 }
@@ -37,15 +56,14 @@ async function startStream() {
   resetState()
   status.value = 'initializing'
 
-  const response = await $fetch<ReadableStream>('/api/speedtest', {
-    method: 'POST',
-    responseType: 'stream',
-  })
-
-  reader = response.pipeThrough(new TextDecoderStream()).getReader()
-  let buffer = ''
-
   try {
+    const response = await $fetch<ReadableStream>('/api/speedtest', {
+      method: 'POST',
+      responseType: 'stream',
+    })
+
+    reader = response.pipeThrough(new TextDecoderStream()).getReader()
+    let buffer = ''
     while (true) {
       const { value, done } = await reader.read()
       if (done) {
@@ -70,7 +88,8 @@ async function startStream() {
   }
   catch (err) {
     console.error('Stream error:', err)
-    status.value = 'idle'
+    errorMessage.value = 'The speed test could not finish. Check the Speedtest CLI and network connection, then try again.'
+    status.value = 'error'
   }
 }
 
@@ -83,27 +102,29 @@ function handleEvent(event: any) {
       break
     case 'ping':
       latency.value = event.ping.latency
+      latencyMeasured.value = true
       progress.value = event.ping.progress
       break
     case 'download':
       if (progress.value >= 1)
         progress.value = 0
       status.value = 'download'
-      pushData('download', toMbps(event.download.bandwidth))
+      updateSpeed('download', event.download.bandwidth)
       progress.value = event.download.progress
       break
     case 'upload':
       if (progress.value >= 1)
         progress.value = 0
       status.value = 'upload'
-      pushData('upload', toMbps(event.upload.bandwidth))
+      updateSpeed('upload', event.upload.bandwidth)
       progress.value = event.upload.progress
       break
     case 'result':
       latency.value = event.ping.latency
+      latencyMeasured.value = true
       resultUrl.value = event.result.url
-      pushData('download', toMbps(event.download.bandwidth))
-      pushData('upload', toMbps(event.upload.bandwidth))
+      updateSpeed('download', event.download.bandwidth)
+      updateSpeed('upload', event.upload.bandwidth)
       status.value = 'complete'
       break
   }
@@ -118,183 +139,120 @@ const statusText = computed(() => ({
   download: 'Measuring Download Speed...',
   upload: 'Measuring Upload Speed...',
   complete: 'Test Complete',
+  error: 'Test Failed',
 }[status.value]))
-
-const option = computed(() => ({
-  backgroundColor: '#0f172a',
-  title: {
-    text: 'Speedtest Metrics',
-    left: 'center',
-    textStyle: { color: '#f1f5f9', fontSize: 16, fontWeight: 600 },
-  },
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: '#1e293b',
-    borderColor: '#334155',
-    textStyle: { color: '#f8fafc' },
-    valueFormatter: (v: number) => `${v.toFixed(2)} Mbps`,
-  },
-  legend: {
-    data: ['📥 Download', '📤 Upload'],
-    top: 40,
-    textStyle: { color: '#e2e8f0', fontWeight: 500 },
-  },
-  grid: {
-    left: 40,
-    right: 20,
-    bottom: 30,
-    top: 80,
-  },
-  xAxis: {
-    boundaryGap: false,
-    show: false,
-    type: 'category',
-    data: Array.from({ length: maxPoints.value }, (_, i) => i + 1),
-  },
-  yAxis: {
-    type: 'value',
-    name: 'Mbps',
-    axisLabel: { color: '#94a3b8' },
-    splitLine: {
-      lineStyle: { color: '#334155' },
-    },
-  },
-  series: [
-    {
-      name: '📥 Download',
-      type: 'line',
-      smooth: true,
-      showSymbol: false,
-      lineStyle: { width: 2, color: '#3b82f6' },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(59,130,246,0.4)' },
-            { offset: 1, color: 'rgba(59,130,246,0.05)' },
-          ],
-        },
-      },
-      data: downloads.value,
-    },
-    {
-      name: '📤 Upload',
-      type: 'line',
-      smooth: true,
-      showSymbol: false,
-      lineStyle: { width: 2, color: '#10b981' },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(16,185,129,0.4)' },
-            { offset: 1, color: 'rgba(16,185,129,0.05)' },
-          ],
-        },
-      },
-      data: uploads.value,
-    },
-  ],
-}) as ECOption)
 </script>
 
 <template>
-  <div class="mt-4 sm:mt-6 p-3 sm:p-5 bg-slate-900 rounded-xl shadow-xl">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-5 gap-3">
-      <div class="w-full sm:w-auto">
-        <p class="text-slate-200 text-base sm:text-lg font-semibold flex flex-wrap items-center gap-2">
-          <span class="break-all">{{ isp || 'No ISP Detected' }}</span>
-          <u-button
-            :disabled="status !== 'idle' && status !== 'complete'"
-            size="sm"
-            class="sm:ml-3"
-            @click="startStream"
-          >
-            {{ status === 'complete' ? 'Run Again' : 'Start Test' }}
-          </u-button>
-        </p>
-        <p class="text-slate-400 text-xs sm:text-sm mt-1 break-all">
-          Public IP: {{ publicIp || 'N/A' }}
+  <main class="mx-auto mt-4 w-full max-w-5xl space-y-5 pb-8 sm:mt-6">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-slate-100 sm:text-3xl">
+          Internet speed test
+        </h1>
+        <p class="mt-1 text-sm text-slate-400">
+          Measure your connection in real time.
         </p>
       </div>
-      <div class="text-slate-300 text-sm sm:text-base w-full sm:w-auto text-left sm:text-right">
-        Latency: <span class="font-semibold">{{ latency.toFixed(1) }} ms</span>
-      </div>
-    </div>
+      <UButton
+        :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
+        size="lg"
+        icon="i-lucide-play"
+        @click="startStream"
+      >
+        {{ status === 'complete' || status === 'error' ? 'Run again' : 'Start test' }}
+      </UButton>
+    </header>
 
-    <div class="flex items-center gap-3 mb-4 sm:mb-5">
-      <div
-        class="w-3 h-3 rounded-full animate-pulse"
-        :class="{
-          'bg-gray-500': status === 'idle',
-          'bg-yellow-500': status === 'initializing',
-          'bg-teal-400': status === 'ping',
-          'bg-blue-500': status === 'download',
-          'bg-green-500': status === 'upload',
-          'bg-purple-500': status === 'complete',
-        }"
-      />
-      <p class="text-slate-300 font-medium text-sm sm:text-base">
-        {{ statusText }}
-      </p>
-    </div>
+    <section class="grid gap-8 rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-xl sm:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(17rem,0.85fr)] lg:gap-10">
+      <div class="min-w-0">
+        <SpeedtestGauge
+          :value="activeSpeed"
+          :max="gaugeMax"
+          :label="status === 'upload' ? 'Upload' : 'Download'"
+          :phase="status === 'upload' ? 'upload' : 'download'"
+        />
 
-    <div v-if="status !== 'idle'" class="grid grid-cols-3 gap-3 sm:gap-6 text-center mb-4 sm:mb-5">
-      <div class="p-3 sm:p-4 bg-slate-800 rounded-lg shadow-inner">
-        <p class="text-2xl sm:text-3xl font-bold text-blue-400">
-          {{ currentDownload.toFixed(2) }}
-        </p>
-        <p class="text-slate-400 text-xs sm:text-sm">
-          Download (Mbps)
-        </p>
-      </div>
-      <div class="p-3 sm:p-4 bg-slate-800 rounded-lg shadow-inner">
-        <p class="text-2xl sm:text-3xl font-bold text-green-400">
-          {{ currentUpload.toFixed(2) }}
-        </p>
-        <p class="text-slate-400 text-xs sm:text-sm">
-          Upload (Mbps)
-        </p>
-      </div>
-      <div class="p-3 sm:p-4 bg-slate-800 rounded-lg shadow-inner">
-        <p class="text-2xl sm:text-3xl font-bold text-teal-400">
-          {{ latency.toFixed(1) }}
-        </p>
-        <p class="text-slate-400 text-xs sm:text-sm">
-          Latency (ms)
+        <div class="mt-2 flex min-h-8 items-center justify-center gap-2" role="status" aria-live="polite">
+          <span
+            class="h-2.5 w-2.5 rounded-full"
+            :class="{
+              'bg-slate-500': status === 'idle',
+              'animate-pulse bg-amber-400': status === 'initializing' || status === 'ping',
+              'animate-pulse bg-blue-400': status === 'download',
+              'animate-pulse bg-green-400': status === 'upload',
+              'bg-green-400': status === 'complete',
+              'bg-red-400': status === 'error',
+            }"
+          />
+          <p class="text-sm font-medium text-slate-200">
+            {{ statusText }}
+          </p>
+        </div>
+
+        <UProgress
+          v-if="['initializing', 'ping', 'download', 'upload'].includes(status)"
+          :model-value="progress * 100"
+          class="mt-4"
+        />
+        <p v-if="errorMessage" class="mt-4 text-center text-sm text-red-300" role="alert">
+          {{ errorMessage }}
         </p>
       </div>
-    </div>
 
-    <VChart
-      :option="option"
-      :style="{ height: '400px' }"
-      autoresize
-    />
+      <div class="min-w-0 self-center">
+        <h2 class="mb-2 text-base font-semibold text-slate-100">
+          Test metrics
+        </h2>
+        <dl class="divide-y divide-slate-800 border-y border-slate-800">
+          <div class="flex items-center justify-between gap-4 py-4">
+            <dt class="text-sm text-slate-400">
+              Download
+            </dt>
+            <dd class="text-right text-lg font-semibold tabular-nums text-blue-300">
+              {{ downloadMeasured ? `${currentDownload.toFixed(2)} Mbps` : '—' }}
+            </dd>
+          </div>
+          <div class="flex items-center justify-between gap-4 py-4">
+            <dt class="text-sm text-slate-400">
+              Upload
+            </dt>
+            <dd class="text-right text-lg font-semibold tabular-nums text-green-300">
+              {{ uploadMeasured ? `${currentUpload.toFixed(2)} Mbps` : '—' }}
+            </dd>
+          </div>
+          <div class="flex items-center justify-between gap-4 py-4">
+            <dt class="text-sm text-slate-400">
+              Latency
+            </dt>
+            <dd class="text-right text-lg font-semibold tabular-nums text-slate-100">
+              {{ latencyMeasured ? `${latency.toFixed(1)} ms` : '—' }}
+            </dd>
+          </div>
+        </dl>
 
-    <u-progress
-      v-if="['initializing', 'ping', 'download', 'upload'].includes(status)"
-      :model-value="progress * 100"
-      class="mt-3 sm:mt-4 rounded-lg"
-      height="8"
-    />
+        <div class="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1">
+          <p class="min-w-0 text-slate-400">
+            <span class="block text-xs uppercase tracking-wide text-slate-500">Provider</span>
+            <span class="mt-1 block truncate text-slate-200">{{ isp || 'Not detected' }}</span>
+          </p>
+          <p class="min-w-0 text-slate-400">
+            <span class="block text-xs uppercase tracking-wide text-slate-500">Public IP</span>
+            <span class="mt-1 block break-all text-slate-200">{{ publicIp || '—' }}</span>
+          </p>
+        </div>
 
-    <div v-if="status === 'complete'" class="mt-4 sm:mt-5 border-t border-slate-700 pt-4 sm:pt-5 text-slate-300 text-xs sm:text-sm space-y-1">
-      <p><span class="text-slate-400">Final Download:</span> {{ currentDownload.toFixed(2) }} Mbps</p>
-      <p><span class="text-slate-400">Final Upload:</span> {{ currentUpload.toFixed(2) }} Mbps</p>
-      <p><span class="text-slate-400">Latency:</span> {{ latency.toFixed(1) }} ms</p>
-      <p v-if="resultUrl" class="break-all">
-        <span class="text-slate-400">Result URL:</span>
-        <a :href="resultUrl" target="_blank" class="text-blue-400 hover:underline break-all">{{ resultUrl }}</a>
-      </p>
-    </div>
-  </div>
+        <a
+          v-if="resultUrl"
+          :href="resultUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-5 inline-flex items-center gap-1 text-sm text-blue-300 underline decoration-blue-300/40 underline-offset-4 hover:text-blue-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-300"
+        >
+          View shared result
+          <UIcon name="i-lucide-arrow-up-right" aria-hidden="true" />
+        </a>
+      </div>
+    </section>
+  </main>
 </template>

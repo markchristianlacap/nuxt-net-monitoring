@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "nuxt-ui": {
+        "type": "remote",
+        "url": "https://ui.nuxt.com/mcp"
+      },
+      "nuxt": {
+        "type": "remote",
+        "url": "https://mcp.nuxt.com/sse"
+      }
+    }
+  }
+}

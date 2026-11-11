@@ -1,44 +1,32 @@
-import type { H3Event } from 'h3'
-import { Buffer } from 'node:buffer'
+import { sendRedirect } from 'h3'
+import { getAuthenticatedAdmin } from '../utils/auth'
 
-const AUTH_COOKIE = 'last_auth_time'
-const AUTH_INTERVAL = 1000 * 60 * 60 * 48
+const PUBLIC_PATHS = new Set([
+  '/login',
+  '/setup',
+  '/api/auth/status',
+  '/api/auth/login',
+  '/api/auth/setup',
+  '/api/auth/logout',
+])
 
-export default defineEventHandler((event: H3Event) => {
-  const lastAuth = getCookie(event, AUTH_COOKIE)
-
-  if (lastAuth && Date.now() - Number(lastAuth) < AUTH_INTERVAL) {
+export default defineEventHandler(async (event) => {
+  const path = event.path.split('?')[0] ?? '/'
+  if (
+    PUBLIC_PATHS.has(path)
+    || path.startsWith('/_nuxt/')
+    || path.startsWith('/assets/')
+    || path === '/favicon.ico'
+  ) {
     return
   }
-  const config = useRuntimeConfig()
-  const auth = getHeader(event, 'authorization')
-  const user = config.USER
-  const pass = config.PASS
 
-  if (!auth || !auth.startsWith('Basic ')) {
-    setHeader(event, 'WWW-Authenticate', 'Basic realm="Protected"')
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
+  if (await getAuthenticatedAdmin(event))
+    return
+
+  if (path.startsWith('/api/')) {
+    throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
   }
 
-  const authParts = auth.split(' ')
-  if (authParts.length !== 2 || !authParts[1]) {
-    setHeader(event, 'WWW-Authenticate', 'Basic realm="Protected"')
-    throw createError({ statusCode: 401, statusMessage: 'Invalid authorization header' })
-  }
-
-  const [username, password] = Buffer.from(authParts[1], 'base64')
-    .toString()
-    .split(':')
-
-  if (username !== user || password !== pass) {
-    setHeader(event, 'WWW-Authenticate', 'Basic realm="Protected"')
-    throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' })
-  }
-
-  setCookie(event, AUTH_COOKIE, String(Date.now()), {
-    httpOnly: true,
-    maxAge: AUTH_INTERVAL / 1000,
-    sameSite: 'strict',
-    path: '/',
-  })
+  return sendRedirect(event, '/login')
 })

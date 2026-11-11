@@ -5,6 +5,7 @@ const title = 'Nuxt Net Monitoring'
 const description = 'Nuxt Net Monitoring - Real-time Latency Monitor, PfSense, and Bandwidth Monitor'
 
 const route = useRoute()
+const isAuthPage = computed(() => ['/login', '/setup'].includes(route.path))
 
 const items = computed<NavigationMenuItem[]>(() => [
   {
@@ -36,7 +37,7 @@ useSeoMeta({
 
 <template>
   <UApp>
-    <UHeader>
+    <UHeader v-if="!isAuthPage">
       <template #title>
         <div class="text-primary">
           {{ title }}

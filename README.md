@@ -99,6 +99,17 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
    Keep the app on a trusted network until setup is complete. Navigate to `http://localhost:3000/setup` to create the first administrator, then sign in and open **Monitoring settings** at `/admin` to configure features. Settings are saved in PostgreSQL and apply immediately.
 
+#### Updating
+
+The **Software updates** section on `/admin` checks GitHub for the latest published release and links to its release notes. The app does not replace or restart its own container. To update a Docker Compose installation, run this from the repository directory on the host:
+
+```bash
+git pull --ff-only
+docker compose up -d --build app
+```
+
+The update check uses the app version declared in `package.json` and compares it with the latest GitHub release tag. Releases should use semantic version tags such as `v0.2.0`.
+
 5. **View Logs** (optional)
    ```bash
    # View all logs

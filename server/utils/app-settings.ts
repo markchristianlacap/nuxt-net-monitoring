@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { MIN_SPEEDTEST_FREQUENCY_SECONDS } from '../../shared/types/settings'
+import { MIN_SPEEDTEST_FREQUENCY_SECONDS } from '#shared/types/settings'
 import { db } from '../db'
 import { appSettings as appSettingsTable } from '../db/schema/app-settings'
 

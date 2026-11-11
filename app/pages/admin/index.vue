@@ -12,6 +12,7 @@ interface AdminSettings extends AppSettings {
 const pending = ref(false)
 const errorMessage = ref('')
 const { data } = await useFetch<{ settings: AdminSettings }>('/api/admin/settings')
+const { data: speedtestInterfaces } = await useFetch<Array<{ name: string, addresses: string[] }>>('/api/admin/speedtest-interfaces')
 const settings = reactive<AppSettings>(data.value?.settings ?? {
   features: { ping: false, bandwidth: false, speedtest: false },
   ping: { hosts: [] },
@@ -19,6 +20,19 @@ const settings = reactive<AppSettings>(data.value?.settings ?? {
   speedtest: { frequencySeconds: 3600, localInterfaceName: null },
 })
 const pingHostsText = ref(settings.ping.hosts.join('\n'))
+const scheduledInterface = ref(settings.speedtest.localInterfaceName ?? '')
+const scheduledInterfaceItems = computed(() => [
+  { label: 'System default', value: '' },
+  ...(speedtestInterfaces.value ?? []).map(item => ({
+    label: `${item.name} · ${item.addresses.join(', ')}`,
+    value: item.name,
+  })),
+  ...(scheduledInterface.value && !speedtestInterfaces.value?.some(item => item.name === scheduledInterface.value)
+    ? [
+        { label: `${scheduledInterface.value} · unavailable`, value: scheduledInterface.value },
+      ]
+    : []),
+])
 const devices = ref((data.value?.settings.snmp.devices ?? []).map(device => ({
   ...device,
   interfacesText: device.interfaces?.join(', ') ?? '',
@@ -49,6 +63,10 @@ async function saveSettings() {
       body: {
         settings: {
           ...settings,
+          speedtest: {
+            ...settings.speedtest,
+            localInterfaceName: scheduledInterface.value || null,
+          },
           ping: {
             hosts: pingHostsText.value.split('\n'),
           },
@@ -174,6 +192,9 @@ async function signOut() {
           <USwitch v-model="settings.features.speedtest" label="Enable scheduled speed tests" />
           <UFormField label="Frequency (seconds)" help="Between 60 seconds and 7 days.">
             <UInput v-model.number="settings.speedtest.frequencySeconds" type="number" min="60" max="604800" class="w-full sm:max-w-xs" />
+          </UFormField>
+          <UFormField label="Scheduled test interface" help="Choose the local network adapter for scheduled tests.">
+            <USelect v-model="scheduledInterface" :items="scheduledInterfaceItems" class="w-full sm:max-w-md" />
           </UFormField>
         </div>
       </UCard>

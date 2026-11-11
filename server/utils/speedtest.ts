@@ -52,9 +52,17 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
   }))
 }
 
-export async function runSpeedtest(): Promise<SpeedtestResult> {
+export async function runSpeedtest(interfaceName: string | null = null): Promise<SpeedtestResult> {
   return retry(() => new Promise((resolve, reject) => {
-    const process = spawn('speedtest', ['-f', 'json', '--accept-license'], {
+    const interfaceArgs = interfaceName
+      ? ['--interface', interfaceName]
+      : []
+    const process = spawn('speedtest', [
+      ...interfaceArgs,
+      '-f',
+      'json',
+      '--accept-license',
+    ], {
       stdio: ['pipe', 'pipe', 'pipe'],
       detached: true,
     })

@@ -10,9 +10,19 @@ const isp = ref('')
 const publicIp = ref('')
 const resultUrl = ref('')
 const errorMessage = ref('')
+const selectedInterface = ref('')
+const testedInterfaceName = ref('')
 const status = ref<'idle' | 'initializing' | 'ping' | 'download' | 'upload' | 'complete' | 'error'>('idle')
 const progress = ref(0)
 let reader: ReadableStreamDefaultReader<string> | null = null
+const { data: availableInterfaces } = await useFetch<Array<{ name: string, addresses: string[] }>>('/api/speedtest/interfaces')
+const interfaceItems = computed(() => [
+  { label: 'System default', value: '' },
+  ...(availableInterfaces.value ?? []).map(item => ({
+    label: `${item.name} · ${item.addresses.join(', ')}`,
+    value: item.name,
+  })),
+])
 
 const activeSpeed = computed(() => status.value === 'upload'
   ? currentUpload.value
@@ -48,6 +58,7 @@ function resetState() {
   isp.value = ''
   publicIp.value = ''
   errorMessage.value = ''
+  testedInterfaceName.value = ''
   status.value = 'idle'
   progress.value = 0
 }
@@ -59,6 +70,7 @@ async function startStream() {
   try {
     const response = await $fetch<ReadableStream>('/api/speedtest', {
       method: 'POST',
+      body: { interfaceName: selectedInterface.value || null },
       responseType: 'stream',
     })
 
@@ -67,7 +79,8 @@ async function startStream() {
     while (true) {
       const { value, done } = await reader.read()
       if (done) {
-        status.value = 'complete'
+        if (!errorMessage.value)
+          status.value = 'complete'
         break
       }
       if (!value)
@@ -98,6 +111,7 @@ function handleEvent(event: any) {
     case 'testStart':
       isp.value = event.isp
       publicIp.value = event.interface?.externalIp ?? 'N/A'
+      testedInterfaceName.value = event.interface?.name || selectedInterface.value || 'System default'
       status.value = 'ping'
       break
     case 'ping':
@@ -123,9 +137,14 @@ function handleEvent(event: any) {
       latency.value = event.ping.latency
       latencyMeasured.value = true
       resultUrl.value = event.result.url
+      testedInterfaceName.value = event.interface?.name || testedInterfaceName.value || selectedInterface.value || 'System default'
       updateSpeed('download', event.download.bandwidth)
       updateSpeed('upload', event.upload.bandwidth)
       status.value = 'complete'
+      break
+    case 'error':
+      errorMessage.value = event.message || 'The speed test failed. Try another interface or use the system default.'
+      status.value = 'error'
       break
   }
 }
@@ -154,14 +173,24 @@ const statusText = computed(() => ({
           Measure your connection in real time.
         </p>
       </div>
-      <UButton
-        :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
-        size="lg"
-        icon="i-lucide-play"
-        @click="startStream"
-      >
-        {{ status === 'complete' || status === 'error' ? 'Run again' : 'Start test' }}
-      </UButton>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <UFormField label="Network interface" help="Choose an adapter or use the system default.">
+          <USelect
+            v-model="selectedInterface"
+            :items="interfaceItems"
+            :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
+            class="w-full sm:min-w-64"
+          />
+        </UFormField>
+        <UButton
+          :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
+          size="lg"
+          icon="i-lucide-play"
+          @click="startStream"
+        >
+          {{ status === 'complete' || status === 'error' ? 'Run again' : 'Start test' }}
+        </UButton>
+      </div>
     </header>
 
     <section class="grid gap-8 rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-xl sm:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(17rem,0.85fr)] lg:gap-10">
@@ -239,6 +268,10 @@ const statusText = computed(() => ({
           <p class="min-w-0 text-slate-400">
             <span class="block text-xs uppercase tracking-wide text-slate-500">Public IP</span>
             <span class="mt-1 block break-all text-slate-200">{{ publicIp || '—' }}</span>
+          </p>
+          <p class="min-w-0 text-slate-400 sm:col-span-2 lg:col-span-1">
+            <span class="block text-xs uppercase tracking-wide text-slate-500">Network interface</span>
+            <span class="mt-1 block break-all text-slate-200">{{ testedInterfaceName || selectedInterface || 'System default' }}</span>
           </p>
         </div>
 

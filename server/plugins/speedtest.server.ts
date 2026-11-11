@@ -23,7 +23,8 @@ export default defineNitroPlugin(async () => {
 
     const activeGeneration = generation
     stopScheduledTest = runEveryInterval(settings.speedtest.frequencySeconds, async () => {
-      const result = await runSpeedtest()
+      const interfaceName = settings.speedtest.localInterfaceName
+      const result = await runSpeedtest(interfaceName)
       if (activeGeneration !== generation)
         return
 
@@ -34,6 +35,7 @@ export default defineNitroPlugin(async () => {
         ip: result.interface.externalIp,
         isp: result.isp,
         timestamp: new Date(),
+        networkInterface: interfaceName || result.interface.name || null,
         url: result.result.url,
       })
     })

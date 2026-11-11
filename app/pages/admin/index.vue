@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { MIN_SPEEDTEST_FREQUENCY_SECONDS } from '../../../shared/types/settings'
-
 definePageMeta({ middleware: 'auth' })
 
 interface AdminSettings extends AppSettings {
@@ -18,6 +16,21 @@ const settings = reactive<AppSettings>(data.value?.settings ?? {
   ping: { hosts: [] },
   snmp: { devices: [] },
   speedtest: { frequencySeconds: 3600, localInterfaceNames: [] },
+})
+const speedtestFrequencyOptions = [
+  { label: 'Every 1 hour', value: 3600 },
+  { label: 'Every 3 hours', value: 10800 },
+  { label: 'Every 12 hours', value: 43200 },
+  { label: 'Every 7 days', value: 604800 },
+]
+const speedtestFrequencyItems = computed(() => {
+  const currentFrequency = settings.speedtest.frequencySeconds
+  return speedtestFrequencyOptions.some(option => option.value === currentFrequency)
+    ? speedtestFrequencyOptions
+    : [
+        { label: `Current interval (${currentFrequency} seconds)`, value: currentFrequency },
+        ...speedtestFrequencyOptions,
+      ]
 })
 const pingHostsText = ref(settings.ping.hosts.join('\n'))
 const scheduledInterfaces = ref([...settings.speedtest.localInterfaceNames])
@@ -187,8 +200,15 @@ async function signOut() {
         </template>
         <div class="space-y-4">
           <USwitch v-model="settings.features.speedtest" label="Enable scheduled speed tests" />
-          <UFormField label="Frequency (seconds)" help="Between 1 hour and 7 days.">
-            <UInput v-model.number="settings.speedtest.frequencySeconds" type="number" :min="MIN_SPEEDTEST_FREQUENCY_SECONDS" max="604800" class="w-full sm:max-w-xs" />
+          <UFormField label="Schedule frequency" help="Choose how often scheduled speed tests run.">
+            <USelectMenu
+              v-model="settings.speedtest.frequencySeconds"
+              :items="speedtestFrequencyItems"
+              value-key="value"
+              label-key="label"
+              :search-input="false"
+              class="w-full sm:max-w-xs"
+            />
           </UFormField>
           <UFormField label="Scheduled test interfaces" help="Choose one or more adapters. Tests run one at a time in selection order; leave empty to use the system default.">
             <USelectMenu

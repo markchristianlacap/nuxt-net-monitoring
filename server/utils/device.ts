@@ -8,6 +8,8 @@ interface DeviceContext {
   sessionClosed: boolean
   interfaces: DeviceInterface[] | null
   cacheTimestamp: number
+  gateways: string[] | null
+  gatewayCacheTimestamp: number
   bandwidthState: Map<number, { inBytes: bigint, outBytes: bigint, time: number }>
 }
 
@@ -21,6 +23,8 @@ const OIDS = {
   ifHCIn: '1.3.6.1.2.1.31.1.1.1.6',
   ifHCOut: '1.3.6.1.2.1.31.1.1.1.10',
   ipAdEntIfIndex: '1.3.6.1.2.1.4.20.1.2',
+  hrSWRunName: '1.3.6.1.2.1.25.4.2.1.2',
+  hrSWRunParameters: '1.3.6.1.2.1.25.4.2.1.5',
 }
 
 const contexts = new Map<string, DeviceContext>()
@@ -45,6 +49,8 @@ function createSession(context: DeviceContext): snmp.Session {
 function invalidateDeviceState(context: DeviceContext) {
   context.interfaces = null
   context.cacheTimestamp = 0
+  context.gateways = null
+  context.gatewayCacheTimestamp = 0
   context.bandwidthState.clear()
 }
 
@@ -59,6 +65,8 @@ function getDeviceContext(config: SnmpDeviceConfig): DeviceContext {
       sessionClosed: false,
       interfaces: null,
       cacheTimestamp: 0,
+      gateways: null,
+      gatewayCacheTimestamp: 0,
       bandwidthState: new Map(),
     }
     context.session = createSession(context)
@@ -201,6 +209,57 @@ export async function getInterfaces(): Promise<DeviceInterface[]> {
     }
   }))
   return results.flat()
+}
+
+async function getDeviceGateways(context: DeviceContext): Promise<string[]> {
+  const now = Date.now()
+  if (context.gateways && now - context.gatewayCacheTimestamp < 30_000)
+    return context.gateways
+
+  const processNames: Record<number, string> = {}
+  const processParameters: Record<number, string> = {}
+  await Promise.all([
+    walk(context, OIDS.hrSWRunName, (index, value) => {
+      processNames[index] = value.toString()
+    }),
+    walk(context, OIDS.hrSWRunParameters, (index, value) => {
+      processParameters[index] = value.toString()
+    }),
+  ])
+
+  const gateways = Object.entries(processParameters).flatMap(([index, parameters]) => {
+    if (!processNames[Number(index)]?.toLowerCase().includes('dpinger'))
+      return []
+    const gateway = parameters.match(/(?:^|\s)-i\s+(\S+)/)?.[1]
+    if (gateway)
+      return [gateway]
+    return []
+  })
+  context.gateways = Array.from(new Set(gateways))
+  context.gatewayCacheTimestamp = now
+  return context.gateways
+}
+
+export async function getGateways(): Promise<DeviceGatewayInfo[]> {
+  const contexts = await getContexts()
+  return Promise.all(contexts.map(async (context) => {
+    try {
+      return {
+        host: context.config.host,
+        displayName: context.displayName,
+        gateways: await getDeviceGateways(context),
+      }
+    }
+    catch (error) {
+      invalidateDeviceState(context)
+      console.error(`getGateways(${context.config.host}) error:`, error)
+      return {
+        host: context.config.host,
+        displayName: context.displayName,
+        gateways: [],
+      }
+    }
+  }))
 }
 
 function bufferToUint64(buf: Buffer): bigint {

@@ -18,3 +18,9 @@ export interface DeviceInterface {
   speed: number
   ip: string
 }
+
+export interface DeviceGatewayInfo {
+  host: string
+  displayName: string
+  gateways: string[]
+}

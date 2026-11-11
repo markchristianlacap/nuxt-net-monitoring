@@ -19,10 +19,12 @@ interface InterfaceStats {
 interface RouterStats {
   host: string
   displayName: string
+  gateways: string[]
   interfaces: InterfaceStats[]
 }
 
 const interfaceInfo = await useFetch('/api/interfaces')
+const gatewayInfo = await useFetch<DeviceGatewayInfo[]>('/api/bandwidths/gateways')
 const interfaces = ref<Map<string, InterfaceStats>>(new Map())
 const maxPoints = 50
 let eventSource: EventSource | null = null
@@ -41,6 +43,7 @@ const routers = computed<RouterStats[]>(() => {
       routerMap.set(stats.host, {
         host: stats.host,
         displayName: stats.displayName,
+        gateways: gatewayInfo.data.value?.find(device => device.host === stats.host)?.gateways ?? [],
         interfaces: [],
       })
     }
@@ -291,6 +294,16 @@ onBeforeUnmount(() => {
               <p v-if="router.displayName !== router.host" class="truncate text-xs text-muted">
                 {{ router.host }}
               </p>
+              <div v-if="router.gateways.length" class="mt-2 flex flex-wrap gap-1.5">
+                <span class="text-xs text-muted">Gateways:</span>
+                <span
+                  v-for="gateway in router.gateways"
+                  :key="gateway"
+                  class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-toned"
+                >
+                  {{ gateway }}
+                </span>
+              </div>
             </div>
             <span class="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-toned">
               {{ router.interfaces.length }} {{ router.interfaces.length === 1 ? 'interface' : 'interfaces' }}

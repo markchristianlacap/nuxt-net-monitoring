@@ -1,66 +1,92 @@
+import type { AppSettings } from '~~/shared/types/settings'
 import { spawn } from 'node:child_process'
 import { db } from '../db'
 import { pings as pingTable } from '../db/schema/pings'
-import { getNetworkConfig } from '../utils/network-config'
+import { getAppSettings, subscribeToAppSettings } from '../utils/app-settings'
+import { runEveryMinute } from '../utils/helper'
 
 export default defineNitroPlugin(async () => {
-  const hosts = getNetworkConfig().ping.hosts.map(host => host.trim()).filter(Boolean)
+  let stopAveraging: (() => void) | undefined
+  let childProcesses: ReturnType<typeof spawn>[] = []
+  let applyQueue = Promise.resolve()
 
-  if (hosts.length === 0) {
-    console.warn('No ping hosts configured in network.config.json')
-    return
+  async function stop() {
+    stopAveraging?.()
+    stopAveraging = undefined
+    for (const child of childProcesses)
+      child.kill('SIGTERM')
+    childProcesses = []
   }
 
-  // Store ping data per host
-  const pingsPerHost = new Map<string, PingResult[]>()
-  hosts.forEach(host => pingsPerHost.set(host, []))
-
-  const saveAverage = async (host: string) => {
-    const pings = pingsPerHost.get(host) || []
-    if (pings.length === 0)
+  async function start(settings: AppSettings) {
+    await stop()
+    const hosts = settings.features.ping
+      ? [
+          ...new Set(settings.ping.hosts.map(host => host.trim()).filter(Boolean)),
+        ]
+      : []
+    if (!hosts.length)
       return
 
-    const avgLatency = pings.reduce((a, b) => a + b.latency, 0) / pings.length
-    const status = avgLatency > 0
-      ? 'online'
-      : 'offline'
+    const pingsPerHost = new Map<string, PingResult[]>(hosts.map(host => [host, []]))
+    const activeChildren: ReturnType<typeof spawn>[] = []
+    childProcesses = activeChildren
 
-    await db.insert(pingTable).values({
-      host,
-      latency: Math.round(avgLatency * 100) / 100,
-      status,
-      timestamp: new Date(),
+    for (const host of hosts) {
+      const child = spawn('ping', ['-i', '1', host])
+      activeChildren.push(child)
+
+      child.stdout.on('data', (data) => {
+        if (childProcesses !== activeChildren)
+          return
+        const latencyMatch = data.toString().match(/time=([\d.]+) ms/)
+        const latency = latencyMatch
+          ? Number.parseFloat(latencyMatch[1])
+          : 0
+        const currentPing: PingResult = {
+          host,
+          status: latency > 0
+            ? 'online'
+            : 'offline',
+          latency,
+          timestamp: new Date().toISOString(),
+        }
+        events.emit('ping:update', currentPing)
+        pingsPerHost.get(host)?.push(currentPing)
+      })
+
+      child.on('error', (error) => {
+        console.error(`Ping process error for host ${host}:`, error)
+      })
+    }
+
+    stopAveraging = runEveryMinute(async () => {
+      for (const host of hosts) {
+        const samples = pingsPerHost.get(host) ?? []
+        if (!samples.length)
+          continue
+
+        const avgLatency = samples.reduce((sum, sample) => sum + sample.latency, 0) / samples.length
+        await db.insert(pingTable).values({
+          host,
+          latency: Math.round(avgLatency * 100) / 100,
+          status: avgLatency > 0
+            ? 'online'
+            : 'offline',
+          timestamp: new Date(),
+        })
+        pingsPerHost.set(host, [])
+      }
     })
-    pingsPerHost.set(host, [])
   }
 
-  // Start ping process for each host
-  hosts.forEach((host) => {
-    const ping = spawn('ping', ['-i', '1', host])
+  const apply = (settings: AppSettings) => {
+    applyQueue = applyQueue
+      .then(() => start(settings))
+      .catch(error => console.error('Unable to reconfigure ping monitoring:', error))
+    return applyQueue
+  }
 
-    ping.stdout.on('data', async (data) => {
-      const latencyMatch = data.toString().match(/time=([\d.]+) ms/)
-      const latency = latencyMatch
-        ? Number.parseFloat(latencyMatch[1])
-        : 0
-      const currentPing: PingResult = {
-        host,
-        status: latency > 0
-          ? 'online'
-          : 'offline',
-        latency,
-        timestamp: new Date().toISOString(),
-      }
-      events.emit('ping:update', currentPing)
-      const hostPings = pingsPerHost.get(host) || []
-      hostPings.push(currentPing)
-      pingsPerHost.set(host, hostPings)
-    })
-
-    ping.on('error', (err) => {
-      console.error(`Ping process error for host ${host}:`, err)
-    })
-
-    runEveryMinute(() => saveAverage(host))
-  })
+  subscribeToAppSettings(apply)
+  await apply(await getAppSettings())
 })

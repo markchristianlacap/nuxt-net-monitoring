@@ -6,29 +6,33 @@ const description = 'Nuxt Net Monitoring - Real-time Latency Monitor, PfSense, a
 
 const route = useRoute()
 const isAuthPage = computed(() => ['/login', '/setup'].includes(route.path))
+const { data: featureData } = await useFetch<{ features: { ping: boolean, bandwidth: boolean, speedtest: boolean } }>('/api/features')
 
-const items = computed<NavigationMenuItem[]>(() => [
-  {
-    label: 'Ping Results',
-    to: '/pings',
-    active: route.path === '/pings',
-  },
-  {
-    label: 'Bandwidth Results',
-    to: '/bandwidths',
-    active: route.path === '/bandwidths',
-  },
-  {
-    label: 'Speedtest Results',
-    to: '/speedtest-results',
-    active: route.path === '/speedtest-results',
-  },
-  {
-    label: 'Settings',
-    to: '/admin',
-    active: route.path.startsWith('/admin'),
-  },
-])
+const items = computed<NavigationMenuItem[]>(() => {
+  const features = featureData.value?.features
+  return [
+    ...(features?.ping
+      ? [
+          { label: 'Ping Results', to: '/pings', active: route.path === '/pings' },
+        ]
+      : []),
+    ...(features?.bandwidth
+      ? [
+          { label: 'Bandwidth Results', to: '/bandwidths', active: route.path === '/bandwidths' },
+        ]
+      : []),
+    ...(features?.speedtest
+      ? [
+          { label: 'Speedtest Results', to: '/speedtest-results', active: route.path === '/speedtest-results' },
+        ]
+      : []),
+    {
+      label: 'Settings',
+      to: '/admin',
+      active: route.path.startsWith('/admin'),
+    },
+  ]
+})
 useSeoMeta({
   title,
   description,
@@ -51,6 +55,7 @@ useSeoMeta({
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />
         <u-button
+          v-if="featureData?.features.speedtest"
           color="primary"
           icon="i-lucide-play"
           @click="navigateTo('/speedtest')"

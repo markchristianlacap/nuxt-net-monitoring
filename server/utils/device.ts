@@ -1,7 +1,7 @@
-import type { SnmpDeviceConfig } from './network-config'
+import type { SnmpDeviceConfig } from '~~/shared/types/settings'
 import { Buffer } from 'node:buffer'
 import snmp from 'net-snmp'
-import { getNetworkConfig } from './network-config'
+import { getAppSettings } from './app-settings'
 
 interface DeviceContext {
   config: SnmpDeviceConfig
@@ -74,8 +74,27 @@ function getDeviceContext(config: SnmpDeviceConfig): DeviceContext {
   return context
 }
 
-function getContexts(): DeviceContext[] {
-  return getNetworkConfig().snmp.devices.map(getDeviceContext)
+async function getContexts(): Promise<DeviceContext[]> {
+  const settings = await getAppSettings()
+  const devices = settings.features.bandwidth
+    ? settings.snmp.devices
+    : []
+  const activeHosts = new Set(devices.map(device => device.host.trim().toLowerCase()))
+
+  for (const [host, context] of contexts) {
+    if (activeHosts.has(host))
+      continue
+    context.session.close()
+    contexts.delete(host)
+  }
+
+  return devices.map(getDeviceContext)
+}
+
+export function resetDeviceContexts() {
+  for (const context of contexts.values())
+    context.session.close()
+  contexts.clear()
 }
 
 function walk(context: DeviceContext, oid: string, handler: (index: number, value: any) => void): Promise<void> {
@@ -166,7 +185,8 @@ async function getDeviceInterfaces(context: DeviceContext): Promise<DeviceInterf
 }
 
 export async function getInterfaces(): Promise<DeviceInterface[]> {
-  const results = await Promise.all(getContexts().map(async (context) => {
+  const contexts = await getContexts()
+  const results = await Promise.all(contexts.map(async (context) => {
     try {
       return await getDeviceInterfaces(context)
     }
@@ -214,7 +234,8 @@ function snmpGet(context: DeviceContext, oids: string[]): Promise<{ inBytes: big
 }
 
 export async function getBandwidth(host: string, iface: string): Promise<BandwidthResult | null> {
-  const context = getContexts().find(device => device.config.host.trim().toLowerCase() === host.trim().toLowerCase())
+  const contexts = await getContexts()
+  const context = contexts.find(device => device.config.host.trim().toLowerCase() === host.trim().toLowerCase())
   if (!context)
     return null
 

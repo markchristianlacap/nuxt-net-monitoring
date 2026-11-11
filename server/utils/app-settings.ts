@@ -7,6 +7,7 @@ import { appSettings as appSettingsTable } from '../db/schema/app-settings'
 type SettingsListener = (settings: AppSettings) => void | Promise<void>
 
 const listeners = new Set<SettingsListener>()
+let settingsCache: AppSettings | undefined
 
 export function subscribeToAppSettings(listener: SettingsListener) {
   listeners.add(listener)
@@ -25,6 +26,9 @@ export async function notifyAppSettingsChanged(settings: AppSettings) {
 }
 
 export async function getAppSettings(): Promise<AppSettings> {
+  if (settingsCache)
+    return structuredClone(settingsCache)
+
   await db.insert(appSettingsTable)
     .values({
       id: 1,
@@ -37,7 +41,8 @@ export async function getAppSettings(): Promise<AppSettings> {
     .where(eq(appSettingsTable.id, 1))
     .limit(1)
 
-  return row?.settings ?? structuredClone(DEFAULT_APP_SETTINGS)
+  settingsCache = row?.settings ?? structuredClone(DEFAULT_APP_SETTINGS)
+  return structuredClone(settingsCache)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -148,6 +153,7 @@ export async function saveAppSettings(settings: AppSettings): Promise<AppSetting
         updatedAt: new Date(),
       },
     })
+  settingsCache = structuredClone(settings)
   await notifyAppSettingsChanged(settings)
   return settings
 }

@@ -45,9 +45,9 @@ const option = computed<ECOption>(() => {
       ? `${item.displayName} (${item.host})`
       : item.host
     const interfaceName = item.interface || item.host
-    const description = interfaceInfo.value?.find(i => i.host === item.host && i.name === item.interface)?.description?.trim()
-    const interfaceLabel = description && description !== interfaceName
-      ? `${interfaceName} (${description})`
+    const alias = interfaceInfo.value?.find(i => i.host === item.host && i.name === item.interface)?.alias?.trim()
+    const interfaceLabel = alias
+      ? `${interfaceName} (${alias})`
       : interfaceName
     const label = `${deviceLabel} / ${interfaceLabel}`
     const time = new Date(item.time_bucket).getTime()

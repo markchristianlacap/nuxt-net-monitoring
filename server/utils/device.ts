@@ -14,6 +14,7 @@ interface DeviceContext {
 const OIDS = {
   ifIndex: '1.3.6.1.2.1.2.2.1.1',
   ifName: '1.3.6.1.2.1.31.1.1.1.1',
+  ifAlias: '1.3.6.1.2.1.31.1.1.1.18',
   ifDescr: '1.3.6.1.2.1.2.2.1.2',
   ifOperStatus: '1.3.6.1.2.1.2.2.1.8',
   ifSpeed: '1.3.6.1.2.1.31.1.1.1.15',
@@ -148,6 +149,10 @@ async function getDeviceInterfaces(context: DeviceContext): Promise<DeviceInterf
       data[index] ??= {}
       data[index].name = value.toString()
     }),
+    walk(context, OIDS.ifAlias, (index, value) => {
+      data[index] ??= {}
+      data[index].alias = value.toString()
+    }),
     walk(context, OIDS.ifDescr, (index, value) => {
       data[index] ??= {}
       data[index].description = value.toString()
@@ -172,6 +177,7 @@ async function getDeviceInterfaces(context: DeviceContext): Promise<DeviceInterf
       displayName: context.displayName,
       index: iface.index,
       name: iface.name,
+      alias: iface.alias ?? '',
       description: iface.description ?? '',
       status: iface.status ?? 'unknown',
       speed: iface.speed ?? 0,

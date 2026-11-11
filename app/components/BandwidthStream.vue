@@ -10,7 +10,7 @@ interface InterfaceStats {
   maxDownload: number
   maxUpload: number
   name: string
-  description: string
+  alias: string
   speed: number
   ip: string
   status: 'up' | 'down' | 'testing' | 'unknown'
@@ -75,9 +75,9 @@ function getRouterChartOption(router: RouterStats): ECOption {
   }
 
   const interfaceLabel = (stats: InterfaceStats) => {
-    const description = stats.description.trim()
-    return description && description !== stats.name
-      ? `${stats.name} (${description})`
+    const alias = stats.alias.trim()
+    return alias
+      ? `${stats.name} (${alias})`
       : stats.name
   }
 
@@ -190,7 +190,7 @@ function connectStream() {
         host: data.host,
         displayName: data.displayName || data.host,
         name: iface,
-        description: '',
+        alias: '',
         speed: 0,
         ip: '',
         status: 'unknown',
@@ -206,7 +206,7 @@ function connectStream() {
         maxDownload: 0,
         maxUpload: 0,
         name: info.name || iface,
-        description: info.description || '',
+        alias: info.alias || '',
         speed: info.speed || 0,
         ip: info.ip || '',
         status: info.status,
@@ -306,7 +306,7 @@ onBeforeUnmount(() => {
           >
             <div class="mb-2 flex min-w-0 items-center justify-between gap-3">
               <h4 class="truncate text-sm font-semibold text-highlighted">
-                {{ stats.description && stats.description !== stats.name ? `${stats.name} (${stats.description})` : stats.name }}
+                {{ stats.alias ? `${stats.name} (${stats.alias})` : stats.name }}
               </h4>
               <span
                 :class="{

@@ -12,6 +12,7 @@ export interface DeviceInterface {
   displayName: string
   index: number
   name: string
+  alias: string
   description: string
   status: 'up' | 'down' | 'testing' | 'unknown'
   speed: number

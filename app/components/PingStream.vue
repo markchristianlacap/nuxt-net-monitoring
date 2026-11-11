@@ -214,7 +214,7 @@ onBeforeUnmount(() => eventSource?.close())
 
     <!-- Overall Summary -->
     <div v-if="hosts.size > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-      <div class="flex flex-col items-center rounded-xl border border-default bg-muted px-4 py-3">
+      <div class="flex flex-col items-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 dark:border-cyan-800 dark:bg-cyan-950/30">
         <span class="mb-1 text-xs font-medium text-muted">Total Hosts</span>
         <span class="text-2xl font-bold text-cyan-700 dark:text-cyan-300">{{ summary.totalHosts }}</span>
       </div>
@@ -226,7 +226,7 @@ onBeforeUnmount(() => eventSource?.close())
         <span class="mb-1 text-xs font-medium text-muted">Offline</span>
         <span class="text-2xl font-bold text-red-700 dark:text-red-300">{{ summary.offlineHosts }}</span>
       </div>
-      <div class="flex flex-col items-center rounded-xl border border-default bg-muted px-4 py-3">
+      <div class="flex flex-col items-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 dark:border-cyan-800 dark:bg-cyan-950/30">
         <span class="mb-1 text-xs font-medium text-muted">Avg Latency</span>
         <span class="text-2xl font-bold text-cyan-700 dark:text-cyan-300">
           {{ summary.avgLatency.toFixed(1) }}<span class="ml-1 text-xs text-dimmed">ms</span>

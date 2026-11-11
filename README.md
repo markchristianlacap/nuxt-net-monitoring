@@ -11,7 +11,6 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 ## 📋 Table of Contents
 
 - [Features](#-features)
-- [Screenshots](#️-screenshots)
 - [Quick Start](#-quick-start)
   - [Docker Deployment](#docker-deployment-recommended)
   - [Manual Installation](#manual-installation)
@@ -53,19 +52,6 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 * **Admin Account**: First-run setup followed by username/password sign-in
 * **Protected Routes**: Authenticated routes use secure, database-backed sessions
 * **Dashboard Configuration**: Feature settings are saved in PostgreSQL and applied immediately
-
----
-
-## 🖥️ Screenshots
-
-**Dashboard Example**
-![Dashboard Screenshot](./screenshots/dashboard.png)
-
-**Live Bandwidth Chart**
-![Bandwidth Chart](./screenshots/bandwidth.png)
-
-**Speed Test Results**
-![Speed Test Chart](./screenshots/speedtest.png)
 
 ---
 

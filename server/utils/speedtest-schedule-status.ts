@@ -4,6 +4,7 @@ let status: SpeedtestScheduleStatus = {
   interfaces: [],
   currentInterface: null,
   currentIndex: null,
+  currentTest: null,
   frequencySeconds: null,
   nextRunAt: null,
   lastAttempt: null,

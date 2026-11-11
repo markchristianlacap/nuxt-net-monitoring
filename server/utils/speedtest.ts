@@ -52,7 +52,10 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
   }))
 }
 
-export async function runSpeedtest(interfaceName: string | null = null): Promise<SpeedtestResult> {
+export async function runSpeedtest(
+  interfaceName: string | null = null,
+  onEvent?: (event: SpeedtestEvent) => void,
+): Promise<SpeedtestResult> {
   return retry(() => new Promise((resolve, reject) => {
     const interfaceArgs = interfaceName
       ? ['--interface', interfaceName]
@@ -60,35 +63,50 @@ export async function runSpeedtest(interfaceName: string | null = null): Promise
     const process = spawn('speedtest', [
       ...interfaceArgs,
       '-f',
-      'json',
+      'jsonl',
       '--accept-license',
     ], {
       stdio: ['pipe', 'pipe', 'pipe'],
       detached: true,
     })
-    let output = ''
+    let outputBuffer = ''
     let stderr = ''
+    let result: SpeedtestResult | undefined
+    let parseError: unknown
 
-    process.stdout.on('data', data => (output += data.toString()))
+    const processLine = (line: string) => {
+      if (!line.trim())
+        return
+
+      try {
+        const event = JSON.parse(line) as SpeedtestEvent
+        onEvent?.(event)
+        if (event.type === 'result')
+          result = event as SpeedtestResult
+      }
+      catch (error) {
+        parseError = error
+      }
+    }
+
+    process.stdout.on('data', (data) => {
+      outputBuffer += data.toString()
+      const lines = outputBuffer.split(/\r?\n/)
+      outputBuffer = lines.pop() ?? ''
+      for (const line of lines)
+        processLine(line)
+    })
     process.stderr.on('data', data => (stderr += data.toString()))
 
     process.on('close', (code) => {
+      processLine(outputBuffer)
+      if (parseError)
+        return reject(parseError)
       if (code !== 0 || stderr)
         return reject(new Error(stderr || `Exited with code ${code}`))
-      if (!output.trim())
-        return reject(new Error('No output from speedtest'))
-      try {
-        const lines = output.trim().split('\n')
-        for (const line of lines) {
-          const res = JSON.parse(line)
-          if (res.type === 'result')
-            return resolve(res as SpeedtestResult)
-        }
-        reject(new Error('No result found'))
-      }
-      catch (err) {
-        reject(err)
-      }
+      if (!result)
+        return reject(new Error('No result found'))
+      resolve(result)
     })
   }))
 }

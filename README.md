@@ -208,7 +208,7 @@ On first launch, visit `/setup` to create the first administrator account. This 
 
 ### Main Dashboard (`/`)
 
-The homepage displays real-time monitoring with two tabs:
+The homepage displays real-time monitoring with three tabs:
 
 1. **Ping Latency Tab**
    - Live streaming ping data every second
@@ -223,14 +223,10 @@ The homepage displays real-time monitoring with two tabs:
    - Individual interface metrics: upload/download speeds in Mbps
    - 60-second averages stored in database
 
-### Speed Test (`/speedtest`)
-
-- Live progress with real-time metrics
-- Download/upload speed visualization
-- Ping latency measurement
-- ISP and public IP detection
-- Results saved automatically
-- Sharable result URL
+3. **Speedtest Tab**
+   - Live phase, download/upload speeds, and latency for the scheduled test in progress
+   - Scheduled interface, next run, and most recent result status
+   - `/speedtest` redirects to this dashboard tab
 
 ### Historical Data
 

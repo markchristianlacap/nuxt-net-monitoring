@@ -1,5 +1,17 @@
+import { toMbps } from '../../shared/utils/converter'
 import { db } from '../db'
 import { speedtestResults } from '../db/schema/speedtest-results'
+
+const emptyProgress: ScheduledSpeedtestProgress = {
+  phase: 'starting',
+  progress: 0,
+  downloadMbps: null,
+  uploadMbps: null,
+  latencyMs: null,
+  isp: null,
+  publicIp: null,
+  resultUrl: null,
+}
 
 export default defineNitroPlugin(async () => {
   let stopScheduledTest: (() => void) | undefined
@@ -58,6 +70,7 @@ export default defineNitroPlugin(async () => {
         running: true,
         currentInterface: null,
         currentIndex: null,
+        currentTest: null,
         nextRunAt: null,
       })
 
@@ -69,10 +82,56 @@ export default defineNitroPlugin(async () => {
           updateSpeedtestScheduleStatus({
             currentInterface: interfaceName ?? 'System default',
             currentIndex: index + 1,
+            currentTest: { ...emptyProgress },
           })
 
           try {
-            const result = await runSpeedtest(interfaceName)
+            const result = await runSpeedtest(interfaceName, (event) => {
+              const currentTest = getSpeedtestScheduleStatus().currentTest ?? { ...emptyProgress }
+              const progress = { ...currentTest }
+
+              switch (event.type) {
+                case 'testStart':
+                  Object.assign(progress, {
+                    ...emptyProgress,
+                    phase: 'ping',
+                    isp: event.isp ?? null,
+                    publicIp: event.interface?.externalIp ?? null,
+                  })
+                  break
+                case 'ping':
+                  progress.phase = 'ping'
+                  progress.progress = event.ping?.progress ?? progress.progress
+                  progress.latencyMs = event.ping?.latency ?? progress.latencyMs
+                  break
+                case 'download':
+                  progress.phase = 'download'
+                  progress.progress = event.download?.progress ?? progress.progress
+                  if (event.download?.bandwidth !== undefined)
+                    progress.downloadMbps = toMbps(event.download.bandwidth)
+                  break
+                case 'upload':
+                  progress.phase = 'upload'
+                  progress.progress = event.upload?.progress ?? progress.progress
+                  if (event.upload?.bandwidth !== undefined)
+                    progress.uploadMbps = toMbps(event.upload.bandwidth)
+                  break
+                case 'result':
+                  progress.phase = 'complete'
+                  progress.progress = 1
+                  progress.latencyMs = event.ping?.latency ?? progress.latencyMs
+                  if (event.download?.bandwidth !== undefined)
+                    progress.downloadMbps = toMbps(event.download.bandwidth)
+                  if (event.upload?.bandwidth !== undefined)
+                    progress.uploadMbps = toMbps(event.upload.bandwidth)
+                  progress.isp = event.isp ?? progress.isp
+                  progress.publicIp = event.interface?.externalIp ?? progress.publicIp
+                  progress.resultUrl = event.result?.url ?? progress.resultUrl
+                  break
+              }
+
+              updateSpeedtestScheduleStatus({ currentTest: progress })
+            })
             if (activeGeneration !== generation)
               return
 
@@ -87,6 +146,10 @@ export default defineNitroPlugin(async () => {
               url: result.result.url,
             })
             updateSpeedtestScheduleStatus({
+              currentTest: {
+                ...(getSpeedtestScheduleStatus().currentTest ?? { ...emptyProgress }),
+                phase: 'complete',
+              },
               lastAttempt: {
                 interfaceName: interfaceName || result.interface.name || 'System default',
                 completedAt: new Date().toISOString(),
@@ -99,6 +162,10 @@ export default defineNitroPlugin(async () => {
               return
             console.error(`Scheduled speed test failed for ${interfaceName ?? 'system default'}:`, error)
             updateSpeedtestScheduleStatus({
+              currentTest: {
+                ...(getSpeedtestScheduleStatus().currentTest ?? { ...emptyProgress }),
+                phase: 'error',
+              },
               lastAttempt: {
                 interfaceName: interfaceName ?? 'System default',
                 completedAt: new Date().toISOString(),
@@ -115,6 +182,7 @@ export default defineNitroPlugin(async () => {
             running: false,
             currentInterface: null,
             currentIndex: null,
+            currentTest: null,
             nextRunAt: new Date(Date.now() + settings.speedtest.frequencySeconds * 1000).toISOString(),
           })
         }
@@ -123,6 +191,7 @@ export default defineNitroPlugin(async () => {
             running: false,
             currentInterface: null,
             currentIndex: null,
+            currentTest: null,
           })
         }
       }

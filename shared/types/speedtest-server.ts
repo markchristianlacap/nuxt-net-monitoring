@@ -19,6 +19,29 @@ export interface SpeedtestResult {
   result: Result
 }
 
+export interface SpeedtestEvent {
+  type: string
+  ping?: {
+    latency?: number
+    progress?: number
+  }
+  download?: {
+    bandwidth?: number
+    progress?: number
+  }
+  upload?: {
+    bandwidth?: number
+    progress?: number
+  }
+  isp?: string
+  interface?: {
+    externalIp?: string
+  }
+  result?: {
+    url?: string
+  }
+}
+
 interface Ping {
   jitter: number
   latency: number

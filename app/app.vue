@@ -57,15 +57,6 @@ useSeoMeta({
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />
         <UColorModeSelect size="sm" aria-label="Color theme" />
-        <u-button
-          v-if="featureData?.features.speedtest"
-          color="primary"
-          icon="i-lucide-play"
-          @click="navigateTo('/speedtest')"
-        >
-          <span class="hidden sm:inline">Run Speedtest</span>
-          <span class="sm:hidden">Test</span>
-        </u-button>
       </template>
       <template #body>
         <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />

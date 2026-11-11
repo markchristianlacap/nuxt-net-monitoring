@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const token = ref('')
 const username = ref('admin')
 const password = ref('')
 const confirmPassword = ref('')
@@ -22,11 +21,15 @@ async function createAdmin() {
   try {
     await $fetch('/api/auth/setup', {
       method: 'POST',
-      body: { token: token.value, username: username.value, password: password.value },
+      body: { username: username.value, password: password.value },
     })
     await navigateTo('/admin')
   }
   catch (error: any) {
+    if (error.statusCode === 409 || error.data?.statusCode === 409) {
+      await navigateTo('/login')
+      return
+    }
     errorMessage.value = error.data?.statusMessage ?? 'Unable to complete setup.'
   }
   finally {
@@ -42,19 +45,13 @@ async function createAdmin() {
         Set up your administrator account
       </h1>
       <p class="mt-2 text-muted">
-        Enter the one-time setup token configured by your deployment administrator.
-      </p>
-      <p v-if="!authStatus?.setupEnabled" class="mt-3 text-sm text-error" role="alert">
-        Admin setup is not enabled. Set NUXT_ADMIN_SETUP_TOKEN in the server environment, then reload this page.
+        Create the first admin account. Keep this app on a trusted network until setup is complete.
       </p>
       <p v-if="statusError" class="mt-3 text-sm text-error" role="alert">
         Unable to check setup status. Verify the database connection and run database migrations, then reload this page.
       </p>
     </div>
     <form class="space-y-4" @submit.prevent="createAdmin">
-      <UFormField label="One-time setup token">
-        <UInput v-model="token" type="password" autocomplete="off" required class="w-full" />
-      </UFormField>
       <UFormField label="Username" help="3–64 letters, numbers, dots, underscores, or hyphens">
         <UInput v-model="username" autocomplete="username" minlength="3" maxlength="64" required class="w-full" />
       </UFormField>
@@ -67,7 +64,7 @@ async function createAdmin() {
       <p v-if="errorMessage" class="text-sm text-error" role="alert">
         {{ errorMessage }}
       </p>
-      <UButton type="submit" :loading="pending" :disabled="!!statusError || !authStatus?.setupEnabled" block>
+      <UButton type="submit" :loading="pending" :disabled="!!statusError || !authStatus?.setupRequired" block>
         Create administrator
       </UButton>
     </form>

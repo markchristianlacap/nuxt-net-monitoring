@@ -92,16 +92,15 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
    cp .env.docker.example .env.docker
    ```
 
-   Set your database values and a one-time admin setup token in `.env.docker`:
+   Set your database values in `.env.docker`:
    ```env
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
    NUXT_DB_PASSWORD=postgres
    NUXT_DB_NAME=net-monitor
-   NUXT_ADMIN_SETUP_TOKEN=replace-with-a-long-random-value
    ```
 
-   Generate a token with `openssl rand -hex 32`. `NUXT_DB_HOST` is set to `postgres` by Docker Compose.
+   `NUXT_DB_HOST` is set to `postgres` by Docker Compose.
 
 3. **Start the Application**
    ```bash
@@ -112,7 +111,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
 4. **Access the Application**
 
-   Navigate to `http://localhost:3000/setup`, enter the setup token, and create the administrator account. Then configure features from **Settings**. Settings are saved in PostgreSQL and apply immediately.
+   Keep the app on a trusted network until setup is complete. Navigate to `http://localhost:3000/setup` to create the first administrator, then configure features from **Settings**. Settings are saved in PostgreSQL and apply immediately.
 
 5. **View Logs** (optional)
    ```bash
@@ -163,17 +162,14 @@ For development or custom setups, you can install and run the application manual
    cp .env.example .env
    ```
 
-   Set your database values and generate a one-time admin setup token:
+   Set your database values:
    ```env
    NUXT_DB_HOST=localhost
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
    NUXT_DB_PASSWORD=your-db-password
    NUXT_DB_NAME=net-monitor
-   NUXT_ADMIN_SETUP_TOKEN=replace-with-a-long-random-value
    ```
-
-   Generate a token with `openssl rand -hex 32`.
 
 4. **Setup Database**
 
@@ -208,7 +204,7 @@ The application will be available at `http://localhost:3000`
 
 ### Authentication
 
-On first launch, visit `/setup` and use the one-time `NUXT_ADMIN_SETUP_TOKEN` to create the administrator account. Sign in at `/login` afterward. The setup route is disabled after the account is created.
+On first launch, visit `/setup` to create the first administrator account. This route closes once the account is created. Keep the application private or on a trusted network until setup is complete. The password is stored as a hash in PostgreSQL; subsequent access uses `/login`.
 
 ### Main Dashboard (`/`)
 

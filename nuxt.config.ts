@@ -16,7 +16,6 @@ export default defineNuxtConfig({
     DB_PASSWORD: process.env.NUXT_DB_PASSWORD,
     DB_NAME: process.env.NUXT_DB_NAME,
     DB_PORT: process.env.NUXT_DB_PORT,
-    ADMIN_SETUP_TOKEN: process.env.NUXT_ADMIN_SETUP_TOKEN,
   },
   compatibilityDate: '2025-01-15',
   nitro: {

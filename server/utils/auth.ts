@@ -42,15 +42,6 @@ export async function verifyPassword(password: string, storedHash: string): Prom
   return timingSafeEqual(actual, expected)
 }
 
-export function verifySecret(candidate: string, expected: string | undefined): boolean {
-  if (!expected)
-    return false
-  const candidateBuffer = Buffer.from(candidate)
-  const expectedBuffer = Buffer.from(expected)
-  return candidateBuffer.length === expectedBuffer.length
-    && timingSafeEqual(candidateBuffer, expectedBuffer)
-}
-
 export async function getAuthenticatedAdmin(event: H3Event): Promise<AuthenticatedAdmin | null> {
   const token = getCookie(event, SESSION_COOKIE)
   if (!token)

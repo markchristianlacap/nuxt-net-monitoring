@@ -1,26 +1,48 @@
-import { readBody } from 'h3'
+import { getHeader, getRequestIP, readBody } from 'h3'
 import { db } from '../../db'
 import { adminUsers } from '../../db/schema/admin-users'
-import { createAdminSession, hashPassword, verifySecret } from '../../utils/auth'
+import { createAdminSession, hasAdminAccount, hashPassword } from '../../utils/auth'
 
 interface SetupBody {
-  token?: string
   username?: string
   password?: string
 }
 
+const setupAttempts = new Map<string, { count: number, resetAt: number }>()
+const MAX_SETUP_ATTEMPTS = 5
+const SETUP_WINDOW_MS = 15 * 60 * 1000
+
 export default defineEventHandler(async (event) => {
-  const { ADMIN_SETUP_TOKEN } = useRuntimeConfig()
-  if (!ADMIN_SETUP_TOKEN) {
-    throw createError({ statusCode: 503, statusMessage: 'Admin setup is not enabled. Configure NUXT_ADMIN_SETUP_TOKEN first.' })
+  if (!getHeader(event, 'content-type')?.includes('application/json')) {
+    throw createError({ statusCode: 415, statusMessage: 'Setup requests must use JSON' })
+  }
+  if (await hasAdminAccount()) {
+    throw createError({ statusCode: 409, statusMessage: 'Admin setup has already been completed' })
+  }
+
+  const clientIp = getRequestIP(event) ?? 'unknown'
+  const attempts = setupAttempts.get(clientIp)
+  if (attempts && attempts.resetAt > Date.now() && attempts.count >= MAX_SETUP_ATTEMPTS) {
+    throw createError({ statusCode: 429, statusMessage: 'Too many setup attempts. Try again later.' })
+  }
+  if (!attempts || attempts.resetAt <= Date.now()) {
+    setupAttempts.set(clientIp, { count: 1, resetAt: Date.now() + SETUP_WINDOW_MS })
+  }
+  else {
+    attempts.count++
+  }
+  if (setupAttempts.size > 1000) {
+    for (const [ip, entry] of setupAttempts) {
+      if (entry.resetAt <= Date.now())
+        setupAttempts.delete(ip)
+    }
   }
 
   const body = await readBody<SetupBody>(event)
-  const username = body?.username?.trim()
+  const username = typeof body?.username === 'string'
+    ? body.username.trim()
+    : ''
   const password = body?.password
-  if (!verifySecret(body?.token ?? '', ADMIN_SETUP_TOKEN)) {
-    throw createError({ statusCode: 403, statusMessage: 'Invalid setup token' })
-  }
   if (!username || !/^[\w.-]{3,64}$/.test(username)) {
     throw createError({ statusCode: 400, statusMessage: 'Username must be 3–64 letters, numbers, dots, underscores, or hyphens' })
   }

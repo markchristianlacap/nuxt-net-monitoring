@@ -19,6 +19,13 @@ export interface DeviceInterface {
   ip: string
 }
 
+export interface DeviceStatus {
+  host: string
+  displayName: string
+  status: 'up' | 'down' | 'unknown'
+  lastSeenAt: string | null
+}
+
 export interface DeviceGatewayInfo {
   host: string
   displayName: string

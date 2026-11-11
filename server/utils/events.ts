@@ -3,6 +3,7 @@ import { EventEmitter } from 'node:events'
 interface AppEvents {
   'ping:update': PingResult
   'bandwidth:update': BandwidthResult
+  'bandwidth:device-status': DeviceStatus
 }
 class TypedEventEmitter<T extends Record<string, any>> {
   private emitter = new EventEmitter()

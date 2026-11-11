@@ -20,12 +20,15 @@ interface RouterStats {
   host: string
   displayName: string
   gateways: string[]
+  status: DeviceStatus['status']
   interfaces: InterfaceStats[]
 }
 
 const interfaceInfo = await useFetch('/api/interfaces')
 const gatewayInfo = await useFetch<DeviceGatewayInfo[]>('/api/bandwidths/gateways')
+const { data: deviceStatusData } = await useFetch<DeviceStatus[]>('/api/bandwidths/devices')
 const interfaces = ref<Map<string, InterfaceStats>>(new Map())
+const deviceStatuses = ref(new Map((deviceStatusData.value ?? []).map(status => [status.host, status])))
 const maxPoints = 50
 let eventSource: EventSource | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -38,17 +41,29 @@ const theme = useChartTheme()
 const routers = computed<RouterStats[]>(() => {
   const routerMap = new Map<string, RouterStats>()
 
+  for (const status of deviceStatuses.value.values()) {
+    routerMap.set(status.host, {
+      host: status.host,
+      displayName: status.displayName,
+      gateways: gatewayInfo.data.value?.find(device => device.host === status.host)?.gateways ?? [],
+      status: status.status,
+      interfaces: [],
+    })
+  }
+
   for (const stats of interfaces.value.values()) {
-    if (!routerMap.has(stats.host)) {
-      routerMap.set(stats.host, {
+    let router = routerMap.get(stats.host)
+    if (!router) {
+      router = {
         host: stats.host,
         displayName: stats.displayName,
         gateways: gatewayInfo.data.value?.find(device => device.host === stats.host)?.gateways ?? [],
+        status: 'up',
         interfaces: [],
-      })
+      }
+      routerMap.set(stats.host, router)
     }
-
-    routerMap.get(stats.host)!.interfaces.push(stats)
+    router.interfaces.push(stats)
   }
 
   return Array.from(routerMap.values())
@@ -69,7 +84,9 @@ function getRouterChartOption(router: RouterStats): ECOption {
     return {
       backgroundColor: 'transparent',
       title: {
-        text: 'Waiting for bandwidth data...',
+        text: router.status === 'down'
+          ? 'Device is unreachable via SNMP'
+          : 'Waiting for bandwidth data...',
         left: 'center',
         top: 'middle',
         textStyle: { color: chartTheme.textMuted },
@@ -199,6 +216,16 @@ function connectStream() {
   }
   eventSource?.close()
   eventSource = new EventSource('/api/bandwidths/stream')
+  eventSource.addEventListener('device-status', (event) => {
+    try {
+      const status = JSON.parse((event as MessageEvent<string>).data) as DeviceStatus
+      deviceStatuses.value.set(status.host, status)
+      deviceStatuses.value = new Map(deviceStatuses.value)
+    }
+    catch (error) {
+      console.error('Invalid bandwidth device-status event:', error)
+    }
+  })
   eventSource.onopen = () => {
     reconnectAttempt = 0
   }
@@ -329,10 +356,22 @@ onBeforeUnmount(() => {
                 </span>
               </div>
             </div>
-            <span class="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-toned">
-              {{ router.interfaces.length }} {{ router.interfaces.length === 1 ? 'interface' : 'interfaces' }}
-            </span>
+            <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <UBadge
+                :color="router.status === 'up' ? 'success' : router.status === 'down' ? 'error' : 'neutral'"
+                variant="subtle"
+                :icon="router.status === 'down' ? 'i-lucide-wifi-off' : undefined"
+              >
+                {{ router.status === 'up' ? 'Online' : router.status === 'down' ? 'Offline' : 'Checking' }}
+              </UBadge>
+              <span class="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-toned">
+                {{ router.interfaces.length }} {{ router.interfaces.length === 1 ? 'interface' : 'interfaces' }}
+              </span>
+            </div>
           </div>
+          <p v-if="router.status === 'down'" class="mt-3 rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-sm text-error">
+            No SNMP response. Any readings below are the last known values.
+          </p>
         </template>
 
         <div class="divide-y divide-default">

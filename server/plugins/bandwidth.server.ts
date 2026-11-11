@@ -2,16 +2,16 @@ import { db } from '../db'
 import { bandwidths } from '../db/schema/bandwidths'
 
 export default defineNitroPlugin(async () => {
-  let stopPolling: (() => void) | undefined
+  let stopPolling: Array<() => void> = []
   let stopAveraging: (() => void) | undefined
   let generation = 0
   let applyQueue = Promise.resolve()
 
   function stop() {
     generation++
-    stopPolling?.()
+    stopPolling.forEach(stopTask => stopTask())
     stopAveraging?.()
-    stopPolling = undefined
+    stopPolling = []
     stopAveraging = undefined
   }
 
@@ -23,7 +23,16 @@ export default defineNitroPlugin(async () => {
 
     const activeGeneration = generation
     const results = new Map<string, BandwidthResult[]>()
+    const lastEmittedStatus = new Map<string, DeviceStatus['status']>()
     const keyFor = (host: string, iface: string) => `${host}\u0000${iface}`
+
+    function emitDeviceStatus(host: string) {
+      const status = getDeviceStatus(host)
+      if (!status || lastEmittedStatus.get(host) === status.status)
+        return
+      lastEmittedStatus.set(host, status.status)
+      events.emit('bandwidth:device-status', status)
+    }
 
     async function saveAverage(host: string, iface: string) {
       const key = keyFor(host, iface)
@@ -44,15 +53,30 @@ export default defineNitroPlugin(async () => {
       results.set(key, [])
     }
 
-    stopPolling = runEverySecond(async () => {
-      const interfaces = await getInterfaces()
+    await getDeviceStatuses()
+
+    async function pollDevice(host: string) {
+      const interfaces = await getDeviceInterfacesForHost(host)
       if (activeGeneration !== generation)
         return
 
+      const deviceStatus = getDeviceStatus(host)
+      if (deviceStatus?.status === 'down') {
+        emitDeviceStatus(host)
+        return
+      }
+
       for (const iface of interfaces) {
-        const bandwidth = await getBandwidth(iface.host, iface.name)
-        if (!bandwidth || activeGeneration !== generation)
+        const bandwidth = await getBandwidth(host, iface.name)
+        if (activeGeneration !== generation)
+          return
+
+        const updatedStatus = getDeviceStatus(host)
+        if (updatedStatus?.status === 'down')
+          break
+        if (!bandwidth)
           continue
+
         events.emit('bandwidth:update', bandwidth)
         const key = keyFor(iface.host, iface.name)
         if (!results.has(key))
@@ -60,7 +84,10 @@ export default defineNitroPlugin(async () => {
         else
           results.get(key)?.push(bandwidth)
       }
-    })
+      emitDeviceStatus(host)
+    }
+
+    stopPolling = settings.snmp.devices.map(({ host }) => runEverySecond(() => pollDevice(host)))
 
     stopAveraging = runEveryMinute(async () => {
       const interfaces = await getInterfaces()

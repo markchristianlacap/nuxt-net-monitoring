@@ -8,6 +8,9 @@ interface DeviceContext {
   sessionClosed: boolean
   interfaces: DeviceInterface[] | null
   cacheTimestamp: number
+  status: DeviceStatus['status']
+  lastSeenAt: string | null
+  retryAt: number
   gateways: string[] | null
   gatewayCacheTimestamp: number
   bandwidthState: Map<number, { inBytes: bigint, outBytes: bigint, time: number }>
@@ -54,6 +57,31 @@ function invalidateDeviceState(context: DeviceContext) {
   context.bandwidthState.clear()
 }
 
+function markDeviceUp(context: DeviceContext) {
+  context.status = 'up'
+  context.lastSeenAt = new Date().toISOString()
+  context.retryAt = 0
+}
+
+function markDeviceDown(context: DeviceContext) {
+  context.status = 'down'
+  context.retryAt = Date.now() + 5_000
+  context.bandwidthState.clear()
+}
+
+function isRequestTimeout(error: unknown): boolean {
+  return error instanceof Error && error.name === 'RequestTimedOutError'
+}
+
+function toDeviceStatus(context: DeviceContext): DeviceStatus {
+  return {
+    host: context.config.host,
+    displayName: context.displayName,
+    status: context.status,
+    lastSeenAt: context.lastSeenAt,
+  }
+}
+
 function getDeviceContext(config: SnmpDeviceConfig): DeviceContext {
   const key = config.host.trim().toLowerCase()
   let context = contexts.get(key)
@@ -65,6 +93,9 @@ function getDeviceContext(config: SnmpDeviceConfig): DeviceContext {
       sessionClosed: false,
       interfaces: null,
       cacheTimestamp: 0,
+      status: 'unknown',
+      lastSeenAt: null,
+      retryAt: 0,
       gateways: null,
       gatewayCacheTimestamp: 0,
       bandwidthState: new Map(),
@@ -144,7 +175,9 @@ async function getIpAddresses(context: DeviceContext): Promise<Record<number, st
 
 async function getDeviceInterfaces(context: DeviceContext): Promise<DeviceInterface[]> {
   const now = Date.now()
-  if (context.interfaces && now - context.cacheTimestamp < 30_000)
+  if (context.status === 'down' && now < context.retryAt)
+    return context.interfaces ?? []
+  if (context.interfaces && context.status !== 'down' && now - context.cacheTimestamp < 30_000)
     return context.interfaces
 
   const data: Record<number, Partial<DeviceInterface>> = {}
@@ -193,26 +226,67 @@ async function getDeviceInterfaces(context: DeviceContext): Promise<DeviceInterf
     }))
     .filter(iface => filter.length === 0 || filter.includes(iface.name))
   context.cacheTimestamp = now
+  markDeviceUp(context)
   return context.interfaces
 }
 
-export async function getInterfaces(): Promise<DeviceInterface[]> {
+export async function getInterfaces(host?: string): Promise<DeviceInterface[]> {
   const contexts = await getContexts()
-  const results = await Promise.all(contexts.map(async (context) => {
+  const normalizedHost = host?.trim().toLowerCase()
+  const selectedContexts = normalizedHost
+    ? contexts.filter(context => context.config.host.trim().toLowerCase() === normalizedHost)
+    : contexts
+  const results = await Promise.all(selectedContexts.map(async (context) => {
     try {
       return await getDeviceInterfaces(context)
     }
     catch (error) {
-      invalidateDeviceState(context)
+      if (isRequestTimeout(error))
+        markDeviceDown(context)
       console.error(`getInterfaces(${context.config.host}) error:`, error)
-      return []
+      return context.interfaces ?? []
     }
   }))
   return results.flat()
 }
 
+export async function getDeviceInterfacesForHost(host: string): Promise<DeviceInterface[]> {
+  const normalizedHost = host.trim().toLowerCase()
+  let context = contexts.get(normalizedHost)
+  if (!context) {
+    const allContexts = await getContexts()
+    context = allContexts.find(device => device.config.host.trim().toLowerCase() === normalizedHost)
+  }
+  if (!context)
+    return []
+
+  try {
+    return await getDeviceInterfaces(context)
+  }
+  catch (error) {
+    if (isRequestTimeout(error))
+      markDeviceDown(context)
+    console.error(`getInterfaces(${context.config.host}) error:`, error)
+    return context.interfaces ?? []
+  }
+}
+
+export async function getDeviceStatuses(): Promise<DeviceStatus[]> {
+  const contexts = await getContexts()
+  return contexts.map(toDeviceStatus)
+}
+
+export function getDeviceStatus(host: string): DeviceStatus | undefined {
+  const context = contexts.get(host.trim().toLowerCase())
+  return context
+    ? toDeviceStatus(context)
+    : undefined
+}
+
 async function getDeviceGateways(context: DeviceContext): Promise<string[]> {
   const now = Date.now()
+  if (context.status === 'down' && now < context.retryAt)
+    return context.gateways ?? []
   if (context.gateways && now - context.gatewayCacheTimestamp < 30_000)
     return context.gateways
 
@@ -237,6 +311,7 @@ async function getDeviceGateways(context: DeviceContext): Promise<string[]> {
   })
   context.gateways = Array.from(new Set(gateways))
   context.gatewayCacheTimestamp = now
+  markDeviceUp(context)
   return context.gateways
 }
 
@@ -251,7 +326,10 @@ export async function getGateways(): Promise<DeviceGatewayInfo[]> {
       }
     }
     catch (error) {
-      invalidateDeviceState(context)
+      context.gateways = null
+      context.gatewayCacheTimestamp = 0
+      if (isRequestTimeout(error))
+        markDeviceDown(context)
       console.error(`getGateways(${context.config.host}) error:`, error)
       return {
         host: context.config.host,
@@ -297,8 +375,9 @@ function snmpGet(context: DeviceContext, oids: string[]): Promise<{ inBytes: big
 }
 
 export async function getBandwidth(host: string, iface: string): Promise<BandwidthResult | null> {
-  const contexts = await getContexts()
-  const context = contexts.find(device => device.config.host.trim().toLowerCase() === host.trim().toLowerCase())
+  const normalizedHost = host.trim().toLowerCase()
+  const context = contexts.get(normalizedHost)
+    ?? (await getContexts()).find(device => device.config.host.trim().toLowerCase() === normalizedHost)
   if (!context)
     return null
 
@@ -312,6 +391,7 @@ export async function getBandwidth(host: string, iface: string): Promise<Bandwid
       `${OIDS.ifHCIn}.${index}`,
       `${OIDS.ifHCOut}.${index}`,
     ])
+    markDeviceUp(context)
     const now = Date.now()
     const previous = context.bandwidthState.get(index)
     context.bandwidthState.set(index, { inBytes, outBytes, time: now })
@@ -338,7 +418,8 @@ export async function getBandwidth(host: string, iface: string): Promise<Bandwid
     }
   }
   catch (error) {
-    invalidateDeviceState(context)
+    if (isRequestTimeout(error))
+      markDeviceDown(context)
     console.error(`getBandwidth(${host}, ${iface}) error:`, error)
     return null
   }

@@ -2,18 +2,21 @@ import { networkInterfaces } from 'node:os'
 
 export interface SpeedtestNetworkInterface {
   name: string
-  addresses: string[]
+  ipAddress: string
 }
 
 export function getAvailableSpeedtestInterfaces(): SpeedtestNetworkInterface[] {
   return Object.entries(networkInterfaces())
-    .map(([name, addresses]) => ({
-      name,
-      addresses: [
-        ...new Set((addresses ?? []).filter(address => !address.internal).map(address => address.address)),
-      ],
-    }))
-    .filter(networkInterface => networkInterface.addresses.length > 0)
+    .flatMap(([name, addresses]) => {
+      const publicAddresses = (addresses ?? []).filter(address => !address.internal)
+      const primaryAddress = publicAddresses.find(address => address.family === 'IPv4')
+        ?? publicAddresses[0]
+      return primaryAddress
+        ? [
+            { name, ipAddress: primaryAddress.address },
+          ]
+        : []
+    })
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 

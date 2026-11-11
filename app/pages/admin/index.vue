@@ -13,7 +13,7 @@ interface AdminSettings extends AppSettings {
 const pending = ref(false)
 const errorMessage = ref('')
 const { data } = await useFetch<{ settings: AdminSettings }>('/api/admin/settings')
-const { data: speedtestInterfaces } = await useFetch<Array<{ name: string, addresses: string[] }>>('/api/admin/speedtest-interfaces')
+const { data: speedtestInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/admin/speedtest-interfaces')
 const settings = reactive<AppSettings>(data.value?.settings ?? {
   features: { ping: false, bandwidth: false, speedtest: false },
   ping: { hosts: [] },
@@ -25,7 +25,7 @@ const scheduledInterface = ref(settings.speedtest.localInterfaceName ?? SYSTEM_D
 const scheduledInterfaceItems = computed(() => [
   { label: 'System default', value: SYSTEM_DEFAULT_INTERFACE_VALUE },
   ...(speedtestInterfaces.value ?? []).map(item => ({
-    label: `${item.name} · ${item.addresses.join(', ')}`,
+    label: `${item.name} · ${item.ipAddress}`,
     value: item.name,
   })),
   ...(scheduledInterface.value !== SYSTEM_DEFAULT_INTERFACE_VALUE

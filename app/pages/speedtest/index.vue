@@ -15,10 +15,10 @@ const testedInterfaceName = ref('')
 const status = ref<'idle' | 'initializing' | 'ping' | 'download' | 'upload' | 'complete' | 'error'>('idle')
 const progress = ref(0)
 let reader: ReadableStreamDefaultReader<string> | null = null
-const { data: availableInterfaces } = await useFetch<Array<{ name: string, addresses: string[] }>>('/api/speedtest/interfaces')
+const { data: availableInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/speedtest/interfaces')
 const interfaceItems = computed(() => [
   ...(availableInterfaces.value ?? []).map(item => ({
-    label: `${item.name} · ${item.addresses.join(', ')}`,
+    label: `${item.name} · ${item.ipAddress}`,
     value: item.name,
   })),
 ])
@@ -173,19 +173,17 @@ const statusText = computed(() => ({
           Measure your connection in real time.
         </p>
       </div>
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div class="flex gap-3 items-center">
+        <div>Select Interface</div>
         <USelect
           v-model="selectedInterface"
           :items="interfaceItems"
           placeholder="System default"
           aria-label="Network interface"
           :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
-          size="lg"
-          class="w-full sm:min-w-64"
         />
         <UButton
           :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
-          size="lg"
           icon="i-lucide-play"
           @click="startStream"
         >

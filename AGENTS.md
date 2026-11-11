@@ -20,3 +20,29 @@ Use these Conventional Commit types:
 - `docs`: update documentation
 - `test`: add or update tests
 - `chore`: maintenance
+
+# Nuxt Development Rules
+
+## Nuxt
+
+- Always follow the latest Nuxt documentation.
+- Prefer Nuxt auto-imports.
+- Use Nuxt conventions for pages, layouts, middleware, and composables.
+- Use TypeScript.
+- Prefer Nuxt composables over manually implementing existing functionality.
+
+## Nuxt UI
+
+- Always use Nuxt UI components when suitable.
+- Consult Nuxt UI MCP before implementing unfamiliar components.
+- Check component props, slots, variants, and events.
+- Avoid reinventing existing Nuxt UI components.
+- Follow accessible UI patterns.
+- Use the installed Nuxt UI version, not outdated examples.
+
+## Before Finishing
+
+- Run type checking.
+- Run relevant tests.
+- Check for console errors.
+- Commit completed changes using Conventional Commits.

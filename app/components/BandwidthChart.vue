@@ -13,6 +13,7 @@ const { data: chartData, refresh } = await useFetch('/api/bandwidths/chart', {
   },
   immediate: true,
 })
+const { data: interfaceInfo } = await useFetch<DeviceInterface[]>('/api/interfaces')
 
 // Watch for prop changes and refresh
 watch(() => [props.start, props.end], () => {
@@ -43,7 +44,12 @@ const option = computed<ECOption>(() => {
     const deviceLabel = item.displayName && item.displayName !== item.host
       ? `${item.displayName} (${item.host})`
       : item.host
-    const label = `${deviceLabel} / ${item.interface || item.host}`
+    const interfaceName = item.interface || item.host
+    const description = interfaceInfo.value?.find(i => i.host === item.host && i.name === item.interface)?.description?.trim()
+    const interfaceLabel = description && description !== interfaceName
+      ? `${interfaceName} (${description})`
+      : interfaceName
+    const label = `${deviceLabel} / ${interfaceLabel}`
     const time = new Date(item.time_bucket).getTime()
     const download = Number(item.avg_download)
     const upload = Number(item.avg_upload)

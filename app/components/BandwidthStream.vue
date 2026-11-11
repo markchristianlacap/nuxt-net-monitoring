@@ -10,6 +10,7 @@ interface InterfaceStats {
   maxDownload: number
   maxUpload: number
   name: string
+  description: string
   speed: number
   ip: string
   status: 'up' | 'down' | 'testing' | 'unknown'
@@ -73,6 +74,13 @@ function getRouterChartOption(router: RouterStats): ECOption {
     }
   }
 
+  const interfaceLabel = (stats: InterfaceStats) => {
+    const description = stats.description.trim()
+    return description && description !== stats.name
+      ? `${stats.name} (${description})`
+      : stats.name
+  }
+
   return {
     backgroundColor: 'transparent',
     tooltip: {
@@ -94,7 +102,7 @@ function getRouterChartOption(router: RouterStats): ECOption {
       },
     },
     legend: {
-      data: ifaceList.flatMap(stats => [`${stats.name} Download`, `${stats.name} Upload`]),
+      data: ifaceList.flatMap(stats => [`${interfaceLabel(stats)} Download`, `${interfaceLabel(stats)} Upload`]),
       textStyle: { color: chartTheme.textMuted, fontWeight: 500 },
       top: 10,
     },
@@ -130,7 +138,7 @@ function getRouterChartOption(router: RouterStats): ECOption {
       const outSeries = stats.timestamps.map((t, i) => [t, stats.outData[i]])
       return [
         {
-          name: `${stats.name} Download`,
+          name: `${interfaceLabel(stats)} Download`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -139,7 +147,7 @@ function getRouterChartOption(router: RouterStats): ECOption {
           areaStyle: { color: colors.area },
         },
         {
-          name: `${stats.name} Upload`,
+          name: `${interfaceLabel(stats)} Upload`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -182,6 +190,7 @@ function connectStream() {
         host: data.host,
         displayName: data.displayName || data.host,
         name: iface,
+        description: '',
         speed: 0,
         ip: '',
         status: 'unknown',
@@ -197,6 +206,7 @@ function connectStream() {
         maxDownload: 0,
         maxUpload: 0,
         name: info.name || iface,
+        description: info.description || '',
         speed: info.speed || 0,
         ip: info.ip || '',
         status: info.status,
@@ -296,7 +306,7 @@ onBeforeUnmount(() => {
           >
             <div class="mb-2 flex min-w-0 items-center justify-between gap-3">
               <h4 class="truncate text-sm font-semibold text-highlighted">
-                {{ stats.name }}
+                {{ stats.description && stats.description !== stats.name ? `${stats.name} (${stats.description})` : stats.name }}
               </h4>
               <span
                 :class="{

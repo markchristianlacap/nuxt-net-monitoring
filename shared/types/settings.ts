@@ -1,3 +1,5 @@
+export const SYSTEM_DEFAULT_INTERFACE_VALUE = '__system_default__'
+
 export interface SnmpDeviceConfig {
   host: string
   community: string

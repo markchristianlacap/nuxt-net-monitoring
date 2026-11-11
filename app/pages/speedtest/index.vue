@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SYSTEM_DEFAULT_INTERFACE_VALUE } from '~~/shared/types/settings'
+
 const currentDownload = ref(0)
 const currentUpload = ref(0)
 const peakSpeed = ref(0)
@@ -10,19 +12,22 @@ const isp = ref('')
 const publicIp = ref('')
 const resultUrl = ref('')
 const errorMessage = ref('')
-const selectedInterface = ref('')
+const selectedInterface = ref(SYSTEM_DEFAULT_INTERFACE_VALUE)
 const testedInterfaceName = ref('')
 const status = ref<'idle' | 'initializing' | 'ping' | 'download' | 'upload' | 'complete' | 'error'>('idle')
 const progress = ref(0)
 let reader: ReadableStreamDefaultReader<string> | null = null
 const { data: availableInterfaces } = await useFetch<Array<{ name: string, addresses: string[] }>>('/api/speedtest/interfaces')
 const interfaceItems = computed(() => [
-  { label: 'System default', value: '' },
+  { label: 'System default', value: SYSTEM_DEFAULT_INTERFACE_VALUE },
   ...(availableInterfaces.value ?? []).map(item => ({
     label: `${item.name} · ${item.addresses.join(', ')}`,
     value: item.name,
   })),
 ])
+const selectedInterfaceLabel = computed(() => selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
+  ? 'System default'
+  : selectedInterface.value)
 
 const activeSpeed = computed(() => status.value === 'upload'
   ? currentUpload.value
@@ -70,7 +75,11 @@ async function startStream() {
   try {
     const response = await $fetch<ReadableStream>('/api/speedtest', {
       method: 'POST',
-      body: { interfaceName: selectedInterface.value || null },
+      body: {
+        interfaceName: selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
+          ? null
+          : selectedInterface.value,
+      },
       responseType: 'stream',
     })
 
@@ -111,7 +120,7 @@ function handleEvent(event: any) {
     case 'testStart':
       isp.value = event.isp
       publicIp.value = event.interface?.externalIp ?? 'N/A'
-      testedInterfaceName.value = event.interface?.name || selectedInterface.value || 'System default'
+      testedInterfaceName.value = event.interface?.name || selectedInterfaceLabel.value
       status.value = 'ping'
       break
     case 'ping':
@@ -137,7 +146,7 @@ function handleEvent(event: any) {
       latency.value = event.ping.latency
       latencyMeasured.value = true
       resultUrl.value = event.result.url
-      testedInterfaceName.value = event.interface?.name || testedInterfaceName.value || selectedInterface.value || 'System default'
+      testedInterfaceName.value = event.interface?.name || testedInterfaceName.value || selectedInterfaceLabel.value
       updateSpeed('download', event.download.bandwidth)
       updateSpeed('upload', event.upload.bandwidth)
       status.value = 'complete'
@@ -271,7 +280,7 @@ const statusText = computed(() => ({
           </p>
           <p class="min-w-0 text-slate-400 sm:col-span-2 lg:col-span-1">
             <span class="block text-xs uppercase tracking-wide text-slate-500">Network interface</span>
-            <span class="mt-1 block break-all text-slate-200">{{ testedInterfaceName || selectedInterface || 'System default' }}</span>
+            <span class="mt-1 block break-all text-slate-200">{{ testedInterfaceName || selectedInterfaceLabel }}</span>
           </p>
         </div>
 

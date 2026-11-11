@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AppSettings } from '~~/shared/types/settings'
+import { SYSTEM_DEFAULT_INTERFACE_VALUE } from '~~/shared/types/settings'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -20,14 +21,15 @@ const settings = reactive<AppSettings>(data.value?.settings ?? {
   speedtest: { frequencySeconds: 3600, localInterfaceName: null },
 })
 const pingHostsText = ref(settings.ping.hosts.join('\n'))
-const scheduledInterface = ref(settings.speedtest.localInterfaceName ?? '')
+const scheduledInterface = ref(settings.speedtest.localInterfaceName ?? SYSTEM_DEFAULT_INTERFACE_VALUE)
 const scheduledInterfaceItems = computed(() => [
-  { label: 'System default', value: '' },
+  { label: 'System default', value: SYSTEM_DEFAULT_INTERFACE_VALUE },
   ...(speedtestInterfaces.value ?? []).map(item => ({
     label: `${item.name} · ${item.addresses.join(', ')}`,
     value: item.name,
   })),
-  ...(scheduledInterface.value && !speedtestInterfaces.value?.some(item => item.name === scheduledInterface.value)
+  ...(scheduledInterface.value !== SYSTEM_DEFAULT_INTERFACE_VALUE
+    && !speedtestInterfaces.value?.some(item => item.name === scheduledInterface.value)
     ? [
         { label: `${scheduledInterface.value} · unavailable`, value: scheduledInterface.value },
       ]
@@ -65,7 +67,9 @@ async function saveSettings() {
           ...settings,
           speedtest: {
             ...settings.speedtest,
-            localInterfaceName: scheduledInterface.value || null,
+            localInterfaceName: scheduledInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
+              ? null
+              : scheduledInterface.value,
           },
           ping: {
             hosts: pingHostsText.value.split('\n'),

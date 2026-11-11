@@ -5,6 +5,7 @@ export default defineNitroPlugin(async () => {
   let stopScheduledTest: (() => void) | undefined
   let generation = 0
   let applyQueue = Promise.resolve()
+  let scheduledTestRunning = false
 
   function stop() {
     generation++
@@ -30,10 +31,8 @@ export default defineNitroPlugin(async () => {
 
     updateSpeedtestScheduleStatus({
       enabled,
-      running: false,
+      running: scheduledTestRunning,
       interfaces: scheduledInterfaces,
-      currentInterface: null,
-      currentIndex: null,
       frequencySeconds,
       nextRunAt,
     })
@@ -43,6 +42,14 @@ export default defineNitroPlugin(async () => {
 
     const activeGeneration = generation
     stopScheduledTest = runEveryInterval(settings.speedtest.frequencySeconds, async () => {
+      if (scheduledTestRunning) {
+        updateSpeedtestScheduleStatus({
+          nextRunAt: new Date(Date.now() + settings.speedtest.frequencySeconds * 1000).toISOString(),
+        })
+        return
+      }
+
+      scheduledTestRunning = true
       const selectedInterfaces: Array<string | null> = [...settings.speedtest.localInterfaceNames]
       if (selectedInterfaces.length === 0)
         selectedInterfaces.push(null)
@@ -102,12 +109,20 @@ export default defineNitroPlugin(async () => {
         }
       }
       finally {
+        scheduledTestRunning = false
         if (activeGeneration === generation) {
           updateSpeedtestScheduleStatus({
             running: false,
             currentInterface: null,
             currentIndex: null,
             nextRunAt: new Date(Date.now() + settings.speedtest.frequencySeconds * 1000).toISOString(),
+          })
+        }
+        else {
+          updateSpeedtestScheduleStatus({
+            running: false,
+            currentInterface: null,
+            currentIndex: null,
           })
         }
       }

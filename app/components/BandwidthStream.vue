@@ -309,52 +309,52 @@ onBeforeUnmount(() => {
                 {{ stats.status }}
               </span>
             </div>
-            <dl class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-              <div>
-                <dt class="text-muted">
-                  Download
+            <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:grid-cols-3">
+              <div class="flex min-w-0 items-baseline justify-between gap-2">
+                <dt class="shrink-0 text-muted" title="Download">
+                  Down
                 </dt>
-                <dd class="font-semibold tabular-nums text-blue-700 dark:text-blue-300">
+                <dd class="truncate text-right font-semibold tabular-nums text-blue-700 dark:text-blue-300">
                   {{ stats.currentDownload.toFixed(2) }} Mbps
                 </dd>
               </div>
-              <div>
-                <dt class="text-muted">
-                  Upload
+              <div class="flex min-w-0 items-baseline justify-between gap-2">
+                <dt class="shrink-0 text-muted" title="Upload">
+                  Up
                 </dt>
-                <dd class="font-semibold tabular-nums text-red-700 dark:text-red-300">
+                <dd class="truncate text-right font-semibold tabular-nums text-red-700 dark:text-red-300">
                   {{ stats.currentUpload.toFixed(2) }} Mbps
                 </dd>
               </div>
-              <div>
-                <dt class="text-muted">
-                  Interface speed
+              <div class="flex min-w-0 items-baseline justify-between gap-2">
+                <dt class="shrink-0 text-muted" title="Interface speed">
+                  Speed
                 </dt>
-                <dd class="font-semibold tabular-nums text-toned">
+                <dd class="truncate text-right font-semibold tabular-nums text-toned">
                   {{ stats.speed }} Mbps
                 </dd>
               </div>
-              <div>
-                <dt class="text-muted">
-                  IP address
+              <div class="flex min-w-0 items-baseline justify-between gap-2">
+                <dt class="shrink-0 text-muted" title="IP address">
+                  IP
                 </dt>
-                <dd class="truncate font-semibold text-toned" :title="stats.ip">
+                <dd class="truncate text-right font-semibold text-toned" :title="stats.ip">
                   {{ stats.ip || '—' }}
                 </dd>
               </div>
-              <div>
-                <dt class="text-muted">
-                  Peak download
+              <div class="flex min-w-0 items-baseline justify-between gap-2">
+                <dt class="shrink-0 text-muted" title="Peak download">
+                  Peak ↓
                 </dt>
-                <dd class="font-semibold tabular-nums text-blue-700 dark:text-blue-400">
+                <dd class="truncate text-right font-semibold tabular-nums text-blue-700 dark:text-blue-400">
                   {{ stats.maxDownload.toFixed(2) }} Mbps
                 </dd>
               </div>
-              <div>
-                <dt class="text-muted">
-                  Peak upload
+              <div class="flex min-w-0 items-baseline justify-between gap-2">
+                <dt class="shrink-0 text-muted" title="Peak upload">
+                  Peak ↑
                 </dt>
-                <dd class="font-semibold tabular-nums text-red-700 dark:text-red-400">
+                <dd class="truncate text-right font-semibold tabular-nums text-red-700 dark:text-red-400">
                   {{ stats.maxUpload.toFixed(2) }} Mbps
                 </dd>
               </div>

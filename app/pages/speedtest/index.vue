@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { SYSTEM_DEFAULT_INTERFACE_VALUE } from '~~/shared/types/settings'
-
 const currentDownload = ref(0)
 const currentUpload = ref(0)
 const peakSpeed = ref(0)
@@ -12,22 +10,19 @@ const isp = ref('')
 const publicIp = ref('')
 const resultUrl = ref('')
 const errorMessage = ref('')
-const selectedInterface = ref(SYSTEM_DEFAULT_INTERFACE_VALUE)
+const selectedInterface = ref<string | undefined>(undefined)
 const testedInterfaceName = ref('')
 const status = ref<'idle' | 'initializing' | 'ping' | 'download' | 'upload' | 'complete' | 'error'>('idle')
 const progress = ref(0)
 let reader: ReadableStreamDefaultReader<string> | null = null
 const { data: availableInterfaces } = await useFetch<Array<{ name: string, addresses: string[] }>>('/api/speedtest/interfaces')
 const interfaceItems = computed(() => [
-  { label: 'System default', value: SYSTEM_DEFAULT_INTERFACE_VALUE },
   ...(availableInterfaces.value ?? []).map(item => ({
     label: `${item.name} · ${item.addresses.join(', ')}`,
     value: item.name,
   })),
 ])
-const selectedInterfaceLabel = computed(() => selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
-  ? 'System default'
-  : selectedInterface.value)
+const selectedInterfaceLabel = computed(() => selectedInterface.value ?? 'System default')
 
 const activeSpeed = computed(() => status.value === 'upload'
   ? currentUpload.value
@@ -75,11 +70,7 @@ async function startStream() {
   try {
     const response = await $fetch<ReadableStream>('/api/speedtest', {
       method: 'POST',
-      body: {
-        interfaceName: selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
-          ? null
-          : selectedInterface.value,
-      },
+      body: { interfaceName: selectedInterface.value },
       responseType: 'stream',
     })
 
@@ -183,15 +174,15 @@ const statusText = computed(() => ({
         </p>
       </div>
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <UFormField label="Network interface">
-          <USelect
-            v-model="selectedInterface"
-            :items="interfaceItems"
-            :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
-            size="lg"
-            class="w-full sm:min-w-64"
-          />
-        </UFormField>
+        <USelect
+          v-model="selectedInterface"
+          :items="interfaceItems"
+          placeholder="System default"
+          aria-label="Network interface"
+          :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
+          size="lg"
+          class="w-full sm:min-w-64"
+        />
         <UButton
           :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
           size="lg"

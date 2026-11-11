@@ -11,8 +11,7 @@ interface AdminSettings extends AppSettings {
 
 const pending = ref(false)
 const errorMessage = ref('')
-const successMessage = ref('')
-const { data, refresh } = await useFetch<{ settings: AdminSettings }>('/api/admin/settings')
+const { data } = await useFetch<{ settings: AdminSettings }>('/api/admin/settings')
 const settings = reactive<AppSettings>(data.value?.settings ?? {
   features: { ping: false, bandwidth: false, speedtest: false },
   ping: { hosts: [] },
@@ -43,7 +42,6 @@ function removeDevice(index: number) {
 
 async function saveSettings() {
   errorMessage.value = ''
-  successMessage.value = ''
   pending.value = true
   try {
     await $fetch('/api/admin/settings', {
@@ -65,13 +63,7 @@ async function saveSettings() {
         },
       },
     })
-    await refresh()
-    devices.value = (data.value?.settings.snmp.devices ?? []).map(device => ({
-      ...device,
-      interfacesText: device.interfaces?.join(', ') ?? '',
-      communityConfigured: device.communityConfigured ?? false,
-    }))
-    successMessage.value = 'Settings saved.'
+    await navigateTo('/')
   }
   catch (error: any) {
     errorMessage.value = error.data?.statusMessage ?? 'Unable to save settings.'
@@ -187,9 +179,6 @@ async function signOut() {
 
       <p v-if="errorMessage" class="text-sm text-error" role="alert">
         {{ errorMessage }}
-      </p>
-      <p v-if="successMessage" class="text-sm text-success" role="status">
-        {{ successMessage }}
       </p>
       <UButton type="submit" :loading="pending">
         Save settings

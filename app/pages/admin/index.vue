@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { MIN_SPEEDTEST_FREQUENCY_SECONDS } from '../../../shared/types/settings'
+
 definePageMeta({ middleware: 'auth' })
 
 interface AdminSettings extends AppSettings {
@@ -23,14 +25,22 @@ const speedtestFrequencyOptions = [
   { label: 'Every 12 hours', value: 43200 },
   { label: 'Every 7 days', value: 604800 },
 ]
-const speedtestFrequencyItems = computed(() => {
-  const currentFrequency = settings.speedtest.frequencySeconds
-  return speedtestFrequencyOptions.some(option => option.value === currentFrequency)
-    ? speedtestFrequencyOptions
-    : [
-        { label: `Current interval (${currentFrequency} seconds)`, value: currentFrequency },
-        ...speedtestFrequencyOptions,
-      ]
+const speedtestFrequencyItems = [
+  ...speedtestFrequencyOptions,
+  { label: 'Custom', value: 'custom' as const },
+]
+const selectedSpeedtestFrequencyValue = ref<number | 'custom'>(
+  speedtestFrequencyOptions.some(option => option.value === settings.speedtest.frequencySeconds)
+    ? settings.speedtest.frequencySeconds
+    : 'custom',
+)
+const selectedSpeedtestFrequency = computed<number | 'custom'>({
+  get: () => selectedSpeedtestFrequencyValue.value,
+  set: (value) => {
+    selectedSpeedtestFrequencyValue.value = value
+    if (typeof value === 'number')
+      settings.speedtest.frequencySeconds = value
+  },
 })
 const pingHostsText = ref(settings.ping.hosts.join('\n'))
 const scheduledInterfaces = ref([...settings.speedtest.localInterfaceNames])
@@ -200,13 +210,27 @@ async function signOut() {
         </template>
         <div class="space-y-4">
           <USwitch v-model="settings.features.speedtest" label="Enable scheduled speed tests" />
-          <UFormField label="Schedule frequency" help="Choose how often scheduled speed tests run.">
+          <UFormField label="Schedule frequency" help="Choose a preset or set a custom interval of at least 1 hour.">
             <USelectMenu
-              v-model="settings.speedtest.frequencySeconds"
+              v-model="selectedSpeedtestFrequency"
               :items="speedtestFrequencyItems"
               value-key="value"
               label-key="label"
               :search-input="false"
+              class="w-full sm:max-w-xs"
+            />
+          </UFormField>
+          <UFormField
+            v-if="selectedSpeedtestFrequency === 'custom'"
+            label="Custom frequency (seconds)"
+            help="Enter a whole number from 3600 seconds (1 hour) to 604800 seconds (7 days)."
+          >
+            <UInput
+              v-model.number="settings.speedtest.frequencySeconds"
+              type="number"
+              :min="MIN_SPEEDTEST_FREQUENCY_SECONDS"
+              max="604800"
+              step="1"
               class="w-full sm:max-w-xs"
             />
           </UFormField>

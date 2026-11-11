@@ -1,17 +1,14 @@
 <script setup lang="ts">
 const route = useRoute()
-const tab = ref<'pings' | 'bandwidths' | 'speedtest'>(
+const tab = ref<'bandwidths' | 'speedtest' | 'pings'>(
   route.query.tab === 'speedtest'
     ? 'speedtest'
-    : 'pings',
+    : route.query.tab === 'pings'
+      ? 'pings'
+      : 'bandwidths',
 )
 const { data } = await useFetch<{ features: { ping: boolean, bandwidth: boolean, speedtest: boolean } }>('/api/features')
 const tabs = computed(() => [
-  ...(data.value?.features.ping
-    ? [
-        { label: 'Ping Latency', value: 'pings' as const },
-      ]
-    : []),
   ...(data.value?.features.bandwidth
     ? [
         { label: 'Bandwidth', value: 'bandwidths' as const },
@@ -20,6 +17,11 @@ const tabs = computed(() => [
   ...(data.value?.features.speedtest
     ? [
         { label: 'Speedtest', value: 'speedtest' as const },
+      ]
+    : []),
+  ...(data.value?.features.ping
+    ? [
+        { label: 'Ping Latency', value: 'pings' as const },
       ]
     : []),
 ])

@@ -13,11 +13,6 @@ const { data: featureData } = await useFetch<{ features: { ping: boolean, bandwi
 const items = computed<NavigationMenuItem[]>(() => {
   const features = featureData.value?.features
   return [
-    ...(features?.ping
-      ? [
-          { label: 'Ping Results', to: '/pings', active: route.path === '/pings' },
-        ]
-      : []),
     ...(features?.bandwidth
       ? [
           { label: 'Bandwidth Results', to: '/bandwidths', active: route.path === '/bandwidths' },
@@ -26,6 +21,11 @@ const items = computed<NavigationMenuItem[]>(() => {
     ...(features?.speedtest
       ? [
           { label: 'Speedtest Results', to: '/speedtest-results', active: route.path === '/speedtest-results' },
+        ]
+      : []),
+    ...(features?.ping
+      ? [
+          { label: 'Ping Results', to: '/pings', active: route.path === '/pings' },
         ]
       : []),
     {

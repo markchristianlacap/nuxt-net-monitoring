@@ -136,25 +136,6 @@ async function signOut() {
         <template #header>
           <div>
             <h2 class="font-semibold">
-              Ping monitoring
-            </h2>
-            <p class="text-sm text-muted">
-              Check hosts continuously and save one-minute averages.
-            </p>
-          </div>
-        </template>
-        <div class="space-y-4">
-          <USwitch v-model="settings.features.ping" label="Enable ping monitoring" />
-          <UFormField label="Hosts" help="Enter one hostname or IP address per line.">
-            <UTextarea v-model="pingHostsText" :rows="4" class="w-full" placeholder="1.1.1.1&#10;example.com" />
-          </UFormField>
-        </div>
-      </UCard>
-
-      <UCard>
-        <template #header>
-          <div>
-            <h2 class="font-semibold">
               SNMP bandwidth monitoring
             </h2>
             <p class="text-sm text-muted">
@@ -241,6 +222,25 @@ async function signOut() {
               placeholder="System default (no interfaces selected)"
               class="w-full sm:max-w-md"
             />
+          </UFormField>
+        </div>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <div>
+            <h2 class="font-semibold">
+              Ping monitoring
+            </h2>
+            <p class="text-sm text-muted">
+              Check hosts continuously and save one-minute averages.
+            </p>
+          </div>
+        </template>
+        <div class="space-y-4">
+          <USwitch v-model="settings.features.ping" label="Enable ping monitoring" />
+          <UFormField label="Hosts" help="Enter one hostname or IP address per line.">
+            <UTextarea v-model="pingHostsText" :rows="4" class="w-full" placeholder="1.1.1.1&#10;example.com" />
           </UFormField>
         </div>
       </UCard>

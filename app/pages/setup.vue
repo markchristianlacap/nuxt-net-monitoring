@@ -6,8 +6,8 @@ const confirmPassword = ref('')
 const errorMessage = ref('')
 const pending = ref(false)
 
-const { data: authStatus } = await useFetch('/api/auth/status')
-if (!authStatus.value?.setupRequired) {
+const { data: authStatus, error: statusError } = await useFetch('/api/auth/status')
+if (authStatus.value && !authStatus.value.setupRequired) {
   await navigateTo(authStatus.value?.authenticated ? '/admin' : '/login')
 }
 
@@ -47,6 +47,9 @@ async function createAdmin() {
       <p v-if="!authStatus?.setupEnabled" class="mt-3 text-sm text-error" role="alert">
         Admin setup is not enabled. Set NUXT_ADMIN_SETUP_TOKEN in the server environment, then reload this page.
       </p>
+      <p v-if="statusError" class="mt-3 text-sm text-error" role="alert">
+        Unable to check setup status. Verify the database connection and run database migrations, then reload this page.
+      </p>
     </div>
     <form class="space-y-4" @submit.prevent="createAdmin">
       <UFormField label="One-time setup token">
@@ -64,7 +67,7 @@ async function createAdmin() {
       <p v-if="errorMessage" class="text-sm text-error" role="alert">
         {{ errorMessage }}
       </p>
-      <UButton type="submit" :loading="pending" :disabled="!authStatus?.setupEnabled" block>
+      <UButton type="submit" :loading="pending" :disabled="!!statusError || !authStatus?.setupEnabled" block>
         Create administrator
       </UButton>
     </form>

@@ -35,11 +35,13 @@ export interface SpeedtestEvent {
   }
   isp?: string
   interface?: {
+    name?: string
     externalIp?: string
   }
   result?: {
     url?: string
   }
+  message?: string
 }
 
 interface Ping {

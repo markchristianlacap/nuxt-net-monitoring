@@ -45,7 +45,10 @@ watch(tabs, (availableTabs) => {
     <div class="mt-4">
       <PingStream v-if="tab === 'pings' && data?.features.ping" />
       <BandwidthStream v-if="tab === 'bandwidths' && data?.features.bandwidth" />
-      <SpeedtestScheduleStatus v-if="tab === 'speedtest' && data?.features.speedtest" />
+      <div v-if="tab === 'speedtest' && data?.features.speedtest" class="space-y-4">
+        <SpeedtestScheduleStatus />
+        <ManualSpeedtest />
+      </div>
       <UCard v-if="!tabs.length" class="text-center">
         <p>No monitoring features are enabled.</p>
         <UButton class="mt-4" to="/admin">

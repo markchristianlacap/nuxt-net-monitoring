@@ -21,7 +21,7 @@ export interface AppSettings {
   }
   speedtest: {
     frequencySeconds: number
-    localInterfaceName: string | null
+    localInterfaceNames: string[]
   }
 }
 
@@ -39,6 +39,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   },
   speedtest: {
     frequencySeconds: 3600,
-    localInterfaceName: null,
+    localInterfaceNames: [],
   },
 }

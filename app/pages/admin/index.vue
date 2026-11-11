@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AppSettings } from '~~/shared/types/settings'
-import { SYSTEM_DEFAULT_INTERFACE_VALUE } from '~~/shared/types/settings'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -18,22 +17,18 @@ const settings = reactive<AppSettings>(data.value?.settings ?? {
   features: { ping: false, bandwidth: false, speedtest: false },
   ping: { hosts: [] },
   snmp: { devices: [] },
-  speedtest: { frequencySeconds: 3600, localInterfaceName: null },
+  speedtest: { frequencySeconds: 3600, localInterfaceNames: [] },
 })
 const pingHostsText = ref(settings.ping.hosts.join('\n'))
-const scheduledInterface = ref(settings.speedtest.localInterfaceName ?? SYSTEM_DEFAULT_INTERFACE_VALUE)
+const scheduledInterfaces = ref([...settings.speedtest.localInterfaceNames])
 const scheduledInterfaceItems = computed(() => [
-  { label: 'System default', value: SYSTEM_DEFAULT_INTERFACE_VALUE },
   ...(speedtestInterfaces.value ?? []).map(item => ({
     label: `${item.name} · ${item.ipAddress}`,
     value: item.name,
   })),
-  ...(scheduledInterface.value !== SYSTEM_DEFAULT_INTERFACE_VALUE
-    && !speedtestInterfaces.value?.some(item => item.name === scheduledInterface.value)
-    ? [
-        { label: `${scheduledInterface.value} · unavailable`, value: scheduledInterface.value },
-      ]
-    : []),
+  ...scheduledInterfaces.value
+    .filter(name => !speedtestInterfaces.value?.some(item => item.name === name))
+    .map(name => ({ label: `${name} · unavailable`, value: name })),
 ])
 const devices = ref((data.value?.settings.snmp.devices ?? []).map(device => ({
   ...device,
@@ -67,9 +62,7 @@ async function saveSettings() {
           ...settings,
           speedtest: {
             ...settings.speedtest,
-            localInterfaceName: scheduledInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
-              ? null
-              : scheduledInterface.value,
+            localInterfaceNames: scheduledInterfaces.value,
           },
           ping: {
             hosts: pingHostsText.value.split('\n'),
@@ -197,8 +190,16 @@ async function signOut() {
           <UFormField label="Frequency (seconds)" help="Between 60 seconds and 7 days.">
             <UInput v-model.number="settings.speedtest.frequencySeconds" type="number" min="60" max="604800" class="w-full sm:max-w-xs" />
           </UFormField>
-          <UFormField label="Scheduled test interface" help="Choose the local network adapter for scheduled tests.">
-            <USelect v-model="scheduledInterface" :items="scheduledInterfaceItems" class="w-full sm:max-w-md" />
+          <UFormField label="Scheduled test interfaces" help="Choose one or more adapters. Tests run one at a time in selection order; leave empty to use the system default.">
+            <USelectMenu
+              v-model="scheduledInterfaces"
+              :items="scheduledInterfaceItems"
+              value-key="value"
+              label-key="label"
+              multiple
+              placeholder="System default (no interfaces selected)"
+              class="w-full sm:max-w-md"
+            />
           </UFormField>
         </div>
       </UCard>

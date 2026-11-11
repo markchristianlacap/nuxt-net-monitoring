@@ -42,6 +42,25 @@ export async function getAppSettings(): Promise<AppSettings> {
     .limit(1)
 
   const storedSettings = row?.settings ?? DEFAULT_APP_SETTINGS
+  const storedSpeedtest = (storedSettings.speedtest ?? {}) as AppSettings['speedtest'] & {
+    localInterfaceName?: unknown
+  }
+  const {
+    localInterfaceName: legacyLocalInterfaceName,
+    ...storedSpeedtestConfig
+  } = storedSpeedtest
+  let localInterfaceNames: string[]
+  if (Array.isArray(storedSpeedtestConfig.localInterfaceNames)) {
+    localInterfaceNames = storedSpeedtestConfig.localInterfaceNames
+  }
+  else if (typeof legacyLocalInterfaceName === 'string' && legacyLocalInterfaceName.trim()) {
+    localInterfaceNames = [
+      legacyLocalInterfaceName.trim(),
+    ]
+  }
+  else {
+    localInterfaceNames = []
+  }
   settingsCache = {
     ...structuredClone(DEFAULT_APP_SETTINGS),
     ...storedSettings,
@@ -59,7 +78,8 @@ export async function getAppSettings(): Promise<AppSettings> {
     },
     speedtest: {
       ...DEFAULT_APP_SETTINGS.speedtest,
-      ...storedSettings.speedtest,
+      ...storedSpeedtestConfig,
+      localInterfaceNames,
     },
   }
   return structuredClone(settingsCache)
@@ -137,13 +157,22 @@ export function normalizeAppSettings(input: unknown, previous: AppSettings): App
   }
 
   const frequencySeconds = input.speedtest.frequencySeconds
-  const localInterfaceName = input.speedtest.localInterfaceName
-  if (
-    localInterfaceName !== undefined
-    && localInterfaceName !== null
-    && (typeof localInterfaceName !== 'string' || localInterfaceName.trim().length > 255)
-  ) {
-    throw createError({ statusCode: 400, statusMessage: 'Scheduled speed-test interface must be a valid interface name' })
+  const legacyLocalInterfaceName = input.speedtest.localInterfaceName
+  let localInterfaceNames: string[]
+  if (input.speedtest.localInterfaceNames !== undefined) {
+    localInterfaceNames = validateStringArray(input.speedtest.localInterfaceNames, 'Scheduled speed-test interfaces', 32)
+  }
+  else if (legacyLocalInterfaceName === undefined || legacyLocalInterfaceName === null) {
+    localInterfaceNames = []
+  }
+  else if (typeof legacyLocalInterfaceName === 'string') {
+    localInterfaceNames = validateStringArray([legacyLocalInterfaceName], 'Scheduled speed-test interfaces', 32)
+  }
+  else {
+    throw createError({ statusCode: 400, statusMessage: 'Scheduled speed-test interfaces must be valid interface names' })
+  }
+  if (localInterfaceNames.some(interfaceName => interfaceName.length > 255)) {
+    throw createError({ statusCode: 400, statusMessage: 'Scheduled speed-test interface names must be at most 255 characters' })
   }
   if (typeof frequencySeconds !== 'number' || !Number.isInteger(frequencySeconds) || frequencySeconds < 60 || frequencySeconds > 604800) {
     throw createError({ statusCode: 400, statusMessage: 'Speed-test frequency must be between 60 and 604800 seconds' })
@@ -165,9 +194,7 @@ export function normalizeAppSettings(input: unknown, previous: AppSettings): App
     snmp: { devices },
     speedtest: {
       frequencySeconds,
-      localInterfaceName: typeof localInterfaceName === 'string' && localInterfaceName.trim()
-        ? localInterfaceName.trim()
-        : null,
+      localInterfaceNames,
     },
   }
 }

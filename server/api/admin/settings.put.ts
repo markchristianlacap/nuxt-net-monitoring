@@ -5,9 +5,9 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const previous = await getAppSettings()
   const settings = normalizeAppSettings(body?.settings, previous)
-  const interfaceName = settings.speedtest.localInterfaceName
-  if (interfaceName && !getAvailableSpeedtestInterfaces().some(item => item.name === interfaceName)) {
-    throw createError({ statusCode: 400, statusMessage: 'Selected scheduled-test interface is not available to the application' })
+  const availableInterfaces = new Set(getAvailableSpeedtestInterfaces().map(item => item.name))
+  if (settings.speedtest.localInterfaceNames.some(interfaceName => !availableInterfaces.has(interfaceName))) {
+    throw createError({ statusCode: 400, statusMessage: 'One or more selected scheduled-test interfaces are not available to the application' })
   }
   await saveAppSettings(settings)
   return { success: true }

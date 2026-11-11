@@ -1,6 +1,6 @@
 <script setup lang="ts">
-const tab = ref<'pings' | 'bandwidths'>('pings')
-const { data } = await useFetch<{ features: { ping: boolean, bandwidth: boolean } }>('/api/features')
+const tab = ref<'pings' | 'bandwidths' | 'speedtest'>('pings')
+const { data } = await useFetch<{ features: { ping: boolean, bandwidth: boolean, speedtest: boolean } }>('/api/features')
 const tabs = computed(() => [
   ...(data.value?.features.ping
     ? [
@@ -10,6 +10,11 @@ const tabs = computed(() => [
   ...(data.value?.features.bandwidth
     ? [
         { label: 'Bandwidth', value: 'bandwidths' as const },
+      ]
+    : []),
+  ...(data.value?.features.speedtest
+    ? [
+        { label: 'Scheduled Speedtest', value: 'speedtest' as const },
       ]
     : []),
 ])
@@ -35,8 +40,9 @@ watch(tabs, (availableTabs) => {
     <div class="mt-4">
       <PingStream v-if="tab === 'pings' && data?.features.ping" />
       <BandwidthStream v-if="tab === 'bandwidths' && data?.features.bandwidth" />
+      <SpeedtestScheduleStatus v-if="tab === 'speedtest' && data?.features.speedtest" />
       <UCard v-if="!tabs.length" class="text-center">
-        <p>No live ping or bandwidth monitoring features are enabled.</p>
+        <p>No monitoring features are enabled.</p>
         <UButton class="mt-4" to="/admin">
           Configure monitoring
         </UButton>

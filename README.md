@@ -33,13 +33,13 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 ## 🎯 Features
 
 ### Real-Time Monitoring
-* **Ping Monitoring**: Continuous ping monitoring with 1-second intervals. Supports multiple hosts configured in `network.config.json`. Each host runs in its own process. Live data streamed via SSE, 60-second averages saved to database
-* **Bandwidth Monitoring**: Real-time SNMP monitoring of network interface traffic. Supports multiple interfaces configured in `network.config.json`. Auto-discovers interface details, monitors 64-bit counters. Data collected every second, averaged and saved every 60 seconds
+* **Ping Monitoring**: Optional continuous ping monitoring with 1-second intervals. Configure hosts in the dashboard. Each host runs in its own process. Live data is streamed via SSE and 60-second averages are saved to the database
+* **Bandwidth Monitoring**: Optional real-time SNMP monitoring of network interface traffic. Configure devices and interfaces in the dashboard. The app auto-discovers interface details, monitors 64-bit counters, and saves 60-second averages
 * **Live Streaming**: Server-sent events (SSE) for real-time data updates without page refresh
 
 ### Speed Test Integration
-* **Automated Testing**: Scheduled speed tests with configurable frequency (default: every hour)
-* **Manual Testing**: On-demand speed tests with live progress visualization
+* **Automated Testing**: Optional scheduled speed tests with configurable frequency (default: every hour when enabled)
+* **Manual Testing**: On-demand speed tests with live progress visualization when the feature is enabled
 * **Real-Time Results**: Live streaming of download/upload speeds during execution
 * **Direct Integration**: Uses official Ookla Speedtest CLI with retry logic
 * **Comprehensive Data**: Captures bandwidth, latency, ISP, public IP, and result URLs
@@ -50,8 +50,9 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 * **Data Export**: CSV format downloads
 
 ### Security & Access
-* **Basic Authentication**: HTTP Basic Auth with 48-hour session cookies
-* **Protected Routes**: All endpoints secured
+* **Admin Account**: First-run setup followed by username/password sign-in
+* **Protected Routes**: Authenticated routes use secure, database-backed sessions
+* **Dashboard Configuration**: Feature settings are saved in PostgreSQL and applied immediately
 
 ---
 
@@ -74,7 +75,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
 #### Prerequisites
 - Docker and Docker Compose
-- SNMP access to your network device
+- Network access required by the monitoring features you choose to enable
 
 #### Steps
 
@@ -86,43 +87,21 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
 2. **Configure Environment Variables**
 
-   Create the database/auth environment file and network settings file from the examples:
+   Create the environment file:
    ```bash
    cp .env.docker.example .env.docker
-   cp network.config.example.json network.config.json
    ```
 
-   Edit `network.config.json` with your SNMP, ping, and speedtest settings. For example:
-   ```json
-   {
-     "snmp": {
-       "host": "192.168.1.1",
-       "community": "your-snmp-community-string",
-       "interfaces": ["eth0", "eth1"]
-     },
-     "ping": {
-       "hosts": ["8.8.8.8", "1.1.1.1"]
-     },
-     "speedtest": {
-       "frequencySeconds": 3600
-     }
-   }
-   ```
-
-   Edit `.env.docker` with your database and Basic Auth credentials:
+   Set your database values and a one-time admin setup token in `.env.docker`:
    ```env
-   # Database Configuration
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
    NUXT_DB_PASSWORD=postgres
    NUXT_DB_NAME=net-monitor
-
-   # Basic Authentication
-   NUXT_USER=admin
-   NUXT_PASS=your-secure-password
+   NUXT_ADMIN_SETUP_TOKEN=replace-with-a-long-random-value
    ```
 
-   > **Note**: `NUXT_DB_HOST` is automatically set to `postgres` in docker-compose.yml. Network settings are read from `network.config.json`.
+   Generate a token with `openssl rand -hex 32`. `NUXT_DB_HOST` is set to `postgres` by Docker Compose.
 
 3. **Start the Application**
    ```bash
@@ -133,7 +112,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
 4. **Access the Application**
 
-   Navigate to `http://localhost:3000` and authenticate with your credentials.
+   Navigate to `http://localhost:3000/setup`, enter the setup token, and create the administrator account. Then configure features from **Settings**. Settings are saved in PostgreSQL and apply immediately.
 
 5. **View Logs** (optional)
    ```bash
@@ -162,9 +141,7 @@ For development or custom setups, you can install and run the application manual
 
 #### Prerequisites
 1. Node.js (v18+), pnpm (v10.18.3+), PostgreSQL (v12+)
-2. [Speedtest CLI](https://www.speedtest.net/apps/cli) by Ookla
-3. SNMP access to your network device
-4. `ping` command
+2. `ping`, SNMP access, and/or Ookla Speedtest CLI only for the features you enable
 
 #### Steps
 
@@ -181,25 +158,22 @@ For development or custom setups, you can install and run the application manual
 
 3. **Configure Environment Variables**
 
-   Create the `.env` and network configuration files:
+   Create the environment file:
    ```bash
    cp .env.example .env
-   cp network.config.example.json network.config.json
    ```
 
-   Configure `network.config.json` as shown above, then edit `.env` with database and Basic Auth credentials:
+   Set your database values and generate a one-time admin setup token:
    ```env
-   # PostgreSQL Database
    NUXT_DB_HOST=localhost
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
    NUXT_DB_PASSWORD=your-db-password
    NUXT_DB_NAME=net-monitor
-
-   # Basic Authentication
-   NUXT_USER=admin
-   NUXT_PASS=your-secure-password
+   NUXT_ADMIN_SETUP_TOKEN=replace-with-a-long-random-value
    ```
+
+   Generate a token with `openssl rand -hex 32`.
 
 4. **Setup Database**
 
@@ -234,7 +208,7 @@ The application will be available at `http://localhost:3000`
 
 ### Authentication
 
-Use your `NUXT_USER` and `NUXT_PASS` credentials. Authentication is cached for 48 hours.
+On first launch, visit `/setup` and use the one-time `NUXT_ADMIN_SETUP_TOKEN` to create the administrator account. Sign in at `/login` afterward. The setup route is disabled after the account is created.
 
 ### Main Dashboard (`/`)
 
@@ -276,29 +250,7 @@ The homepage displays real-time monitoring with two tabs:
 
 **Compatible with pfSense and OPNsense firewalls** - both use standard SNMP v2c protocol.
 
-Configure one or more SNMP devices in `network.config.json`. Each device can have an optional display name and its own interface filter. Omit `interfaces` or set it to an empty array to monitor all interfaces:
-
-```json
-{
-  "snmp": {
-    "devices": [
-      {
-        "host": "192.168.1.1",
-        "displayName": "Main Router",
-        "community": "your-snmp-community-string",
-        "interfaces": ["eth0", "eth1"]
-      },
-      {
-        "host": "192.168.1.2",
-        "community": "another-community-string",
-        "interfaces": ["wan"]
-      }
-    ]
-  }
-}
-```
-
-`displayName` is optional; when omitted, the device host is used. `network.config.json` must use the `snmp.devices` structure.
+Configure monitoring from **Settings** in the dashboard. Enable bandwidth monitoring, add one or more SNMP devices, and provide each device's host and community string. Display names are optional; when omitted, the device host is used. Leave the interface list blank to monitor all interfaces, or provide comma-separated interface names to filter them. Settings are stored in PostgreSQL and take effect without restarting the app.
 
 **SNMP OIDs Used:**
 - Interface Index: `1.3.6.1.2.1.2.2.1.1`
@@ -331,29 +283,13 @@ The application automatically handles 64-bit counter values, converts to Mbps, m
 
 ### Multiple Ping Hosts
 
-Configure multiple hosts in the `ping.hosts` array in `network.config.json`:
-
-```json
-{
-  "ping": {
-    "hosts": ["8.8.8.8", "1.1.1.1", "google.com", "192.168.1.1"]
-  }
-}
-```
+Enable ping monitoring in **Settings** and enter one hostname or IP address per line.
 
 Features: Independent monitoring per host, color-coded visualization, individual statistics, overall summary with total/online/offline hosts.
 
 ### Speed Test Frequency
 
-Configure the frequency of automated speed tests in `network.config.json`:
-
-```json
-{
-  "speedtest": {
-    "frequencySeconds": 3600
-  }
-}
-```
+Enable scheduled speed tests in **Settings** and choose a frequency from 60 seconds to 7 days.
 
 **Common Frequency Values:**
 - `1800` = 30 minutes
@@ -377,7 +313,7 @@ The speed test will automatically run at the specified interval. You can still t
 * **Runtime**: Nuxt Nitro server (Node.js)
 * **Database**: PostgreSQL with Drizzle ORM
 * **SNMP Library**: net-snmp for device communication
-* **Protocols**: ICMP Ping, SNMP v2c, HTTP Basic Authentication
+* **Protocols**: ICMP Ping, SNMP v2c, session-based admin authentication
 
 ### External Dependencies
 * **Speedtest CLI**: Ookla Speedtest CLI with retry logic
@@ -391,11 +327,11 @@ The speed test will automatically run at the specified interval. You can still t
 
 #### Background Processes
 
-The application runs three background monitoring processes via Nitro plugins:
+The application has three optional background monitoring processes via Nitro plugins. Each starts only when enabled in dashboard settings:
 
 1. **Ping Monitor** (`server/plugins/ping.server.ts`)
-   - Spawns independent `ping` processes for **each configured host** on server startup
-   - Monitors all hosts in `network.config.json`'s `ping.hosts` array with 1-second intervals
+   - Spawns independent `ping` processes for each configured host when ping monitoring is enabled
+   - Loads hosts from PostgreSQL settings and applies dashboard changes while running
    - Each host runs in its own child process with separate stdout monitoring
    - Parses latency from ping output using regex pattern matching (`time=([\d.]+) ms`)
    - Streams real-time data via events system and SSE to frontend
@@ -406,7 +342,7 @@ The application runs three background monitoring processes via Nitro plugins:
 2. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
    - Uses precise timing helper (`runEverySecond`) for consistent 1-second intervals
    - Auto-discovers and caches interface information for 30 seconds
-   - Monitors interfaces configured for every device in `network.config.json`'s `snmp.devices` array
+   - Monitors interfaces configured for each enabled SNMP device in PostgreSQL settings
    - Queries each SNMP device using an independent net-snmp session
    - Reads 64-bit interface counters (ifHCIn/ifHCOut) via SNMP OIDs
    - Calculates bandwidth delta between readings (handles counter wraparound)
@@ -416,7 +352,7 @@ The application runs three background monitoring processes via Nitro plugins:
 
 3. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
    - Runs Ookla Speedtest CLI at configurable intervals using `runEveryInterval` timing helper
-   - Frequency configured via `network.config.json`'s `speedtest.frequencySeconds` (default: 3600 seconds/1 hour)
+   - Runs only when enabled; frequency is loaded from PostgreSQL settings (default: 3600 seconds/1 hour)
    - Executes `speedtest -f jsonl --accept-license` command
    - Implements retry logic with exponential backoff (3 attempts, 1s base delay)
    - Parses JSONL output to extract final result object
@@ -523,7 +459,7 @@ nuxt-net-monitoring/
 ├── server/
 │   ├── api/               # API endpoints with SSE streaming
 │   ├── db/                # Drizzle schema, client, and migrations
-│   ├── middleware/        # Server middleware (Basic Auth)
+│   ├── middleware/        # Server middleware (session authentication and feature gates)
 │   ├── plugins/           # Background processes (ping, bandwidth, speedtest)
 │   └── utils/             # Utility functions (timing, SNMP, CSV export)
 ├── shared/                # Shared types and utilities between client/server

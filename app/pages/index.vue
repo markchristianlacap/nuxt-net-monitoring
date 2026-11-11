@@ -36,7 +36,7 @@ watch(tabs, (availableTabs) => {
       <PingStream v-if="tab === 'pings' && data?.features.ping" />
       <BandwidthStream v-if="tab === 'bandwidths' && data?.features.bandwidth" />
       <UCard v-if="!tabs.length" class="text-center">
-        <p>No monitoring features are enabled yet.</p>
+        <p>No live ping or bandwidth monitoring features are enabled.</p>
         <UButton class="mt-4" to="/admin">
           Configure monitoring
         </UButton>

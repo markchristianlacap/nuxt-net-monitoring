@@ -44,6 +44,9 @@ async function createAdmin() {
       <p class="mt-2 text-muted">
         Enter the one-time setup token configured by your deployment administrator.
       </p>
+      <p v-if="!authStatus?.setupEnabled" class="mt-3 text-sm text-error" role="alert">
+        Admin setup is not enabled. Set NUXT_ADMIN_SETUP_TOKEN in the server environment, then reload this page.
+      </p>
     </div>
     <form class="space-y-4" @submit.prevent="createAdmin">
       <UFormField label="One-time setup token">
@@ -61,7 +64,7 @@ async function createAdmin() {
       <p v-if="errorMessage" class="text-sm text-error" role="alert">
         {{ errorMessage }}
       </p>
-      <UButton type="submit" :loading="pending" block>
+      <UButton type="submit" :loading="pending" :disabled="!authStatus?.setupEnabled" block>
         Create administrator
       </UButton>
     </form>

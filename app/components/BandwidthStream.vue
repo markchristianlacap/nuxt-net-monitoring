@@ -32,13 +32,6 @@ let streamActive = false
 const colorPalette = [...chartBaseColors].sort(() => Math.random() - 0.5)
 const theme = useChartTheme()
 
-function getInterfaceLabel(stats: InterfaceStats) {
-  const device = stats.displayName !== stats.host
-    ? `${stats.displayName} (${stats.host})`
-    : stats.host
-  return `${device} / ${stats.name}`
-}
-
 const routers = computed<RouterStats[]>(() => {
   const routerMap = new Map<string, RouterStats>()
 
@@ -65,9 +58,9 @@ const summary = computed(() => {
   }
 })
 
-const option = computed<ECOption>(() => {
+function getRouterChartOption(router: RouterStats): ECOption {
   const chartTheme = theme.value
-  const ifaceList = Array.from(interfaces.value.entries())
+  const ifaceList = router.interfaces
   if (ifaceList.length === 0) {
     return {
       backgroundColor: 'transparent',
@@ -101,7 +94,7 @@ const option = computed<ECOption>(() => {
       },
     },
     legend: {
-      data: ifaceList.flatMap(([, stats]) => [`${getInterfaceLabel(stats)} Download`, `${getInterfaceLabel(stats)} Upload`]),
+      data: ifaceList.flatMap(stats => [`${stats.name} Download`, `${stats.name} Upload`]),
       textStyle: { color: chartTheme.textMuted, fontWeight: 500 },
       top: 10,
     },
@@ -130,14 +123,14 @@ const option = computed<ECOption>(() => {
       },
       axisLabel: { color: chartTheme.textMuted, fontSize: 11 },
     },
-    series: ifaceList.flatMap(([, stats], index) => {
+    series: ifaceList.flatMap((stats, index) => {
       const colorIndex = index % colorPalette.length
       const colors = colorPalette[colorIndex] ?? colorPalette[0]!
       const inSeries = stats.timestamps.map((t, i) => [t, stats.inData[i]])
       const outSeries = stats.timestamps.map((t, i) => [t, stats.outData[i]])
       return [
         {
-          name: `${getInterfaceLabel(stats)} Download`,
+          name: `${stats.name} Download`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -146,7 +139,7 @@ const option = computed<ECOption>(() => {
           areaStyle: { color: colors.area },
         },
         {
-          name: `${getInterfaceLabel(stats)} Upload`,
+          name: `${stats.name} Upload`,
           type: 'line',
           showSymbol: false,
           smooth: true,
@@ -159,7 +152,7 @@ const option = computed<ECOption>(() => {
       ]
     }),
   }
-})
+}
 
 function connectStream() {
   if (!streamActive)
@@ -277,7 +270,7 @@ onBeforeUnmount(() => {
       </p>
     </div>
     <!-- Router Cards -->
-    <div v-if="routers.length > 0" class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div v-if="routers.length > 0" class="grid grid-cols-1 gap-4 2xl:grid-cols-2">
       <UCard v-for="router in routers" :key="router.host" class="h-full">
         <template #header>
           <div class="flex min-w-0 items-start justify-between gap-3">
@@ -368,12 +361,15 @@ onBeforeUnmount(() => {
             </dl>
           </section>
         </div>
+
+        <div class="mt-4 rounded-lg border border-default bg-muted p-2 sm:p-3">
+          <VChart :option="getRouterChartOption(router)" autoresize :style="{ height: '300px' }" />
+        </div>
       </UCard>
     </div>
 
-    <!-- Chart -->
-    <div class="rounded-xl border border-default bg-muted p-2 sm:rounded-2xl sm:p-4">
-      <VChart :option="option" autoresize :style="{ height: '400px' }" />
+    <div v-else class="flex min-h-48 items-center justify-center rounded-xl border border-default bg-muted px-4 text-sm text-muted">
+      Waiting for bandwidth data...
     </div>
   </div>
 </template>

@@ -1,19 +1,23 @@
 import { and, desc } from 'drizzle-orm'
 import { db } from '~~/server/db'
 import { speedtestResults } from '~~/server/db/schema/speedtest-results'
+import { getSpeedtestInterfaceFilter } from '../../utils/speedtest-result-filter'
 
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event)
 
-    const where = and(...dateRangeConditions(speedtestResults.timestamp, {
-      start: query.start && query.start !== 'null'
-        ? query.start as string
-        : undefined,
-      end: query.end && query.end !== 'null'
-        ? query.end as string
-        : undefined,
-    }))
+    const where = and(
+      ...dateRangeConditions(speedtestResults.timestamp, {
+        start: query.start && query.start !== 'null'
+          ? query.start as string
+          : undefined,
+        end: query.end && query.end !== 'null'
+          ? query.end as string
+          : undefined,
+      }),
+      getSpeedtestInterfaceFilter(query.networkInterface),
+    )
 
     const result = await db.select().from(speedtestResults).where(where).orderBy(desc(speedtestResults.timestamp))
 
@@ -25,6 +29,7 @@ export default defineEventHandler(async (event) => {
         'download',
         'upload',
         'latency',
+        'network_interface',
         'timestamp',
         'url',
       ],
@@ -34,6 +39,7 @@ export default defineEventHandler(async (event) => {
         row.download?.toString() || '0',
         row.upload?.toString() || '0',
         Number(row.latency || 0)?.toFixed(2) || '0',
+        row.networkInterface || '',
         new Date(row.timestamp).toISOString(),
         row.url || '',
       ],

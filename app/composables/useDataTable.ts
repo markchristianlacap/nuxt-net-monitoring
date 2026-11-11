@@ -54,14 +54,17 @@ export function useDataTable(apiEndpoint: string, csvFilename: string) {
     // Debounce the actual download
     downloadTimeout = setTimeout(() => {
       try {
-        let url = `/api/${apiEndpoint}/download`
-        const params = []
+        const params = new URLSearchParams()
         if (query.start)
-          params.push(`start=${query.start}`)
+          params.set('start', String(query.start))
         if (query.end)
-          params.push(`end=${query.end}`)
-        if (params.length)
-          url += `?${params.join('&')}`
+          params.set('end', String(query.end))
+        if (query.networkInterface && query.networkInterface !== 'all')
+          params.set('networkInterface', String(query.networkInterface))
+        const queryString = params.toString()
+        const url = `/api/${apiEndpoint}/download${queryString
+          ? `?${queryString}`
+          : ''}`
 
         const a = document.createElement('a')
         a.href = url

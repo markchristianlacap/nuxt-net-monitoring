@@ -2,6 +2,7 @@
 interface Props {
   start: string | null
   end: string | null
+  networkInterface: string
 }
 
 const props = defineProps<Props>()
@@ -10,12 +11,13 @@ const { data: chartData, refresh } = await useFetch('/api/speedtest-results/char
   query: {
     start: computed(() => props.start),
     end: computed(() => props.end),
+    networkInterface: computed(() => props.networkInterface),
   },
   immediate: true,
 })
 
 // Watch for prop changes and refresh
-watch(() => [props.start, props.end], () => {
+watch(() => [props.start, props.end, props.networkInterface], () => {
   refresh()
 }, { deep: true })
 
@@ -32,20 +34,91 @@ const option = computed<ECOption>(() => {
     }
   }
 
-  const downloadData = chartData.value.map((item: any) => [
-    new Date(item.timestamp).getTime(),
-    toMbps(item.download),
-  ])
+  const groupedData = new Map<string, any[]>()
+  for (const item of chartData.value) {
+    const interfaceLabel = item.networkInterface || 'Unspecified'
+    const rows = groupedData.get(interfaceLabel) ?? []
+    rows.push(item)
+    groupedData.set(interfaceLabel, rows)
+  }
 
-  const uploadData = chartData.value.map((item: any) => [
-    new Date(item.timestamp).getTime(),
-    toMbps(item.upload),
-  ])
+  const palettes = [
+    { download: '#3b82f6', upload: '#22c55e', latency: '#f59e0b' },
+    { download: '#a78bfa', upload: '#2dd4bf', latency: '#fb7185' },
+    { download: '#38bdf8', upload: '#a3e635', latency: '#f97316' },
+    { download: '#f472b6', upload: '#34d399', latency: '#facc15' },
+  ]
+  const series: Record<string, any>[] = []
+  const legend: string[] = []
+  const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    '\'': '&#39;',
+  })[character] ?? character)
+  const colorWithAlpha = (color: string, alpha: number) => {
+    const channels = color.match(/[\da-f]{2}/gi)?.map(channel => Number.parseInt(channel, 16)) ?? [0, 0, 0]
+    return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${alpha})`
+  }
 
-  const latencyData = chartData.value.map((item: any) => [
-    new Date(item.timestamp).getTime(),
-    Number(item.latency),
-  ])
+  for (const [groupIndex, [interfaceLabel, rows]] of [
+    ...groupedData.entries(),
+  ].entries()) {
+    const colors = palettes[groupIndex % palettes.length]!
+    const downloadName = `${interfaceLabel} · Download`
+    const uploadName = `${interfaceLabel} · Upload`
+    const latencyName = `${interfaceLabel} · Latency`
+    legend.push(downloadName, uploadName, latencyName)
+
+    series.push(
+      {
+        name: downloadName,
+        type: 'line',
+        yAxisIndex: 0,
+        showSymbol: false,
+        smooth: true,
+        data: rows.map((item: any) => [
+          new Date(item.timestamp).getTime(),
+          toMbps(item.download),
+        ]),
+        lineStyle: { width: 3, color: colors.download },
+        itemStyle: { color: colors.download },
+        areaStyle: {
+          color: colorWithAlpha(colors.download, 0.16),
+        },
+      },
+      {
+        name: uploadName,
+        type: 'line',
+        yAxisIndex: 0,
+        showSymbol: false,
+        smooth: true,
+        data: rows.map((item: any) => [
+          new Date(item.timestamp).getTime(),
+          toMbps(item.upload),
+        ]),
+        lineStyle: { width: 3, color: colors.upload },
+        itemStyle: { color: colors.upload },
+        areaStyle: {
+          color: colorWithAlpha(colors.upload, 0.12),
+        },
+      },
+      {
+        name: latencyName,
+        type: 'line',
+        yAxisIndex: 1,
+        showSymbol: false,
+        smooth: true,
+        data: rows.map((item: any) => [
+          new Date(item.timestamp).getTime(),
+          Number(item.latency),
+        ]),
+        lineStyle: { width: 2, color: colors.latency, type: 'dashed' },
+        itemStyle: { color: colors.latency },
+      },
+    )
+  }
 
   return {
     backgroundColor: 'transparent',
@@ -65,7 +138,7 @@ const option = computed<ECOption>(() => {
             const unit = param.seriesName.includes('Latency')
               ? ' ms'
               : ' Mbps'
-            content += `${param.marker} ${param.seriesName}: <b style="color:${param.color}">${param.data[1].toFixed(2)}${unit}</b><br/>`
+            content += `${param.marker} ${escapeHtml(param.seriesName)}: <b style="color:${param.color}">${param.data[1].toFixed(2)}${unit}</b><br/>`
           }
         })
         content += '</div>'
@@ -73,7 +146,8 @@ const option = computed<ECOption>(() => {
       },
     },
     legend: {
-      data: ['Download', 'Upload', 'Latency'],
+      data: legend,
+      type: 'scroll',
       textStyle: { color: '#94a3b8', fontWeight: 500 },
       top: 10,
     },
@@ -121,60 +195,7 @@ const option = computed<ECOption>(() => {
         axisLabel: { color: '#cbd5e1', fontSize: 11 },
       },
     ],
-    series: [
-      {
-        name: 'Download',
-        type: 'line',
-        yAxisIndex: 0,
-        showSymbol: false,
-        smooth: true,
-        data: downloadData,
-        lineStyle: {
-          width: 3,
-          color: '#3b82f6',
-        },
-        itemStyle: {
-          color: '#3b82f6',
-        },
-        areaStyle: {
-          color: 'rgba(59, 130, 246, 0.2)',
-        },
-      },
-      {
-        name: 'Upload',
-        type: 'line',
-        yAxisIndex: 0,
-        showSymbol: false,
-        smooth: true,
-        data: uploadData,
-        lineStyle: {
-          width: 3,
-          color: '#22c55e',
-        },
-        itemStyle: {
-          color: '#22c55e',
-        },
-        areaStyle: {
-          color: 'rgba(34, 197, 94, 0.2)',
-        },
-      },
-      {
-        name: 'Latency',
-        type: 'line',
-        yAxisIndex: 1,
-        showSymbol: false,
-        smooth: true,
-        data: latencyData,
-        lineStyle: {
-          width: 2,
-          color: '#f59e0b',
-          type: 'dashed',
-        },
-        itemStyle: {
-          color: '#f59e0b',
-        },
-      },
-    ],
+    series,
   }
 })
 </script>

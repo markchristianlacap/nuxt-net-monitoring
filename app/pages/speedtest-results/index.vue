@@ -5,6 +5,18 @@ import { DATA_COLORS, TABLE_CLASSES } from '~/constants/tableStyles'
 
 const UIcon = resolveComponent('UIcon')
 const { query, downloadCSV, isDownloading } = useDataTable('speedtest-results', 'speedtest-results.csv')
+query.networkInterface = String(useRoute().query.networkInterface || 'all')
+
+const { data: interfaceData } = await useFetch<{ interfaces: string[], hasLegacyResults: boolean }>('/api/speedtest-results/interfaces')
+const interfaceFilterItems = computed(() => [
+  { label: 'All interfaces', value: 'all' },
+  ...(interfaceData.value?.interfaces ?? []).map(name => ({ label: name, value: name })),
+  ...(interfaceData.value?.hasLegacyResults
+    ? [
+        { label: 'Legacy results · unknown interface', value: '__legacy__' },
+      ]
+    : []),
+])
 
 // Override default pagination limit for speedtest results
 query.limit = Number(useRoute().query.limit) || 10
@@ -16,6 +28,11 @@ const { data } = await useFetch('/api/speedtest-results', {
 const columns: TableColumn<any>[] = [
   createIdColumn(),
   createTimestampColumn(),
+  {
+    accessorKey: 'networkInterface',
+    header: 'Interface',
+    cell: ({ row }) => row.getValue('networkInterface') || 'Unknown',
+  },
   { accessorKey: 'isp', header: 'ISP' },
   { accessorKey: 'ip', header: 'Public IP' },
   {
@@ -52,6 +69,7 @@ const columns: TableColumn<any>[] = [
         </h2>
         <div class="flex gap-2 w-full sm:w-auto">
           <common-date-range v-model:start="query.start" v-model:end="query.end" />
+          <USelect v-model="query.networkInterface" :items="interfaceFilterItems" class="min-w-48" aria-label="Filter by network interface" />
           <UButton
             color="neutral"
             variant="subtle"
@@ -63,7 +81,7 @@ const columns: TableColumn<any>[] = [
         </div>
       </div>
 
-      <SpeedtestChart :start="query.start" :end="query.end" />
+      <SpeedtestChart :start="query.start" :end="query.end" :network-interface="query.networkInterface" />
 
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <u-table

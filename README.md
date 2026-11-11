@@ -92,7 +92,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
    cp .env.docker.example .env.docker
    ```
 
-   Set your database values in `.env.docker`:
+   The bundled PostgreSQL service uses the credentials below by default. Keep `NUXT_DB_PASSWORD` set to `postgres` to match it. If you change the database credentials, update the PostgreSQL service's `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` in `docker-compose.yml` to match:
    ```env
    NUXT_DB_PORT=5432
    NUXT_DB_USER=postgres
@@ -111,7 +111,7 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
 4. **Access the Application**
 
-   Keep the app on a trusted network until setup is complete. Navigate to `http://localhost:3000/setup` to create the first administrator, then configure features from **Settings**. Settings are saved in PostgreSQL and apply immediately.
+   Keep the app on a trusted network until setup is complete. Navigate to `http://localhost:3000/setup` to create the first administrator, then sign in and open **Monitoring settings** at `/admin` to configure features. Settings are saved in PostgreSQL and apply immediately.
 
 5. **View Logs** (optional)
    ```bash
@@ -204,7 +204,7 @@ The application will be available at `http://localhost:3000`
 
 ### Authentication
 
-On first launch, visit `/setup` to create the first administrator account. This route closes once the account is created. Keep the application private or on a trusted network until setup is complete. The password is stored as a hash in PostgreSQL; subsequent access uses `/login`.
+On first launch, visit `/setup` to create the first administrator account. This route closes once the account is created. Keep the application private or on a trusted network until setup is complete. The password is stored as a hash in PostgreSQL; subsequent access uses `/login`. Configure monitoring features, ping hosts, SNMP devices, and speed-test schedules at `/admin` (**Monitoring settings**).
 
 ### Main Dashboard (`/`)
 
@@ -242,7 +242,7 @@ The homepage displays real-time monitoring with three tabs:
 
 **Compatible with pfSense and OPNsense firewalls** - both use standard SNMP v2c protocol.
 
-Configure monitoring from **Settings** in the dashboard. Enable bandwidth monitoring, add one or more SNMP devices, and provide each device's host and community string. Display names are optional; when omitted, the device host is used. Leave the interface list blank to monitor all interfaces, or provide comma-separated interface names to filter them. Settings are stored in PostgreSQL and take effect without restarting the app.
+Configure monitoring from **Monitoring settings** (`/admin`). Enable bandwidth monitoring, add one or more SNMP devices, and provide each device's host and community string. Display names are optional; when omitted, the device host is used. Leave the interface list blank to monitor all interfaces, or provide comma-separated interface names to filter them. Settings are stored in PostgreSQL and take effect without restarting the app.
 
 **SNMP OIDs Used:**
 - Interface Index: `1.3.6.1.2.1.2.2.1.1`
@@ -275,13 +275,13 @@ The application automatically handles 64-bit counter values, converts to Mbps, m
 
 ### Multiple Ping Hosts
 
-Enable ping monitoring in **Settings** and enter one hostname or IP address per line.
+Enable ping monitoring in **Monitoring settings** (`/admin`) and enter one hostname or IP address per line.
 
 Features: Independent monitoring per host, color-coded visualization, individual statistics, overall summary with total/online/offline hosts.
 
 ### Speed Test Frequency
 
-Enable scheduled speed tests in **Settings**, choose to run them every 1 hour, 3 hours, 12 hours, or 7 days, or enter a custom frequency from 1 hour to 7 days. Optionally select the local interface used by scheduled runs. The live test page also lets you select an interface for each run. Available interfaces are those visible to the app process; in Docker, this usually means the container's interfaces, not every host adapter.
+Enable scheduled speed tests in **Monitoring settings** (`/admin`), choose to run them every 1 hour, 3 hours, 12 hours, or 7 days, or enter a custom frequency from 1 hour to 7 days. Optionally select one or more local interfaces for scheduled runs; tests run one at a time in selection order. The live test page also lets you select an interface for each run. Available interfaces are those visible to the app process; in Docker, this usually means the container's interfaces, not every host adapter.
 
 **Schedule Frequency Values:**
 - `3600` = 1 hour (default)

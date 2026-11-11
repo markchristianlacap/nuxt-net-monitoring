@@ -23,6 +23,11 @@ const items = computed<NavigationMenuItem[]>(() => [
     to: '/speedtest-results',
     active: route.path === '/speedtest-results',
   },
+  {
+    label: 'Settings',
+    to: '/admin',
+    active: route.path.startsWith('/admin'),
+  },
 ])
 useSeoMeta({
   title,

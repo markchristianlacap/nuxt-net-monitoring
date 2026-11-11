@@ -119,22 +119,19 @@ async function signOut() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl space-y-8 pb-12">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-semibold">
-          Monitoring settings
-        </h1>
-        <p class="mt-2 text-muted">
-          Choose which monitoring features run and configure their sources.
-        </p>
-      </div>
-      <UButton variant="outline" @click="signOut">
-        Sign out
-      </UButton>
-    </div>
+  <div class="mx-auto max-w-4xl space-y-6">
+    <CommonPageHeader
+      title="Monitoring settings"
+      description="Choose which monitoring features run and configure their sources."
+    >
+      <template #actions>
+        <UButton variant="outline" class="self-start sm:self-auto" @click="signOut">
+          Sign out
+        </UButton>
+      </template>
+    </CommonPageHeader>
 
-    <form class="space-y-6" @submit.prevent="saveSettings">
+    <form class="space-y-6 pb-8" @submit.prevent="saveSettings">
       <UCard>
         <template #header>
           <div>

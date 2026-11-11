@@ -39,34 +39,32 @@ async function createAdmin() {
 </script>
 
 <template>
-  <div class="mx-auto mt-12 w-full max-w-lg space-y-6">
-    <div>
-      <h1 class="text-2xl font-semibold">
-        Set up your administrator account
-      </h1>
-      <p class="mt-2 text-muted">
-        Create the first admin account. Keep this app on a trusted network until setup is complete.
-      </p>
-      <p v-if="statusError" class="mt-3 text-sm text-error" role="alert">
-        Unable to check setup status. Verify the database connection and run database migrations, then reload this page.
-      </p>
-    </div>
-    <form class="space-y-4" @submit.prevent="createAdmin">
-      <UFormField label="Username" help="3–64 letters, numbers, dots, underscores, or hyphens">
-        <UInput v-model="username" autocomplete="username" minlength="3" maxlength="64" required class="w-full" />
-      </UFormField>
-      <UFormField label="Password" help="Use at least 12 characters.">
-        <UInput v-model="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="w-full" />
-      </UFormField>
-      <UFormField label="Confirm password">
-        <UInput v-model="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="w-full" />
-      </UFormField>
-      <p v-if="errorMessage" class="text-sm text-error" role="alert">
-        {{ errorMessage }}
-      </p>
-      <UButton type="submit" :loading="pending" :disabled="!!statusError || !authStatus?.setupRequired" block>
-        Create administrator
-      </UButton>
-    </form>
+  <div class="mx-auto w-full max-w-md space-y-6 py-8 sm:py-12">
+    <CommonPageHeader
+      title="Set up your administrator account"
+      description="Create the first admin account. Keep this app on a trusted network until setup is complete."
+    />
+    <p v-if="statusError" class="text-sm text-error" role="alert">
+      Unable to check setup status. Verify the database connection and run database migrations, then reload this page.
+    </p>
+    <UCard>
+      <form class="space-y-4" @submit.prevent="createAdmin">
+        <UFormField label="Username" help="3–64 letters, numbers, dots, underscores, or hyphens">
+          <UInput v-model="username" autocomplete="username" minlength="3" maxlength="64" required class="w-full" />
+        </UFormField>
+        <UFormField label="Password" help="Use at least 12 characters.">
+          <UInput v-model="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="w-full" />
+        </UFormField>
+        <UFormField label="Confirm password">
+          <UInput v-model="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="w-full" />
+        </UFormField>
+        <p v-if="errorMessage" class="text-sm text-error" role="alert">
+          {{ errorMessage }}
+        </p>
+        <UButton type="submit" :loading="pending" :disabled="!!statusError || !authStatus?.setupRequired" block>
+          Create administrator
+        </UButton>
+      </form>
+    </UCard>
   </div>
 </template>

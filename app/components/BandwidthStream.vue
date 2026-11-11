@@ -272,16 +272,15 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="rounded-2xl border border-default bg-elevated p-4 shadow-sm sm:p-6">
-    <!-- Header -->
-    <div class="text-center mb-4 sm:mb-6">
-      <h2 class="mb-1 text-2xl font-bold tracking-wide text-highlighted sm:text-3xl">
+  <section class="space-y-6">
+    <header class="space-y-1">
+      <h2 class="text-xl font-semibold tracking-tight text-highlighted sm:text-2xl">
         Bandwidth Monitor
       </h2>
-      <p class="text-xs text-muted sm:text-sm">
+      <p class="text-sm text-muted">
         Live throughput monitoring · {{ summary.routers }} {{ summary.routers === 1 ? 'router' : 'routers' }} · {{ summary.interfaces }} {{ summary.interfaces === 1 ? 'interface' : 'interfaces' }}
       </p>
-    </div>
+    </header>
     <!-- Router Cards -->
     <div v-if="routers.length > 0" class="grid grid-cols-1 gap-4 2xl:grid-cols-2">
       <UCard v-for="router in routers" :key="router.host" class="h-full">
@@ -394,5 +393,5 @@ onBeforeUnmount(() => {
     <div v-else class="flex min-h-48 items-center justify-center rounded-xl border border-default bg-muted px-4 text-sm text-muted">
       Waiting for bandwidth data...
     </div>
-  </div>
+  </section>
 </template>

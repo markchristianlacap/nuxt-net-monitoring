@@ -31,8 +31,8 @@ watch(tabs, (availableTabs) => {
 </script>
 
 <template>
-  <div>
-    <div v-if="tabs.length > 1" class="flex justify-center">
+  <div class="space-y-6">
+    <div v-if="tabs.length > 1" class="flex justify-center sm:justify-start">
       <u-radio-group
         v-model="tab"
         variant="table"
@@ -42,7 +42,7 @@ watch(tabs, (availableTabs) => {
         value-key="value"
       />
     </div>
-    <div class="mt-4">
+    <div>
       <PingStream v-if="tab === 'pings' && data?.features.ping" />
       <BandwidthStream v-if="tab === 'bandwidths' && data?.features.bandwidth" />
       <div v-if="tab === 'speedtest' && data?.features.speedtest" class="space-y-4">

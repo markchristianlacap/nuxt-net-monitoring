@@ -201,19 +201,18 @@ onBeforeUnmount(() => eventSource?.close())
 </script>
 
 <template>
-  <div class="rounded-2xl border border-default bg-elevated p-4 shadow-sm sm:p-6">
-    <!-- Header -->
-    <div class="text-center mb-4 sm:mb-6">
-      <h2 class="mb-1 text-2xl font-bold tracking-wide text-highlighted sm:text-3xl">
+  <section class="space-y-6">
+    <header class="space-y-1">
+      <h2 class="text-xl font-semibold tracking-tight text-highlighted sm:text-2xl">
         Latency Monitor
       </h2>
-      <p class="text-xs text-muted sm:text-sm">
+      <p class="text-sm text-muted">
         Live ping stream visualization - {{ hosts.size }} host{{ hosts.size !== 1 ? 's' : '' }}
       </p>
-    </div>
+    </header>
 
     <!-- Overall Summary -->
-    <div v-if="hosts.size > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+    <div v-if="hosts.size > 0" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <div class="flex flex-col items-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 dark:border-cyan-800 dark:bg-cyan-950/30">
         <span class="mb-1 text-xs font-medium text-muted">Total Hosts</span>
         <span class="text-2xl font-bold text-cyan-700 dark:text-cyan-300">{{ summary.totalHosts }}</span>
@@ -241,7 +240,7 @@ onBeforeUnmount(() => eventSource?.close())
     </div>
 
     <!-- Host stats -->
-    <div v-if="hosts.size > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+    <div v-if="hosts.size > 0" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div
         v-for="([hostName, hostData], index) in Array.from(hosts.entries())"
         :key="hostName"
@@ -282,5 +281,5 @@ onBeforeUnmount(() => eventSource?.close())
     <div class="rounded-xl border border-default bg-muted p-2 sm:rounded-2xl sm:p-4">
       <VChart :option="option" autoresize :style="{ height: '400px' }" />
     </div>
-  </div>
+  </section>
 </template>

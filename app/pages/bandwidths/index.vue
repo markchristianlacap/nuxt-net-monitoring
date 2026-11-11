@@ -70,13 +70,10 @@ const columns: TableColumn<any>[] = [
 </script>
 
 <template>
-  <u-page>
-    <div class="container mx-auto mt-3 space-y-4 px-2 text-default sm:mt-6 sm:px-0">
-      <div class="flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-3">
-        <h2 class="text-xl sm:text-2xl font-bold tracking-tight flex-1">
-          Bandwidth Monitoring
-        </h2>
-        <div class="flex flex-col gap-2 w-full sm:w-auto sm:flex-row">
+  <div class="space-y-6">
+    <CommonPageHeader title="Bandwidth Monitoring">
+      <template #actions>
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <USelect
             v-model="selectedDevice"
             :items="deviceOptions"
@@ -88,33 +85,34 @@ const columns: TableColumn<any>[] = [
             color="neutral"
             variant="subtle"
             icon="i-lucide-download"
+            aria-label="Download bandwidth results as CSV"
             :loading="isDownloading"
             :disabled="isDownloading"
             @click="downloadCSV"
           />
         </div>
-      </div>
+      </template>
+    </CommonPageHeader>
 
-      <BandwidthChart :start="query.start" :end="query.end" :host="query.host" />
+    <BandwidthChart :start="query.start" :end="query.end" :host="query.host" />
 
-      <div class="overflow-x-auto -mx-2 sm:mx-0">
-        <u-table
-          :data="tableData"
-          :columns="columns"
-          class="min-w-[600px]"
-          :class="TABLE_CLASSES"
-        />
-      </div>
-
-      <div class="mt-3 flex flex-col items-center justify-between gap-3 text-xs text-muted sm:flex-row sm:text-sm">
-        <div>Total: {{ data?.total?.toLocaleString() ?? 0 }}</div>
-        <u-pagination
-          v-model:page="query.page"
-          :total="data?.total ?? 0"
-          :page-size="query.limit"
-          size="sm"
-        />
-      </div>
+    <div class="max-w-full overflow-x-auto">
+      <u-table
+        :data="tableData"
+        :columns="columns"
+        class="min-w-[600px]"
+        :class="TABLE_CLASSES"
+      />
     </div>
-  </u-page>
+
+    <div class="flex flex-col items-center justify-between gap-3 text-sm text-muted sm:flex-row">
+      <div>Total: {{ data?.total?.toLocaleString() ?? 0 }}</div>
+      <u-pagination
+        v-model:page="query.page"
+        :total="data?.total ?? 0"
+        :page-size="query.limit"
+        size="sm"
+      />
+    </div>
+  </div>
 </template>

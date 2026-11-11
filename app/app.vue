@@ -63,9 +63,9 @@ useSeoMeta({
       </template>
     </UHeader>
     <UMain>
-      <UPage class="w-full max-w-(--ui-container) mx-auto px-4 sm:px-6 lg:px-8 h-full mt-5">
+      <UContainer class="py-6 sm:py-8">
         <NuxtPage />
-      </UPage>
+      </UContainer>
     </UMain>
   </UApp>
 </template>

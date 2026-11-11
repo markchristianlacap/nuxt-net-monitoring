@@ -16,6 +16,7 @@ export function useDataTable(apiEndpoint: string, csvFilename: string) {
     limit: Number(route.query.limit) || 25,
     start: route.query.start as string || '',
     end: route.query.end as string || endOfToday,
+    host: route.query.host as string || '',
   })
 
   // CSV download state
@@ -61,6 +62,8 @@ export function useDataTable(apiEndpoint: string, csvFilename: string) {
           params.set('end', String(query.end))
         if (query.networkInterface && query.networkInterface !== 'all')
           params.set('networkInterface', String(query.networkInterface))
+        if (query.host)
+          params.set('host', String(query.host))
         const queryString = params.toString()
         const url = `/api/${apiEndpoint}/download${queryString
           ? `?${queryString}`

@@ -15,6 +15,24 @@ const tableData = computed(() => data.value?.data?.map((row: any) => ({
   ...row,
   interfaceLabel: interfaceInfo.value?.find(info => info.host === row.host && info.name === row.interface)?.alias?.trim() || '—',
 })))
+const deviceOptions = computed(() => {
+  const devices = new Map<string, string>()
+  for (const info of interfaceInfo.value ?? []) {
+    if (!devices.has(info.host)) {
+      devices.set(info.host, info.displayName && info.displayName !== info.host
+        ? `${info.displayName} (${info.host})`
+        : info.host)
+    }
+  }
+  return [
+    { label: 'All devices', value: '' },
+    ...Array.from(devices, ([value, label]) => ({ label, value })),
+  ]
+})
+
+watch(() => query.host, () => {
+  query.page = 1
+})
 
 const columns: TableColumn<any>[] = [
   createIdColumn(),
@@ -49,7 +67,13 @@ const columns: TableColumn<any>[] = [
         <h2 class="text-xl sm:text-2xl font-bold tracking-tight flex-1">
           Bandwidth Monitoring
         </h2>
-        <div class="flex gap-2 w-full sm:w-auto">
+        <div class="flex flex-col gap-2 w-full sm:w-auto sm:flex-row">
+          <USelect
+            v-model="query.host"
+            :items="deviceOptions"
+            aria-label="Filter by device"
+            class="w-full sm:w-56"
+          />
           <common-date-range v-model:start="query.start" v-model:end="query.end" />
           <UButton
             color="neutral"
@@ -62,7 +86,7 @@ const columns: TableColumn<any>[] = [
         </div>
       </div>
 
-      <BandwidthChart :start="query.start" :end="query.end" />
+      <BandwidthChart :start="query.start" :end="query.end" :host="query.host" />
 
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <u-table

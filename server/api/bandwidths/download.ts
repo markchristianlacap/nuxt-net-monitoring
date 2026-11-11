@@ -1,19 +1,20 @@
-import { and, desc } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '~~/server/db'
 import { bandwidths } from '~~/server/db/schema/bandwidths'
 
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event)
+    const dateQuery: { start?: string, end?: string } = {}
+    if (typeof query.start === 'string' && query.start !== 'null')
+      dateQuery.start = query.start
+    if (typeof query.end === 'string' && query.end !== 'null')
+      dateQuery.end = query.end
 
-    const where = and(...dateRangeConditions(bandwidths.timestamp, {
-      start: query.start && query.start !== 'null'
-        ? query.start as string
-        : undefined,
-      end: query.end && query.end !== 'null'
-        ? query.end as string
-        : undefined,
-    }))
+    const conditions = dateRangeConditions(bandwidths.timestamp, dateQuery)
+    if (typeof query.host === 'string' && query.host)
+      conditions.push(eq(bandwidths.host, query.host))
+    const where = and(...conditions)
 
     const result = await db.select().from(bandwidths).where(where).orderBy(desc(bandwidths.timestamp))
 

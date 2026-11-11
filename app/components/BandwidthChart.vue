@@ -2,6 +2,7 @@
 interface Props {
   start: string | null
   end: string | null
+  host: string
 }
 
 const props = defineProps<Props>()
@@ -10,13 +11,14 @@ const { data: chartData, refresh } = await useFetch('/api/bandwidths/chart', {
   query: {
     start: computed(() => props.start),
     end: computed(() => props.end),
+    host: computed(() => props.host),
   },
   immediate: true,
 })
 const { data: interfaceInfo } = await useFetch<DeviceInterface[]>('/api/interfaces')
 
 // Watch for prop changes and refresh
-watch(() => [props.start, props.end], () => {
+watch(() => [props.start, props.end, props.host], () => {
   refresh()
 }, { deep: true })
 

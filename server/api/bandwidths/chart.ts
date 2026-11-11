@@ -1,4 +1,4 @@
-import { and, asc, max, sql } from 'drizzle-orm'
+import { and, asc, eq, max, sql } from 'drizzle-orm'
 import { db } from '~~/server/db'
 import { bandwidths } from '~~/server/db/schema/bandwidths'
 
@@ -6,7 +6,10 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
   const timeBucket = sql<Date>`DATE_TRUNC('hour', ${bandwidths.timestamp})`
-  const where = and(...dateRangeConditions(bandwidths.timestamp, query))
+  const conditions = dateRangeConditions(bandwidths.timestamp, query)
+  if (typeof query.host === 'string' && query.host)
+    conditions.push(eq(bandwidths.host, query.host))
+  const where = and(...conditions)
 
   const data = await db.select({
     time_bucket: timeBucket,

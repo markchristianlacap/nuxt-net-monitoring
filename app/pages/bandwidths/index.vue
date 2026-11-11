@@ -73,24 +73,21 @@ const columns: TableColumn<any>[] = [
   <div class="space-y-6">
     <CommonPageHeader title="Bandwidth Monitoring">
       <template #actions>
-        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <USelect
-            v-model="selectedDevice"
-            :items="deviceOptions"
-            aria-label="Filter by device"
-            class="w-full sm:w-56"
-          />
-          <common-date-range v-model:start="query.start" v-model:end="query.end" />
-          <UButton
-            color="neutral"
-            variant="subtle"
-            icon="i-lucide-download"
-            aria-label="Download bandwidth results as CSV"
-            :loading="isDownloading"
-            :disabled="isDownloading"
-            @click="downloadCSV"
-          />
-        </div>
+        <CommonResultsFilters
+          v-model:start="query.start"
+          v-model:end="query.end"
+          :is-downloading="isDownloading"
+          @download="downloadCSV"
+        >
+          <template #filter>
+            <USelect
+              v-model="selectedDevice"
+              :items="deviceOptions"
+              aria-label="Filter by device"
+              class="w-full sm:w-48"
+            />
+          </template>
+        </CommonResultsFilters>
       </template>
     </CommonPageHeader>
 

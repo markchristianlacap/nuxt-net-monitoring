@@ -7,6 +7,19 @@ const { query, downloadCSV, isDownloading } = useDataTable('pings', 'pings.csv')
 // Override default pagination limit and add status filter
 query.limit = Number(useRoute().query.limit) || 10
 query.status = useRoute().query.status as 'online' | 'offline' | null || null
+const statusFilterItems = [
+  { label: 'All statuses', value: 'all' },
+  { label: 'Online', value: 'online' },
+  { label: 'Offline', value: 'offline' },
+]
+const selectedStatus = computed({
+  get: () => query.status || 'all',
+  set: (value: string) => {
+    query.status = value === 'all'
+      ? null
+      : value as 'online' | 'offline'
+  },
+})
 
 const { data } = await useFetch('/api/pings', {
   query,
@@ -41,34 +54,21 @@ const columns: TableColumn<any>[] = [
   <div class="space-y-6">
     <CommonPageHeader title="Ping Results">
       <template #actions>
-        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-muted">Status</span>
-            <URadioGroup
-              v-model="query.status"
-              size="sm"
-              orientation="horizontal"
-              variant="table"
-              :items="[
-                { label: 'All', value: null },
-                { label: 'Online', value: 'online' },
-                { label: 'Offline', value: 'offline' },
-              ]"
-              label-key="label"
-              value-key="value"
+        <CommonResultsFilters
+          v-model:start="query.start"
+          v-model:end="query.end"
+          :is-downloading="isDownloading"
+          @download="downloadCSV"
+        >
+          <template #filter>
+            <USelect
+              v-model="selectedStatus"
+              :items="statusFilterItems"
+              aria-label="Filter by status"
+              class="w-full sm:w-48"
             />
-          </div>
-          <common-date-range v-model:start="query.start" v-model:end="query.end" />
-          <UButton
-            color="neutral"
-            variant="subtle"
-            icon="i-lucide-download"
-            aria-label="Download ping results as CSV"
-            :loading="isDownloading"
-            :disabled="isDownloading"
-            @click="downloadCSV"
-          />
-        </div>
+          </template>
+        </CommonResultsFilters>
       </template>
     </CommonPageHeader>
     <PingChart :start="query.start" :end="query.end" :status="query.status" />

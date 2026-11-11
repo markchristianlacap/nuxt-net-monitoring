@@ -62,19 +62,16 @@ const columns: TableColumn<any>[] = [
   <div class="space-y-6">
     <CommonPageHeader title="Speedtest Results Log">
       <template #actions>
-        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <common-date-range v-model:start="query.start" v-model:end="query.end" />
-          <USelect v-model="query.networkInterface" :items="interfaceFilterItems" class="w-full sm:w-48" aria-label="Filter by network interface" />
-          <UButton
-            color="neutral"
-            variant="subtle"
-            icon="i-lucide-download"
-            aria-label="Download speedtest results as CSV"
-            :loading="isDownloading"
-            :disabled="isDownloading"
-            @click="downloadCSV"
-          />
-        </div>
+        <CommonResultsFilters
+          v-model:start="query.start"
+          v-model:end="query.end"
+          :is-downloading="isDownloading"
+          @download="downloadCSV"
+        >
+          <template #filter>
+            <USelect v-model="query.networkInterface" :items="interfaceFilterItems" class="w-full sm:w-48" aria-label="Filter by network interface" />
+          </template>
+        </CommonResultsFilters>
       </template>
     </CommonPageHeader>
 

@@ -183,11 +183,12 @@ const statusText = computed(() => ({
         </p>
       </div>
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <UFormField label="Network interface" help="Choose an adapter or use the system default.">
+        <UFormField label="Network interface">
           <USelect
             v-model="selectedInterface"
             :items="interfaceItems"
             :disabled="['initializing', 'ping', 'download', 'upload'].includes(status)"
+            size="lg"
             class="w-full sm:min-w-64"
           />
         </UFormField>

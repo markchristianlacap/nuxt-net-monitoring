@@ -2,6 +2,14 @@ import { spawn } from 'node:child_process'
 
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
+const SPEEDTEST_RATE_LIMIT_PATTERN = /limit reached|too many requests received/i
+
+class SpeedtestRateLimitError extends Error {
+  constructor() {
+    super('Ookla rate-limited the Speedtest server lookup. Wait before trying again. The Speedtest CLI is limited to personal, non-commercial use on one computer; commercial use requires an appropriate license: https://www.ookla.com/speedtest-embedded.')
+    this.name = 'SpeedtestRateLimitError'
+  }
+}
 
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -13,6 +21,8 @@ async function retry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T>
       return await fn()
     }
     catch (err) {
+      if (err instanceof SpeedtestRateLimitError)
+        throw err
       if (attempt < retries - 1) {
         await delay(RETRY_DELAY_MS * 2 ** attempt)
       }
@@ -36,8 +46,12 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
 
     process.stdout.on('data', data => (output += data.toString()))
     process.stderr.on('data', data => (stderr += data.toString()))
+    process.once('error', reject)
 
     process.on('close', (code) => {
+      const commandOutput = [output, stderr].filter(Boolean).join('\n').trim()
+      if (SPEEDTEST_RATE_LIMIT_PATTERN.test(commandOutput))
+        return reject(new SpeedtestRateLimitError())
       if (code !== 0 || stderr)
         return reject(new Error(stderr || `Exited with code ${code}`))
       if (!output.trim())

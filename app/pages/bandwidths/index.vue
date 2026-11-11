@@ -25,9 +25,18 @@ const deviceOptions = computed(() => {
     }
   }
   return [
-    { label: 'All devices', value: '' },
+    { label: 'All devices', value: 'all' },
     ...Array.from(devices, ([value, label]) => ({ label, value })),
   ]
+})
+const selectedDevice = computed({
+  get: () => query.host || 'all',
+  set: (value: string) => {
+    if (value === 'all')
+      query.host = ''
+    else
+      query.host = value
+  },
 })
 
 watch(() => query.host, () => {
@@ -69,7 +78,7 @@ const columns: TableColumn<any>[] = [
         </h2>
         <div class="flex flex-col gap-2 w-full sm:w-auto sm:flex-row">
           <USelect
-            v-model="query.host"
+            v-model="selectedDevice"
             :items="deviceOptions"
             aria-label="Filter by device"
             class="w-full sm:w-56"

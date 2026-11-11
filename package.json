@@ -2,7 +2,6 @@
   "name": "nuxt-net-monitoring",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@10.18.3",
   "license": "MIT",
   "scripts": {
     "build": "nuxt build",
@@ -13,27 +12,24 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "@iconify-json/lucide": "^1.2.138",
-    "@iconify-json/simple-icons": "^1.2.98",
-    "@nuxt/ui": "^4.11.2",
-    "kysely": "^0.29.6",
-    "net-snmp": "^3.29.1",
-    "nuxt": "^4.5.2",
+    "@iconify-json/lucide": "^1.2.153",
+    "@iconify-json/simple-icons": "^1.2.102",
+    "@nuxt/ui": "^4.12.0",
+    "kysely": "^0.29.8",
+    "net-snmp": "^3.29.2",
+    "nuxt": "^4.6.4",
     "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^9.5.1",
+    "@antfu/eslint-config": "^10.0.0",
     "@nuxt/eslint": "^1.17.0",
     "@types/net-snmp": "^3.23.0",
     "@types/node": "latest",
     "@types/pg": "^8.23.1",
-    "eslint": "^10.11.0",
-    "kysely-ctl": "^0.21.0",
+    "eslint": "^10.14.0",
+    "kysely-ctl": "^0.22.0",
     "nuxt-echarts": "^1.1.0",
     "typescript": "6.0.3",
-    "vue-tsc": "^3.3.11"
-  },
-  "resolutions": {
-    "unimport": "4.1.1"
+    "vue-tsc": "^3.3.14"
   }
 }

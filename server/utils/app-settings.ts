@@ -41,7 +41,27 @@ export async function getAppSettings(): Promise<AppSettings> {
     .where(eq(appSettingsTable.id, 1))
     .limit(1)
 
-  settingsCache = row?.settings ?? structuredClone(DEFAULT_APP_SETTINGS)
+  const storedSettings = row?.settings ?? DEFAULT_APP_SETTINGS
+  settingsCache = {
+    ...structuredClone(DEFAULT_APP_SETTINGS),
+    ...storedSettings,
+    features: {
+      ...DEFAULT_APP_SETTINGS.features,
+      ...storedSettings.features,
+    },
+    ping: {
+      ...DEFAULT_APP_SETTINGS.ping,
+      ...storedSettings.ping,
+    },
+    snmp: {
+      ...DEFAULT_APP_SETTINGS.snmp,
+      ...storedSettings.snmp,
+    },
+    speedtest: {
+      ...DEFAULT_APP_SETTINGS.speedtest,
+      ...storedSettings.speedtest,
+    },
+  }
   return structuredClone(settingsCache)
 }
 
@@ -117,6 +137,14 @@ export function normalizeAppSettings(input: unknown, previous: AppSettings): App
   }
 
   const frequencySeconds = input.speedtest.frequencySeconds
+  const localInterfaceName = input.speedtest.localInterfaceName
+  if (
+    localInterfaceName !== undefined
+    && localInterfaceName !== null
+    && (typeof localInterfaceName !== 'string' || localInterfaceName.trim().length > 255)
+  ) {
+    throw createError({ statusCode: 400, statusMessage: 'Scheduled speed-test interface must be a valid interface name' })
+  }
   if (typeof frequencySeconds !== 'number' || !Number.isInteger(frequencySeconds) || frequencySeconds < 60 || frequencySeconds > 604800) {
     throw createError({ statusCode: 400, statusMessage: 'Speed-test frequency must be between 60 and 604800 seconds' })
   }
@@ -135,7 +163,12 @@ export function normalizeAppSettings(input: unknown, previous: AppSettings): App
     },
     ping: { hosts: pingHosts },
     snmp: { devices },
-    speedtest: { frequencySeconds },
+    speedtest: {
+      frequencySeconds,
+      localInterfaceName: typeof localInterfaceName === 'string' && localInterfaceName.trim()
+        ? localInterfaceName.trim()
+        : null,
+    },
   }
 }
 

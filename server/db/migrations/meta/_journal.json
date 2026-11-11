@@ -15,6 +15,13 @@
       "when": 1794369916863,
       "tag": "0001_damp_bloodscream",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794374038340,
+      "tag": "0002_whole_human_torch",
+      "breakpoints": true
     }
   ]
 }

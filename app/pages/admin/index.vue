@@ -16,7 +16,7 @@ const settings = reactive<AppSettings>(data.value?.settings ?? {
   features: { ping: false, bandwidth: false, speedtest: false },
   ping: { hosts: [] },
   snmp: { devices: [] },
-  speedtest: { frequencySeconds: 3600 },
+  speedtest: { frequencySeconds: 3600, localInterfaceName: null },
 })
 const pingHostsText = ref(settings.ping.hosts.join('\n'))
 const devices = ref((data.value?.settings.snmp.devices ?? []).map(device => ({

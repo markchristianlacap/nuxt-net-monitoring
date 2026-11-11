@@ -8,6 +8,7 @@ export const speedtestResults = pgTable('speedtest_results', {
   latency: numeric('latency', { mode: 'number' }).notNull(),
   isp: varchar('isp', { length: 255 }).notNull(),
   ip: varchar('ip', { length: 45 }).notNull(),
+  networkInterface: varchar('network_interface', { length: 255 }),
   url: text('url').notNull(),
 })
 

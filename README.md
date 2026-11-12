@@ -110,6 +110,14 @@ docker compose up -d --build app
 
 The update check uses the app version declared in `package.json` and compares it with the latest GitHub release tag. Releases should use semantic version tags such as `v0.2.0`.
 
+#### Automated Releases
+
+GitHub Actions runs linting, typechecking, and a production build on pull requests and pushes to `main`. Release Please watches commits on `main` and opens a release pull request when it finds releasable changes. Merging that pull request publishes a GitHub Release and a semantic version tag; no Docker image is published.
+
+Use Conventional Commit messages so changes are versioned correctly: `fix:` produces a patch release, `feat:` a minor release, and a `!` marker or `BREAKING CHANGE:` footer a major release. The current `0.1.0` version is the baseline; commits before release automation was enabled are excluded from the first changelog.
+
+The release workflow uses the repository's `GITHUB_TOKEN` by default. To have CI run automatically on Release Please pull requests, add a repository Actions secret named `RELEASE_PLEASE_TOKEN` with a token that can create pull requests and trigger workflows. Also allow GitHub Actions to create pull requests in the repository's Actions settings.
+
 5. **View Logs** (optional)
    ```bash
    # View all logs

@@ -11,9 +11,6 @@ interface AdminSettings extends AppSettings {
 
 const pending = ref(false)
 const errorMessage = ref('')
-const updateCheckPending = ref(false)
-const updateCheckError = ref('')
-const updateStatus = ref<SoftwareUpdateStatus | null>(null)
 const { data } = await useFetch<{ settings: AdminSettings }>('/api/admin/settings')
 const { data: speedtestInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/admin/speedtest-interfaces')
 const settings = reactive<AppSettings>(data.value?.settings ?? {
@@ -61,40 +58,6 @@ const devices = ref((data.value?.settings.snmp.devices ?? []).map(device => ({
   interfacesText: device.interfaces?.join(', ') ?? '',
   communityConfigured: device.communityConfigured ?? false,
 })))
-
-interface SoftwareUpdateStatus {
-  currentVersion: string
-  latestVersion: string | null
-  releaseUrl: string | null
-  checkedAt: string
-  status: 'update-available' | 'up-to-date' | 'no-releases' | 'unavailable'
-  message: string | null
-}
-
-async function checkForUpdates(forceRefresh = false) {
-  updateCheckPending.value = true
-  updateCheckError.value = ''
-
-  try {
-    const options: { query?: { refresh: string } } = {}
-    if (forceRefresh)
-      options.query = { refresh: 'true' }
-
-    updateStatus.value = await $fetch<SoftwareUpdateStatus>('/api/admin/update-check', {
-      ...options,
-    })
-  }
-  catch (error: any) {
-    updateCheckError.value = error.data?.statusMessage ?? 'Unable to check for updates.'
-  }
-  finally {
-    updateCheckPending.value = false
-  }
-}
-
-onMounted(() => {
-  void checkForUpdates()
-})
 
 function addDevice() {
   devices.value.push({
@@ -167,95 +130,6 @@ async function signOut() {
         </UButton>
       </template>
     </CommonPageHeader>
-
-    <UCard>
-      <template #header>
-        <div>
-          <h2 class="font-semibold">
-            Software updates
-          </h2>
-          <p class="text-sm text-muted">
-            Check for the latest published release.
-          </p>
-        </div>
-      </template>
-
-      <div class="space-y-4">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="space-y-1" aria-live="polite">
-            <p class="text-sm">
-              <span class="text-muted">Installed version:</span>
-              <code class="font-medium">{{ updateStatus ? `v${updateStatus.currentVersion}` : '—' }}</code>
-            </p>
-            <p v-if="updateCheckPending" class="text-sm text-muted">
-              Checking GitHub releases…
-            </p>
-            <p v-else-if="updateCheckError" class="text-sm text-error" role="alert">
-              {{ updateCheckError }}
-            </p>
-            <p v-else-if="updateStatus?.status === 'up-to-date'" class="text-sm text-muted">
-              You’re up to date. Latest release: {{ updateStatus.latestVersion }}.
-            </p>
-            <p v-else-if="updateStatus?.status === 'no-releases'" class="text-sm text-muted">
-              No public releases are available yet.
-            </p>
-            <p v-else-if="updateStatus?.status === 'unavailable'" class="text-sm text-error" role="alert">
-              {{ updateStatus.message }}
-            </p>
-            <p v-else-if="updateStatus?.status === 'update-available'" class="text-sm text-muted">
-              Version {{ updateStatus.latestVersion }} is available.
-            </p>
-            <p v-if="updateStatus?.checkedAt" class="text-xs text-muted">
-              Last checked {{ new Date(updateStatus.checkedAt).toLocaleString() }}
-            </p>
-          </div>
-
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              icon="i-lucide-refresh-cw"
-              variant="outline"
-              :loading="updateCheckPending"
-              @click="checkForUpdates(true)"
-            >
-              Check for updates
-            </UButton>
-            <UButton
-              v-if="updateStatus?.status === 'update-available' && updateStatus.releaseUrl"
-              :to="updateStatus.releaseUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              icon="i-lucide-external-link"
-            >
-              View release
-            </UButton>
-          </div>
-        </div>
-
-        <UAlert
-          v-if="updateStatus?.status === 'update-available'"
-          color="warning"
-          variant="soft"
-          icon="i-lucide-download"
-          :title="`Version ${updateStatus.latestVersion} is ready`"
-          description="This installation does not update itself. Update the checkout on the host, then rebuild the app container."
-        />
-        <UAlert
-          v-else-if="updateCheckError || updateStatus?.status === 'unavailable'"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          title="Update check unavailable"
-          description="The app is still running normally. Check your connection and try again."
-        />
-
-        <div class="space-y-2 border-t border-default pt-4">
-          <p class="text-sm text-muted">
-            To update this Docker Compose installation, pull the latest code on the host and rebuild the app:
-          </p>
-          <code class="block overflow-x-auto rounded-md bg-elevated px-3 py-2 text-sm">git pull --ff-only &amp;&amp; docker compose up -d --build app</code>
-        </div>
-      </div>
-    </UCard>
 
     <form class="space-y-6 pb-8" @submit.prevent="saveSettings">
       <UCard>

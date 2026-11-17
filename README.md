@@ -199,6 +199,17 @@ For development or custom setups, you can install and run the application manual
    node .output/server/index.mjs
    ```
 
+   To keep the production server running with PM2, install PM2 globally and start the included ecosystem config after building:
+   ```bash
+   npm install --global pm2
+   pnpm run build
+   set -a && . ./.env && set +a
+   pm2 start ecosystem.config.cjs --env production
+   pm2 save
+   ```
+
+   The config listens on port `3000` on all interfaces. To have PM2 restore the app after a server reboot, run `pm2 startup` once and execute the command it prints, then run `pm2 save`. Use `pm2 logs nuxt-net-monitoring` to view logs and `pm2 restart ecosystem.config.cjs --env production --update-env` to restart after deploying an update.
+
 The application will be available at `http://localhost:3000`
 
 ---

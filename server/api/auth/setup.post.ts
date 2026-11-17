@@ -44,8 +44,8 @@ export default defineEventHandler(async (event) => {
   if (!username || !/^[\w.-]{3,64}$/.test(username)) {
     throw createError({ statusCode: 400, statusMessage: 'Username must be 3–64 letters, numbers, dots, underscores, or hyphens' })
   }
-  if (typeof password !== 'string' || password.length < 12 || password.length > 128) {
-    throw createError({ statusCode: 400, statusMessage: 'Password must be between 12 and 128 characters' })
+  if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
+    throw createError({ statusCode: 400, statusMessage: 'Password must be between 8 and 128 characters' })
   }
 
   const passwordHash = await hashPassword(password)

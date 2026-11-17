@@ -52,11 +52,11 @@ async function createAdmin() {
         <UFormField label="Username" help="3–64 letters, numbers, dots, underscores, or hyphens">
           <UInput v-model="username" autocomplete="username" minlength="3" maxlength="64" required class="w-full" />
         </UFormField>
-        <UFormField label="Password" help="Use at least 12 characters.">
-          <UInput v-model="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="w-full" />
+        <UFormField label="Password" help="Use at least 8 characters.">
+          <UInput v-model="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required class="w-full" />
         </UFormField>
         <UFormField label="Confirm password">
-          <UInput v-model="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="w-full" />
+          <UInput v-model="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required class="w-full" />
         </UFormField>
         <p v-if="errorMessage" class="text-sm text-error" role="alert">
           {{ errorMessage }}

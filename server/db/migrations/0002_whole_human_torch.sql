@@ -1,1 +1,0 @@
-ALTER TABLE "speedtest_results" ADD COLUMN "network_interface" varchar(255);

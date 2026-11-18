@@ -4,7 +4,9 @@ const password = ref('')
 const errorMessage = ref('')
 const pending = ref(false)
 
-const { data: authStatus } = await useFetch('/api/auth/status')
+const { data: authStatus } = await useFetch('/api/auth/status', {
+  credentials: 'same-origin',
+})
 if (authStatus.value?.setupRequired) {
   await navigateTo('/setup')
 }
@@ -19,6 +21,7 @@ async function signIn() {
     await $fetch('/api/auth/login', {
       method: 'POST',
       body: { username: username.value, password: password.value },
+      credentials: 'same-origin',
     })
     await navigateTo('/admin')
   }

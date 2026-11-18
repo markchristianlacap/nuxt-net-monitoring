@@ -113,7 +113,7 @@ async function saveSettings() {
 }
 
 async function signOut() {
-  await $fetch('/api/auth/logout', { method: 'POST' })
+  await $fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
   await navigateTo('/login')
 }
 </script>

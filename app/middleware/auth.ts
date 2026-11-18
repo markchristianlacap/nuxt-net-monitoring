@@ -2,7 +2,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server)
     return
 
-  const status = await $fetch<{ setupRequired: boolean, authenticated: boolean }>('/api/auth/status')
+  const status = await $fetch<{ setupRequired: boolean, authenticated: boolean }>('/api/auth/status', {
+    credentials: 'same-origin',
+  })
   if (status.setupRequired) {
     return navigateTo('/setup')
   }

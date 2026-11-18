@@ -88,6 +88,8 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 
    `NUXT_DB_HOST` is set to `postgres` by Docker Compose.
 
+   If you serve the app through a trusted TLS-terminating reverse proxy, set `NUXT_TRUST_PROXY=true` so secure session cookies follow its `X-Forwarded-Proto` header. Leave it false for direct connections; do not enable it unless the proxy overwrites that header.
+
 3. **Start the Application**
    ```bash
    docker compose up -d

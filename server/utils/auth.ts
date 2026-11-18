@@ -1,7 +1,6 @@
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
-import process from 'node:process'
 import { promisify } from 'node:util'
 import { and, eq, gt, lt } from 'drizzle-orm'
 import { db } from '../db'
@@ -68,6 +67,7 @@ export async function getAuthenticatedAdmin(event: H3Event): Promise<Authenticat
 export async function createAdminSession(event: H3Event, adminUserId: number) {
   const token = randomBytes(32).toString('base64url')
   const expiresAt = new Date(Date.now() + SESSION_TTL_SECONDS * 1000)
+  const { trustProxy } = useRuntimeConfig(event)
   await db.delete(adminSessions).where(lt(adminSessions.expiresAt, new Date()))
   await db.insert(adminSessions).values({
     tokenHash: hashSessionToken(token),
@@ -77,7 +77,7 @@ export async function createAdminSession(event: H3Event, adminUserId: number) {
 
   setCookie(event, SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: getRequestProtocol(event, { xForwardedProto: trustProxy }) === 'https',
     sameSite: 'strict',
     path: '/',
     maxAge: SESSION_TTL_SECONDS,

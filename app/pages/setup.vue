@@ -5,7 +5,9 @@ const confirmPassword = ref('')
 const errorMessage = ref('')
 const pending = ref(false)
 
-const { data: authStatus, error: statusError } = await useFetch('/api/auth/status')
+const { data: authStatus, error: statusError } = await useFetch('/api/auth/status', {
+  credentials: 'same-origin',
+})
 if (authStatus.value && !authStatus.value.setupRequired) {
   await navigateTo(authStatus.value?.authenticated ? '/admin' : '/login')
 }
@@ -22,6 +24,7 @@ async function createAdmin() {
     await $fetch('/api/auth/setup', {
       method: 'POST',
       body: { username: username.value, password: password.value },
+      credentials: 'same-origin',
     })
     await navigateTo('/admin')
   }

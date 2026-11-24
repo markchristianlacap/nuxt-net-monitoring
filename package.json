@@ -15,12 +15,12 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "@iconify-json/lucide": "^1.2.155",
-    "@iconify-json/simple-icons": "^1.2.102",
+    "@iconify-json/lucide": "^1.2.158",
+    "@iconify-json/simple-icons": "^1.2.103",
     "@internationalized/date": "^3.12.4",
-    "@nuxt/ui": "^4.12.0",
+    "@nuxt/ui": "^4.13.0",
     "drizzle-orm": "^0.45.4",
-    "net-snmp": "^3.29.2",
+    "net-snmp": "^3.29.3",
     "nuxt": "^4.6.4",
     "pg": "^8.23.1"
   },

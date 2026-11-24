@@ -1,8 +1,5 @@
 <script setup lang="ts">
-const status = ref<SpeedtestScheduleStatus | null>(null)
-const unavailable = ref(false)
-let refreshTimer: ReturnType<typeof setInterval> | undefined
-let isRefreshing = false
+const { status, unavailable } = useSpeedtestStatus()
 const currentTest = computed(() => status.value?.currentTest ?? null)
 const activeSpeed = computed(() => currentTest.value?.phase === 'upload'
   ? currentTest.value.uploadMbps ?? 0
@@ -21,23 +18,6 @@ const phaseLabel = computed(() => ({
   error: 'Test failed',
 }[currentTest.value?.phase ?? 'starting']))
 
-async function refreshStatus() {
-  if (isRefreshing)
-    return
-  isRefreshing = true
-
-  try {
-    status.value = await $fetch<SpeedtestScheduleStatus>('/api/speedtest/schedule-status')
-    unavailable.value = false
-  }
-  catch {
-    unavailable.value = true
-  }
-  finally {
-    isRefreshing = false
-  }
-}
-
 function formatDate(value: string | null) {
   if (!value)
     return '—'
@@ -46,16 +26,6 @@ function formatDate(value: string | null) {
     timeStyle: 'short',
   }).format(new Date(value))
 }
-
-onMounted(() => {
-  void refreshStatus()
-  refreshTimer = setInterval(() => void refreshStatus(), 1000)
-})
-
-onBeforeUnmount(() => {
-  if (refreshTimer)
-    clearInterval(refreshTimer)
-})
 </script>
 
 <template>
@@ -86,24 +56,30 @@ onBeforeUnmount(() => {
     </template>
 
     <p v-if="unavailable" class="mb-4 text-sm text-error" role="status">
-      Could not refresh the schedule status. Retrying automatically.
+      Live speed-test updates are unavailable. Reconnecting automatically.
     </p>
 
     <div v-if="status" class="space-y-5">
-      <div v-if="status.running" class="flex items-center gap-3 rounded-lg bg-muted p-4" role="status" aria-live="polite">
-        <UIcon name="i-lucide-loader-circle" class="size-5 shrink-0 animate-spin text-primary" aria-hidden="true" />
+      <div v-if="status.currentTest" class="flex items-center gap-3 rounded-lg bg-muted p-4" role="status" aria-live="polite">
+        <UIcon
+          :name="status.running ? 'i-lucide-loader-circle' : currentTest?.phase === 'error' ? 'i-lucide-circle-x' : 'i-lucide-circle-check'"
+          class="size-5 shrink-0 text-primary"
+          :class="{ 'animate-spin': status.running }"
+          aria-hidden="true"
+        />
         <p class="font-medium text-highlighted">
-          Testing {{ status.currentInterface ?? 'next interface' }}
-          <span v-if="status.currentIndex" class="font-normal text-muted">
+          {{ status.running ? (status.source === 'manual' ? 'Manual test on' : 'Testing') : 'Last test on' }}
+          {{ status.currentInterface ?? 'selected interface' }}
+          <span v-if="status.running && status.source === 'scheduled' && status.currentIndex" class="font-normal text-muted">
             · {{ status.currentIndex }} of {{ status.interfaces.length }}
           </span>
         </p>
       </div>
 
       <section
-        v-if="status.running && currentTest"
+        v-if="currentTest"
         class="grid gap-5 rounded-lg border border-default p-4 sm:grid-cols-[minmax(0,1fr)_minmax(15rem,0.8fr)] sm:items-center"
-        aria-label="Current scheduled speed test"
+        aria-label="Current speed test"
       >
         <div class="min-w-0">
           <div class="flex items-center gap-2" role="status" aria-live="polite">
@@ -137,7 +113,7 @@ onBeforeUnmount(() => {
             aria-label="Speed test progress"
           />
           <p v-if="currentTest.phase === 'error'" class="mt-3 text-sm text-error" role="alert">
-            This interface test failed. The scheduler will continue with the next interface.
+            {{ currentTest.errorMessage || 'This interface test failed.' }}
           </p>
         </div>
 
@@ -229,7 +205,7 @@ onBeforeUnmount(() => {
         </p>
         <ol class="mt-2 flex flex-wrap gap-2">
           <li v-for="(interfaceName, index) in status.interfaces" :key="`${interfaceName}-${index}`">
-            <UBadge :color="status.running && status.currentIndex === index + 1 ? 'primary' : 'neutral'" variant="subtle">
+            <UBadge :color="status.running && status.source === 'scheduled' && status.currentIndex === index + 1 ? 'primary' : 'neutral'" variant="subtle">
               {{ index + 1 }}. {{ interfaceName }}
             </UBadge>
           </li>

@@ -1,22 +1,10 @@
 <script setup lang="ts">
 type ManualSpeedtestPhase = 'idle' | 'initializing' | 'ping' | 'download' | 'upload' | 'complete' | 'error'
 
-const currentDownload = ref(0)
-const currentUpload = ref(0)
-const peakSpeed = ref(0)
-const downloadMeasured = ref(false)
-const uploadMeasured = ref(false)
-const latency = ref(0)
-const latencyMeasured = ref(false)
-const isp = ref('')
-const publicIp = ref('')
-const resultUrl = ref('')
-const errorMessage = ref('')
+const { status: serviceStatus } = useSpeedtestStatus()
+const requestError = ref('')
+const requesting = ref(false)
 const selectedInterface = ref(SYSTEM_DEFAULT_INTERFACE_VALUE)
-const testedInterfaceName = ref('')
-const status = ref<ManualSpeedtestPhase>('idle')
-const progress = ref(0)
-let reader: ReadableStreamDefaultReader<string> | null = null
 
 const { data: availableInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/speedtest/interfaces')
 const interfaceItems = computed(() => [
@@ -29,12 +17,30 @@ const interfaceItems = computed(() => [
 const selectedInterfaceLabel = computed(() => selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
   ? 'System default'
   : selectedInterface.value)
-const isRunning = computed(() => [
-  'initializing',
-  'ping',
-  'download',
-  'upload',
-].includes(status.value))
+const currentTest = computed(() => serviceStatus.value?.currentTest ?? null)
+const status = computed<ManualSpeedtestPhase>(() => {
+  if (!serviceStatus.value)
+    return 'idle'
+  if (serviceStatus.value.running && (!currentTest.value || currentTest.value.phase === 'starting'))
+    return 'initializing'
+  if (currentTest.value?.phase === 'starting')
+    return 'initializing'
+  return currentTest.value?.phase ?? 'idle'
+})
+const isRunning = computed(() => serviceStatus.value?.running ?? false)
+const progress = computed(() => currentTest.value?.progress ?? 0)
+const currentDownload = computed(() => currentTest.value?.downloadMbps ?? 0)
+const currentUpload = computed(() => currentTest.value?.uploadMbps ?? 0)
+const downloadMeasured = computed(() => currentTest.value?.downloadMbps !== null && currentTest.value?.downloadMbps !== undefined)
+const uploadMeasured = computed(() => currentTest.value?.uploadMbps !== null && currentTest.value?.uploadMbps !== undefined)
+const latency = computed(() => currentTest.value?.latencyMs ?? 0)
+const latencyMeasured = computed(() => currentTest.value?.latencyMs !== null && currentTest.value?.latencyMs !== undefined)
+const isp = computed(() => currentTest.value?.isp ?? '')
+const publicIp = computed(() => currentTest.value?.publicIp ?? '')
+const resultUrl = computed(() => currentTest.value?.resultUrl ?? '')
+const errorMessage = computed(() => requestError.value || currentTest.value?.errorMessage || '')
+const testedInterfaceName = computed(() => serviceStatus.value?.currentInterface ?? '')
+const peakSpeed = computed(() => Math.max(currentDownload.value, currentUpload.value))
 const activeSpeed = computed(() => status.value === 'upload'
   ? currentUpload.value
   : currentDownload.value)
@@ -43,7 +49,7 @@ const gaugeMax = computed(() => {
   const increment = 10 ** Math.floor(Math.log10(peak)) / 2
   return Math.ceil(peak / increment) * increment
 })
-const statusText = computed(() => ({
+const phaseText = computed(() => ({
   idle: 'Ready to start',
   initializing: 'Initializing test…',
   ping: 'Measuring latency…',
@@ -52,143 +58,45 @@ const statusText = computed(() => ({
   complete: 'Test complete',
   error: 'Test failed',
 }[status.value]))
-
-function updateSpeed(type: 'download' | 'upload', value: number) {
-  const speed = toMbps(value)
-  if (type === 'download') {
-    currentDownload.value = speed
-    downloadMeasured.value = true
-  }
-  else {
-    currentUpload.value = speed
-    uploadMeasured.value = true
-  }
-  peakSpeed.value = Math.max(peakSpeed.value, speed)
-}
-
-function resetState() {
-  currentDownload.value = 0
-  currentUpload.value = 0
-  peakSpeed.value = 0
-  downloadMeasured.value = false
-  uploadMeasured.value = false
-  latency.value = 0
-  latencyMeasured.value = false
-  resultUrl.value = ''
-  isp.value = ''
-  publicIp.value = ''
-  errorMessage.value = ''
-  testedInterfaceName.value = ''
-  progress.value = 0
-}
-
-function handleEvent(event: SpeedtestEvent) {
-  switch (event.type) {
-    case 'testStart':
-      isp.value = event.isp ?? ''
-      publicIp.value = event.interface?.externalIp ?? ''
-      testedInterfaceName.value = event.interface?.name || selectedInterfaceLabel.value
-      status.value = 'ping'
-      break
-    case 'ping':
-      if (event.ping?.latency !== undefined) {
-        latency.value = event.ping.latency
-        latencyMeasured.value = true
-      }
-      progress.value = event.ping?.progress ?? progress.value
-      status.value = 'ping'
-      break
-    case 'download':
-      if (progress.value >= 1)
-        progress.value = 0
-      status.value = 'download'
-      if (event.download?.bandwidth !== undefined)
-        updateSpeed('download', event.download.bandwidth)
-      progress.value = event.download?.progress ?? progress.value
-      break
-    case 'upload':
-      if (progress.value >= 1)
-        progress.value = 0
-      status.value = 'upload'
-      if (event.upload?.bandwidth !== undefined)
-        updateSpeed('upload', event.upload.bandwidth)
-      progress.value = event.upload?.progress ?? progress.value
-      break
-    case 'result':
-      if (event.ping?.latency !== undefined) {
-        latency.value = event.ping.latency
-        latencyMeasured.value = true
-      }
-      resultUrl.value = event.result?.url ?? ''
-      testedInterfaceName.value = event.interface?.name || testedInterfaceName.value || selectedInterfaceLabel.value
-      if (event.download?.bandwidth !== undefined)
-        updateSpeed('download', event.download.bandwidth)
-      if (event.upload?.bandwidth !== undefined)
-        updateSpeed('upload', event.upload.bandwidth)
-      status.value = 'complete'
-      break
-    case 'error':
-      errorMessage.value = event.message || 'The test failed. Check the Speedtest CLI output and network connection.'
-      status.value = 'error'
-      break
-  }
-}
+const statusText = computed(() => {
+  if (!serviceStatus.value)
+    return 'Connecting to speedtest service…'
+  if (!isRunning.value)
+    return phaseText.value
+  const source = serviceStatus.value.source === 'scheduled'
+    ? 'Scheduled test'
+    : 'Manual test'
+  return `${source} · ${phaseText.value}`
+})
 
 async function startTest() {
-  if (isRunning.value)
+  if (isRunning.value || requesting.value)
     return
 
-  resetState()
-  status.value = 'initializing'
+  requesting.value = true
+  requestError.value = ''
 
   try {
-    const response = await $fetch<ReadableStream>('/api/speedtest', {
+    await $fetch('/api/speedtest', {
       method: 'POST',
       body: {
         interfaceName: selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
           ? null
           : selectedInterface.value,
       },
-      responseType: 'stream',
     })
-
-    reader = response.pipeThrough(new TextDecoderStream()).getReader()
-    let buffer = ''
-    while (true) {
-      const { value, done } = await reader.read()
-      if (done) {
-        if (!errorMessage.value)
-          status.value = 'complete'
-        break
-      }
-      if (!value)
-        continue
-
-      buffer += value
-      const parts = buffer.split(/\r?\n\r?\n/)
-      buffer = parts.pop() ?? ''
-
-      for (const part of parts) {
-        const match = part.match(/data:\s*(\{.*\})/s)
-        if (!match?.[1])
-          continue
-        handleEvent(JSON.parse(match[1]) as SpeedtestEvent)
-      }
-    }
   }
   catch (error) {
-    console.error('Manual speedtest stream failed:', error)
-    errorMessage.value = 'The speed test could not finish. Check the Speedtest CLI and network connection, then try again.'
-    status.value = 'error'
+    console.error('Unable to start manual speedtest:', error)
+    const fetchError = error as { data?: { statusMessage?: string }, statusMessage?: string }
+    requestError.value = fetchError.data?.statusMessage
+      || fetchError.statusMessage
+      || 'The speed test could not start. Check the network connection, then try again.'
   }
   finally {
-    reader = null
+    requesting.value = false
   }
 }
-
-onBeforeUnmount(() => {
-  void reader?.cancel()
-})
 </script>
 
 <template>
@@ -214,8 +122,8 @@ onBeforeUnmount(() => {
             />
           </UFormField>
           <UButton
-            :disabled="isRunning"
-            :loading="status === 'initializing'"
+            :disabled="isRunning || requesting"
+            :loading="requesting || (isRunning && status === 'initializing')"
             icon="i-lucide-play"
             @click="startTest"
           >

@@ -1,10 +1,10 @@
-export interface ScheduledSpeedtestAttempt {
+export interface SpeedtestAttempt {
   interfaceName: string
   completedAt: string
   status: 'success' | 'failed'
 }
 
-export interface ScheduledSpeedtestProgress {
+export interface SpeedtestProgress {
   phase: 'starting' | 'ping' | 'download' | 'upload' | 'complete' | 'error'
   progress: number
   downloadMbps: number | null
@@ -13,16 +13,18 @@ export interface ScheduledSpeedtestProgress {
   isp: string | null
   publicIp: string | null
   resultUrl: string | null
+  errorMessage: string | null
 }
 
-export interface SpeedtestScheduleStatus {
+export interface SpeedtestStatus {
   enabled: boolean
   running: boolean
+  source: 'manual' | 'scheduled' | null
   interfaces: string[]
   currentInterface: string | null
   currentIndex: number | null
-  currentTest: ScheduledSpeedtestProgress | null
+  currentTest: SpeedtestProgress | null
   frequencySeconds: number | null
   nextRunAt: string | null
-  lastAttempt: ScheduledSpeedtestAttempt | null
+  lastAttempt: SpeedtestAttempt | null
 }

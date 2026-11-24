@@ -1,1 +1,1 @@
-export default defineEventHandler(() => getSpeedtestScheduleStatus())
+export default defineEventHandler(() => getSpeedtestStatus())

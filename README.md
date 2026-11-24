@@ -369,13 +369,14 @@ The application has three optional background monitoring processes via Nitro plu
 #### Real-Time Streaming
 
 - **Server-Sent Events (SSE)**: Efficient live data streaming using Nuxt's event system
-- **Event-driven Architecture**: Background processes emit events via global events emitter
+- **Event-driven Architecture**: Monitoring data and shared speed-test status are broadcast to connected clients
 - **Stream Endpoints**:
   - `/api/pings/stream` - Live ping data stream for all monitored hosts (1-second updates)
   - `/api/bandwidths/stream` - Live bandwidth stream for all monitored interfaces (1-second updates)
-  - `/api/speedtest` (POST) - Live speed test execution with JSONL streaming and progress updates
+  - `/api/speedtest` (POST) - Starts a manual test; returns `202` or `409` if another test is running
+  - `/api/speedtest/stream` (GET) - Shared live status for manual and scheduled tests; reconnects with the current snapshot
 - **Interface Discovery**: `/api/interfaces` - Returns available SNMP interfaces with auto-discovery
-- **Connection Management**: Automatic cleanup on client disconnect and error handling
+- **Connection Management**: SSE subscribers are cleaned up on disconnect; active tests continue in the speedtest service
 
 #### Data Collection & Storage Strategy
 

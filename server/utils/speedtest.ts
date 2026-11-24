@@ -1,9 +1,234 @@
 import { spawn } from 'node:child_process'
+import { toMbps } from '../../shared/utils/converter'
+import { db } from '../db'
+import { speedtestResults } from '../db/schema/speedtest-results'
 import { getSpeedtestInterfaceIpAddress } from './speedtest-interfaces'
 
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
 const SPEEDTEST_RATE_LIMIT_PATTERN = /limit reached|too many requests received/i
+
+const emptyProgress: SpeedtestProgress = {
+  phase: 'starting',
+  progress: 0,
+  downloadMbps: null,
+  uploadMbps: null,
+  latencyMs: null,
+  isp: null,
+  publicIp: null,
+  resultUrl: null,
+  errorMessage: null,
+}
+
+let status: SpeedtestStatus = {
+  enabled: false,
+  running: false,
+  source: null,
+  interfaces: [],
+  currentInterface: null,
+  currentIndex: null,
+  currentTest: null,
+  frequencySeconds: null,
+  nextRunAt: null,
+  lastAttempt: null,
+}
+
+const statusListeners = new Set<(status: SpeedtestStatus) => void>()
+
+function publishStatus() {
+  const snapshot = getSpeedtestStatus()
+  for (const listener of statusListeners) {
+    try {
+      listener(snapshot)
+    }
+    catch (error) {
+      console.error('Unable to publish speedtest status:', error)
+    }
+  }
+}
+
+export function getSpeedtestStatus(): SpeedtestStatus {
+  return structuredClone(status)
+}
+
+export function updateSpeedtestStatus(update: Partial<SpeedtestStatus>) {
+  status = {
+    ...status,
+    ...update,
+  }
+  publishStatus()
+}
+
+export function subscribeToSpeedtestStatus(listener: (status: SpeedtestStatus) => void) {
+  statusListeners.add(listener)
+  return () => statusListeners.delete(listener)
+}
+
+function progressFromEvent(current: SpeedtestProgress, event: SpeedtestEvent): SpeedtestProgress {
+  const progress = { ...current, errorMessage: null }
+
+  switch (event.type) {
+    case 'testStart':
+      return {
+        ...emptyProgress,
+        phase: 'ping',
+        isp: event.isp ?? null,
+        publicIp: event.interface?.externalIp ?? null,
+      }
+    case 'ping':
+      progress.phase = 'ping'
+      progress.progress = event.ping?.progress ?? progress.progress
+      progress.latencyMs = event.ping?.latency ?? progress.latencyMs
+      break
+    case 'download':
+      progress.phase = 'download'
+      progress.progress = event.download?.progress ?? progress.progress
+      if (event.download?.bandwidth !== undefined)
+        progress.downloadMbps = toMbps(event.download.bandwidth)
+      break
+    case 'upload':
+      progress.phase = 'upload'
+      progress.progress = event.upload?.progress ?? progress.progress
+      if (event.upload?.bandwidth !== undefined)
+        progress.uploadMbps = toMbps(event.upload.bandwidth)
+      break
+    case 'result':
+      progress.phase = 'complete'
+      progress.progress = 1
+      progress.latencyMs = event.ping?.latency ?? progress.latencyMs
+      if (event.download?.bandwidth !== undefined)
+        progress.downloadMbps = toMbps(event.download.bandwidth)
+      if (event.upload?.bandwidth !== undefined)
+        progress.uploadMbps = toMbps(event.upload.bandwidth)
+      progress.isp = event.isp ?? progress.isp
+      progress.publicIp = event.interface?.externalIp ?? progress.publicIp
+      progress.resultUrl = event.result?.url ?? progress.resultUrl
+      break
+  }
+
+  return progress
+}
+
+async function runSingleSpeedtest(interfaceName: string | null, source: 'manual' | 'scheduled', index: number | null) {
+  updateSpeedtestStatus({
+    source,
+    currentInterface: interfaceName || 'System default',
+    currentIndex: index,
+    currentTest: { ...emptyProgress },
+  })
+
+  try {
+    const result = await executeSpeedtest(interfaceName, (event) => {
+      const progress = progressFromEvent(status.currentTest ?? { ...emptyProgress }, event)
+      updateSpeedtestStatus({
+        currentInterface: event.interface?.name || status.currentInterface,
+        currentTest: progress,
+      })
+    })
+
+    await db.insert(speedtestResults).values({
+      download: result.download.bandwidth,
+      upload: result.upload.bandwidth,
+      latency: result.ping.latency,
+      ip: result.interface.externalIp,
+      isp: result.isp,
+      timestamp: new Date(),
+      networkInterface: interfaceName || result.interface.name || null,
+      url: result.result.url,
+    })
+
+    updateSpeedtestStatus({
+      currentInterface: interfaceName || result.interface.name || 'System default',
+      currentTest: {
+        ...(status.currentTest ?? { ...emptyProgress }),
+        phase: 'complete',
+        progress: 1,
+        errorMessage: null,
+      },
+      lastAttempt: {
+        interfaceName: interfaceName || result.interface.name || 'System default',
+        completedAt: new Date().toISOString(),
+        status: 'success',
+      },
+    })
+  }
+  catch (error) {
+    const output = error instanceof Error
+      ? error.message
+      : String(error)
+    const message = SPEEDTEST_RATE_LIMIT_PATTERN.test(output)
+      ? 'Ookla has temporarily rate-limited the Speedtest CLI. Wait before trying again; changing the network interface will not resolve this limit.'
+      : `Speedtest failed using the ${interfaceName
+        ? `interface “${interfaceName}”`
+        : 'system default interface'}: ${output.split(/\r?\n/).filter(Boolean).slice(-4).join(' ').slice(0, 400) || 'Check the Speedtest CLI and network connection.'}`
+
+    console.error(`${source === 'scheduled'
+      ? 'Scheduled'
+      : 'Manual'} speed test failed for ${interfaceName ?? 'system default'}:`, error)
+    updateSpeedtestStatus({
+      currentTest: {
+        ...(status.currentTest ?? { ...emptyProgress }),
+        phase: 'error',
+        errorMessage: message,
+      },
+      lastAttempt: {
+        interfaceName: interfaceName ?? 'System default',
+        completedAt: new Date().toISOString(),
+        status: 'failed',
+      },
+    })
+  }
+}
+
+export function startManualSpeedtest(interfaceName: string | null): boolean {
+  if (status.running)
+    return false
+
+  updateSpeedtestStatus({
+    running: true,
+    source: 'manual',
+    currentIndex: null,
+    nextRunAt: status.nextRunAt,
+  })
+
+  void runSingleSpeedtest(interfaceName, 'manual', null)
+    .finally(() => updateSpeedtestStatus({ running: false }))
+
+  return true
+}
+
+export async function runScheduledSpeedtests(
+  interfaceNames: Array<string | null>,
+  shouldContinue: () => boolean,
+): Promise<boolean> {
+  if (status.running)
+    return false
+
+  const selectedInterfaces = interfaceNames.length > 0
+    ? interfaceNames
+    : [null]
+  updateSpeedtestStatus({
+    running: true,
+    source: 'scheduled',
+    currentInterface: null,
+    currentIndex: null,
+    currentTest: null,
+    nextRunAt: null,
+  })
+
+  try {
+    for (const [index, interfaceName] of selectedInterfaces.entries()) {
+      if (!shouldContinue())
+        break
+      await runSingleSpeedtest(interfaceName, 'scheduled', index + 1)
+    }
+  }
+  finally {
+    updateSpeedtestStatus({ running: false, currentIndex: null })
+  }
+
+  return true
+}
 
 class SpeedtestRateLimitError extends Error {
   constructor() {
@@ -67,7 +292,7 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
   }))
 }
 
-export async function runSpeedtest(
+async function executeSpeedtest(
   interfaceName: string | null = null,
   onEvent?: (event: SpeedtestEvent) => void,
 ): Promise<SpeedtestResult> {
@@ -90,6 +315,8 @@ export async function runSpeedtest(
     let stderr = ''
     let result: SpeedtestResult | undefined
     let parseError: unknown
+
+    process.once('error', reject)
 
     const processLine = (line: string) => {
       if (!line.trim())

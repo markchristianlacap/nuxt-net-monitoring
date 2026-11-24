@@ -2,6 +2,7 @@
 const { status, unavailable } = useSpeedtestStatus()
 const requestError = ref('')
 const requesting = ref(false)
+const stopping = ref(false)
 const selectedInterface = ref(SYSTEM_DEFAULT_INTERFACE_VALUE)
 const { data: availableInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/speedtest/interfaces')
 const interfaceItems = computed(() => [
@@ -28,6 +29,7 @@ const phaseLabel = computed(() => ({
   upload: 'Measuring upload speed',
   complete: 'Test complete',
   error: 'Test failed',
+  cancelled: 'Test stopped',
 }[currentTest.value?.phase ?? 'starting']))
 
 function formatDate(value: string | null) {
@@ -65,6 +67,27 @@ async function startTest() {
   }
   finally {
     requesting.value = false
+  }
+}
+
+async function stopTest() {
+  if (!isRunning.value || status.value?.source !== 'manual' || stopping.value)
+    return
+
+  stopping.value = true
+  requestError.value = ''
+
+  try {
+    const response = await $fetch<{ stopped: boolean }>('/api/speedtest/stop', { method: 'POST' })
+    if (!response.stopped)
+      requestError.value = 'The manual speed test has already finished.'
+  }
+  catch (error) {
+    console.error('Unable to stop manual speedtest:', error)
+    requestError.value = 'The manual speed test could not be stopped. Try again.'
+  }
+  finally {
+    stopping.value = false
   }
 }
 </script>
@@ -106,12 +129,24 @@ async function startTest() {
             />
           </UFormField>
           <UButton
+            v-if="status?.running && status.source === 'manual' && currentTest?.phase !== 'complete'"
+            color="error"
+            variant="soft"
+            :disabled="stopping"
+            :loading="stopping"
+            icon="i-lucide-square-stop"
+            @click="stopTest"
+          >
+            Stop test
+          </UButton>
+          <UButton
+            v-else
             :disabled="isRunning || requesting"
-            :loading="requesting"
-            icon="i-lucide-play"
+            :loading="requesting || (isRunning && currentTest?.phase === 'complete')"
+            :icon="isRunning ? 'i-lucide-loader-circle' : 'i-lucide-play'"
             @click="startTest"
           >
-            {{ isRunning ? 'Test running' : currentTest ? 'Run again' : 'Start test' }}
+            {{ isRunning ? (currentTest?.phase === 'complete' ? 'Finishing test' : 'Test running') : currentTest ? 'Run again' : 'Start test' }}
           </UButton>
         </div>
       </div>
@@ -128,7 +163,7 @@ async function startTest() {
     <div v-if="status" class="space-y-5">
       <div v-if="status.currentTest" class="flex items-center gap-3 rounded-lg bg-muted p-4" role="status" aria-live="polite">
         <UIcon
-          :name="status.running ? 'i-lucide-loader-circle' : currentTest?.phase === 'error' ? 'i-lucide-circle-x' : 'i-lucide-circle-check'"
+          :name="status.running ? 'i-lucide-loader-circle' : currentTest?.phase === 'error' ? 'i-lucide-circle-x' : currentTest?.phase === 'cancelled' ? 'i-lucide-circle-stop' : 'i-lucide-circle-check'"
           class="size-5 shrink-0 text-primary"
           :class="{ 'animate-spin': status.running }"
           aria-hidden="true"
@@ -157,6 +192,7 @@ async function startTest() {
                 'animate-pulse bg-green-600 dark:bg-green-400': currentTest.phase === 'upload',
                 'bg-green-600 dark:bg-green-400': currentTest.phase === 'complete',
                 'bg-red-600 dark:bg-red-400': currentTest.phase === 'error',
+                'bg-neutral-500': currentTest.phase === 'cancelled',
               }"
             />
             <p class="font-medium text-highlighted">
@@ -249,11 +285,11 @@ async function startTest() {
         </div>
         <div>
           <p class="text-sm text-muted">
-            Last completed test
+            Last test attempt
           </p>
           <div v-if="status.lastAttempt" class="mt-1 flex flex-wrap items-center gap-2">
-            <UBadge :color="status.lastAttempt.status === 'success' ? 'success' : 'error'" variant="subtle">
-              {{ status.lastAttempt.status === 'success' ? 'Succeeded' : 'Failed' }}
+            <UBadge :color="status.lastAttempt.status === 'success' ? 'success' : status.lastAttempt.status === 'failed' ? 'error' : 'neutral'" variant="subtle">
+              {{ status.lastAttempt.status === 'success' ? 'Succeeded' : status.lastAttempt.status === 'failed' ? 'Failed' : 'Cancelled' }}
             </UBadge>
             <span class="text-sm text-toned">
               {{ status.lastAttempt.interfaceName }} · {{ formatDate(status.lastAttempt.completedAt) }}

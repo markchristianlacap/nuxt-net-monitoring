@@ -8,6 +8,13 @@ const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
 const SPEEDTEST_RATE_LIMIT_PATTERN = /limit reached|too many requests received/i
 
+class SpeedtestCancelledError extends Error {
+  constructor() {
+    super('Speedtest was cancelled')
+    this.name = 'SpeedtestCancelledError'
+  }
+}
+
 const emptyProgress: SpeedtestProgress = {
   phase: 'starting',
   progress: 0,
@@ -34,6 +41,8 @@ let status: SpeedtestStatus = {
 }
 
 const statusListeners = new Set<(status: SpeedtestStatus) => void>()
+let manualAbortController: AbortController | null = null
+let manualRunPromise: Promise<void> | null = null
 
 function publishStatus() {
   const snapshot = getSpeedtestStatus()
@@ -109,7 +118,12 @@ function progressFromEvent(current: SpeedtestProgress, event: SpeedtestEvent): S
   return progress
 }
 
-async function runSingleSpeedtest(interfaceName: string | null, source: 'manual' | 'scheduled', index: number | null) {
+async function runSingleSpeedtest(
+  interfaceName: string | null,
+  source: 'manual' | 'scheduled',
+  index: number | null,
+  signal?: AbortSignal,
+) {
   updateSpeedtestStatus({
     source,
     currentInterface: interfaceName || 'System default',
@@ -124,7 +138,7 @@ async function runSingleSpeedtest(interfaceName: string | null, source: 'manual'
         currentInterface: event.interface?.name || status.currentInterface,
         currentTest: progress,
       })
-    })
+    }, signal)
 
     await db.insert(speedtestResults).values({
       download: result.download.bandwidth,
@@ -153,6 +167,22 @@ async function runSingleSpeedtest(interfaceName: string | null, source: 'manual'
     })
   }
   catch (error) {
+    if (error instanceof SpeedtestCancelledError) {
+      updateSpeedtestStatus({
+        currentTest: {
+          ...(status.currentTest ?? { ...emptyProgress }),
+          phase: 'cancelled',
+          errorMessage: null,
+        },
+        lastAttempt: {
+          interfaceName: status.currentInterface || interfaceName || 'System default',
+          completedAt: new Date().toISOString(),
+          status: 'cancelled',
+        },
+      })
+      return
+    }
+
     const output = error instanceof Error
       ? error.message
       : String(error)
@@ -184,6 +214,8 @@ export function startManualSpeedtest(interfaceName: string | null): boolean {
   if (status.running)
     return false
 
+  const abortController = new AbortController()
+  manualAbortController = abortController
   updateSpeedtestStatus({
     running: true,
     source: 'manual',
@@ -191,9 +223,29 @@ export function startManualSpeedtest(interfaceName: string | null): boolean {
     nextRunAt: status.nextRunAt,
   })
 
-  void runSingleSpeedtest(interfaceName, 'manual', null)
-    .finally(() => updateSpeedtestStatus({ running: false }))
+  manualRunPromise = runSingleSpeedtest(interfaceName, 'manual', null, abortController.signal)
+    .finally(() => {
+      manualAbortController = null
+      manualRunPromise = null
+      updateSpeedtestStatus({ running: false })
+    })
 
+  return true
+}
+
+export async function stopManualSpeedtest(): Promise<boolean> {
+  if (
+    status.source !== 'manual'
+    || !status.running
+    || status.currentTest?.phase === 'complete'
+    || !manualAbortController
+    || !manualRunPromise
+  ) {
+    return false
+  }
+
+  manualAbortController.abort()
+  await manualRunPromise
   return true
 }
 
@@ -237,20 +289,41 @@ class SpeedtestRateLimitError extends Error {
   }
 }
 
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+function delay(ms: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted)
+      return reject(new SpeedtestCancelledError())
+
+    let timeout: ReturnType<typeof setTimeout>
+    const onAbort = () => {
+      clearTimeout(timeout)
+      signal?.removeEventListener('abort', onAbort)
+      reject(new SpeedtestCancelledError())
+    }
+    timeout = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
 }
 
-async function retry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
+async function retry<T>(fn: () => Promise<T>, retries = MAX_RETRIES, signal?: AbortSignal): Promise<T> {
   for (let attempt = 0; attempt < retries; attempt++) {
+    if (signal?.aborted)
+      throw new SpeedtestCancelledError()
+
     try {
       return await fn()
     }
     catch (err) {
       if (err instanceof SpeedtestRateLimitError)
         throw err
+      if (err instanceof SpeedtestCancelledError || signal?.aborted)
+        throw new SpeedtestCancelledError()
       if (attempt < retries - 1) {
-        await delay(RETRY_DELAY_MS * 2 ** attempt)
+        await delay(RETRY_DELAY_MS * 2 ** attempt, signal)
       }
       else {
         throw err
@@ -295,6 +368,7 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
 async function executeSpeedtest(
   interfaceName: string | null = null,
   onEvent?: (event: SpeedtestEvent) => void,
+  signal?: AbortSignal,
 ): Promise<SpeedtestResult> {
   const interfaceIpAddress = getSpeedtestInterfaceIpAddress(interfaceName)
   const interfaceArgs = interfaceIpAddress
@@ -302,6 +376,9 @@ async function executeSpeedtest(
     : []
 
   return retry(() => new Promise((resolve, reject) => {
+    if (signal?.aborted)
+      return reject(new SpeedtestCancelledError())
+
     const process = spawn('speedtest', [
       ...interfaceArgs,
       '-f',
@@ -315,8 +392,35 @@ async function executeSpeedtest(
     let stderr = ''
     let result: SpeedtestResult | undefined
     let parseError: unknown
+    let forceKillTimeout: ReturnType<typeof setTimeout> | undefined
+    let terminationRequested = false
 
-    process.once('error', reject)
+    const terminate = () => {
+      if (terminationRequested || process.exitCode !== null || process.signalCode !== null)
+        return
+
+      terminationRequested = true
+      process.kill('SIGTERM')
+      forceKillTimeout = setTimeout(() => {
+        if (process.exitCode === null && process.signalCode === null)
+          process.kill('SIGKILL')
+      }, 2000)
+    }
+
+    const cleanup = () => {
+      signal?.removeEventListener('abort', terminate)
+      if (forceKillTimeout)
+        clearTimeout(forceKillTimeout)
+    }
+
+    signal?.addEventListener('abort', terminate, { once: true })
+    process.once('error', (error) => {
+      cleanup()
+      if (signal?.aborted)
+        reject(new SpeedtestCancelledError())
+      else
+        reject(error)
+    })
 
     const processLine = (line: string) => {
       if (!line.trim())
@@ -325,11 +429,14 @@ async function executeSpeedtest(
       try {
         const event = JSON.parse(line) as SpeedtestEvent
         onEvent?.(event)
-        if (event.type === 'result')
+        if (event.type === 'result') {
           result = event as SpeedtestResult
+          terminate()
+        }
       }
       catch (error) {
-        parseError = error
+        if (!result)
+          parseError = error
       }
     }
 
@@ -343,14 +450,20 @@ async function executeSpeedtest(
     process.stderr.on('data', data => (stderr += data.toString()))
 
     process.on('close', (code) => {
+      cleanup()
       processLine(outputBuffer)
+      if (signal?.aborted && !result)
+        return reject(new SpeedtestCancelledError())
       if (parseError)
         return reject(parseError)
-      if (code !== 0 || stderr)
-        return reject(new Error(stderr || `Exited with code ${code}`))
-      if (!result)
+      if (!result) {
+        if (code !== 0 || stderr)
+          return reject(new Error(stderr || `Exited with code ${code}`))
         return reject(new Error('No result found'))
+      }
+      if (code !== 0 && !terminationRequested)
+        return reject(new Error(stderr || `Exited with code ${code}`))
       resolve(result)
     })
-  }))
+  }), MAX_RETRIES, signal)
 }

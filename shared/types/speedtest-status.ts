@@ -1,11 +1,11 @@
 export interface SpeedtestAttempt {
   interfaceName: string
   completedAt: string
-  status: 'success' | 'failed'
+  status: 'success' | 'failed' | 'cancelled'
 }
 
 export interface SpeedtestProgress {
-  phase: 'starting' | 'ping' | 'download' | 'upload' | 'complete' | 'error'
+  phase: 'starting' | 'ping' | 'download' | 'upload' | 'complete' | 'error' | 'cancelled'
   progress: number
   downloadMbps: number | null
   uploadMbps: number | null

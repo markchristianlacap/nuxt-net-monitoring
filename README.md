@@ -374,6 +374,7 @@ The application has three optional background monitoring processes via Nitro plu
   - `/api/pings/stream` - Live ping data stream for all monitored hosts (1-second updates)
   - `/api/bandwidths/stream` - Live bandwidth stream for all monitored interfaces (1-second updates)
   - `/api/speedtest` (POST) - Starts a manual test; returns `202` or `409` if another test is running
+  - `/api/speedtest/stop` (POST) - Cancels an active manual test
   - `/api/speedtest/stream` (GET) - Shared live status for manual and scheduled tests; reconnects with the current snapshot
 - **Interface Discovery**: `/api/interfaces` - Returns available SNMP interfaces with auto-discovery
 - **Connection Management**: SSE subscribers are cleaned up on disconnect; active tests continue in the speedtest service

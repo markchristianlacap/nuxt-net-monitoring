@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { getSpeedtestInterfaceIpAddress } from './speedtest-interfaces'
 
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
@@ -70,10 +71,12 @@ export async function runSpeedtest(
   interfaceName: string | null = null,
   onEvent?: (event: SpeedtestEvent) => void,
 ): Promise<SpeedtestResult> {
+  const interfaceIpAddress = getSpeedtestInterfaceIpAddress(interfaceName)
+  const interfaceArgs = interfaceIpAddress
+    ? ['-i', interfaceIpAddress]
+    : []
+
   return retry(() => new Promise((resolve, reject) => {
-    const interfaceArgs = interfaceName
-      ? ['--interface', interfaceName]
-      : []
     const process = spawn('speedtest', [
       ...interfaceArgs,
       '-f',

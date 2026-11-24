@@ -20,6 +20,22 @@ export function getAvailableSpeedtestInterfaces(): SpeedtestNetworkInterface[] {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
+function findSpeedtestInterface(interfaceName: string) {
+  return getAvailableSpeedtestInterfaces().find(networkInterface => networkInterface.name === interfaceName)
+}
+
+export function getSpeedtestInterfaceIpAddress(interfaceName: string | null): string | null {
+  if (!interfaceName)
+    return null
+
+  const networkInterface = findSpeedtestInterface(interfaceName)
+  if (!networkInterface) {
+    throw new Error(`Selected network interface "${interfaceName}" is not available to the application`)
+  }
+
+  return networkInterface.ipAddress
+}
+
 export function validateSpeedtestInterface(value: unknown): string | null {
   if (value === undefined || value === null || value === '')
     return null
@@ -30,7 +46,7 @@ export function validateSpeedtestInterface(value: unknown): string | null {
   const interfaceName = value.trim()
   if (!interfaceName)
     return null
-  if (!getAvailableSpeedtestInterfaces().some(networkInterface => networkInterface.name === interfaceName)) {
+  if (!findSpeedtestInterface(interfaceName)) {
     throw createError({ statusCode: 400, statusMessage: 'Selected network interface is not available to the application' })
   }
   return interfaceName

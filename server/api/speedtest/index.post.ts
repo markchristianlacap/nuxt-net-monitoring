@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import { db } from '~~/server/db'
 import { speedtestResults } from '~~/server/db/schema/speedtest-results'
+import { getSpeedtestInterfaceIpAddress } from '~~/server/utils/speedtest-interfaces'
 
 interface SpeedtestRequestBody {
   interfaceName?: unknown
@@ -32,6 +33,7 @@ function getSpeedtestFailureMessage(interfaceName: string | null, code: number |
 export default defineEventHandler(async (event) => {
   const body = await readBody<SpeedtestRequestBody>(event)
   const interfaceName = validateSpeedtestInterface(body?.interfaceName)
+  const interfaceIpAddress = getSpeedtestInterfaceIpAddress(interfaceName)
   const res = event.node.res
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
@@ -44,8 +46,8 @@ export default defineEventHandler(async (event) => {
   let clientDisconnected = false
   let processError = false
   let outputQueue = Promise.resolve()
-  const interfaceArgs = interfaceName
-    ? ['--interface', interfaceName]
+  const interfaceArgs = interfaceIpAddress
+    ? ['-i', interfaceIpAddress]
     : []
   const speedtest = spawn('speedtest', [
     ...interfaceArgs,

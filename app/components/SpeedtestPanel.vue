@@ -1,6 +1,18 @@
 <script setup lang="ts">
 const { status, unavailable } = useSpeedtestStatus()
+const requestError = ref('')
+const requesting = ref(false)
+const selectedInterface = ref(SYSTEM_DEFAULT_INTERFACE_VALUE)
+const { data: availableInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/speedtest/interfaces')
+const interfaceItems = computed(() => [
+  { label: 'System default', value: SYSTEM_DEFAULT_INTERFACE_VALUE },
+  ...(availableInterfaces.value ?? []).map(item => ({
+    label: `${item.name} · ${item.ipAddress}`,
+    value: item.name,
+  })),
+])
 const currentTest = computed(() => status.value?.currentTest ?? null)
+const isRunning = computed(() => status.value?.running ?? false)
 const activeSpeed = computed(() => currentTest.value?.phase === 'upload'
   ? currentTest.value.uploadMbps ?? 0
   : currentTest.value?.downloadMbps ?? 0)
@@ -10,7 +22,7 @@ const gaugeMax = computed(() => {
   return Math.ceil(peak / increment) * increment
 })
 const phaseLabel = computed(() => ({
-  starting: 'Starting scheduled test',
+  starting: 'Starting test',
   ping: 'Measuring latency',
   download: 'Measuring download speed',
   upload: 'Measuring upload speed',
@@ -26,34 +38,88 @@ function formatDate(value: string | null) {
     timeStyle: 'short',
   }).format(new Date(value))
 }
+
+async function startTest() {
+  if (isRunning.value || requesting.value)
+    return
+
+  requesting.value = true
+  requestError.value = ''
+
+  try {
+    await $fetch('/api/speedtest', {
+      method: 'POST',
+      body: {
+        interfaceName: selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
+          ? null
+          : selectedInterface.value,
+      },
+    })
+  }
+  catch (error) {
+    console.error('Unable to start manual speedtest:', error)
+    const fetchError = error as { data?: { statusMessage?: string }, statusMessage?: string }
+    requestError.value = fetchError.data?.statusMessage
+      || fetchError.statusMessage
+      || 'The speed test could not start. Check the network connection, then try again.'
+  }
+  finally {
+    requesting.value = false
+  }
+}
 </script>
 
 <template>
   <UCard>
     <template #header>
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 class="font-semibold text-highlighted">
-            Scheduled speed tests
+            Speedtest
           </h2>
           <p class="mt-1 text-sm text-muted">
-            Tests run one at a time across the configured interfaces.
+            Manual and scheduled tests share one live run.
           </p>
+          <div class="mt-2">
+            <UBadge v-if="status?.running" color="success" variant="subtle" icon="i-lucide-loader-circle" class="animate-pulse">
+              Running
+            </UBadge>
+            <UBadge v-else-if="status?.enabled" color="primary" variant="subtle">
+              Scheduled
+            </UBadge>
+            <UBadge v-else-if="status" color="neutral" variant="subtle">
+              Schedule off
+            </UBadge>
+            <UBadge v-else color="neutral" variant="subtle">
+              Connecting
+            </UBadge>
+          </div>
         </div>
-        <UBadge v-if="status?.running" color="success" variant="subtle" icon="i-lucide-loader-circle" class="animate-pulse">
-          Running
-        </UBadge>
-        <UBadge v-else-if="status?.enabled" color="primary" variant="subtle">
-          Scheduled
-        </UBadge>
-        <UBadge v-else-if="status" color="neutral" variant="subtle">
-          Disabled
-        </UBadge>
-        <UBadge v-else color="neutral" variant="subtle">
-          Loading
-        </UBadge>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <UFormField label="Network interface">
+            <USelect
+              v-model="selectedInterface"
+              :items="interfaceItems"
+              aria-label="Network interface for manual speedtest"
+              class="w-full sm:min-w-56"
+              :disabled="isRunning || requesting"
+            />
+          </UFormField>
+          <UButton
+            :disabled="isRunning || requesting"
+            :loading="requesting"
+            icon="i-lucide-play"
+            @click="startTest"
+          >
+            {{ isRunning ? 'Test running' : currentTest ? 'Run again' : 'Start test' }}
+          </UButton>
+        </div>
       </div>
     </template>
+
+    <p v-if="requestError" class="mb-4 text-sm text-error" role="alert">
+      {{ requestError }}
+    </p>
 
     <p v-if="unavailable" class="mb-4 text-sm text-error" role="status">
       Live speed-test updates are unavailable. Reconnecting automatically.
@@ -213,7 +279,7 @@ function formatDate(value: string | null) {
       </div>
     </div>
 
-    <div v-else class="space-y-3" aria-label="Loading scheduled speed-test status">
+    <div v-else class="space-y-3" aria-label="Loading speed-test status">
       <USkeleton class="h-5 w-48" />
       <USkeleton class="h-12 w-full" />
     </div>

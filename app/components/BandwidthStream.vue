@@ -342,7 +342,7 @@ onBeforeUnmount(() => {
               <h3 class="truncate text-base font-semibold text-highlighted">
                 {{ router.displayName }}
               </h3>
-              <p v-if="router.displayName !== router.host" class="truncate text-xs text-muted">
+              <p class="truncate text-xs text-muted">
                 {{ router.host }}
               </p>
               <div v-if="router.gateways.length" class="mt-2 flex flex-wrap items-center gap-1.5">
@@ -386,8 +386,8 @@ onBeforeUnmount(() => {
               </h4>
               <span
                 :class="{
-                  'text-green-700 dark:text-green-400': stats.status === 'up',
-                  'text-red-700 dark:text-red-400': stats.status === 'down',
+                  'text-success': stats.status === 'up',
+                  'text-error': stats.status === 'down',
                   'text-muted': stats.status === 'unknown',
                 }"
                 class="shrink-0 text-xs font-semibold uppercase"
@@ -397,23 +397,23 @@ onBeforeUnmount(() => {
             </div>
             <dl class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:grid-cols-3">
               <div class="flex min-w-0 items-baseline justify-between gap-2">
-                <dt class="shrink-0 font-medium text-blue-700 dark:text-blue-300" title="Current download">
+                <dt class="shrink-0 font-medium text-primary" title="Current download">
                   Download
                 </dt>
-                <dd class="truncate text-right font-semibold tabular-nums text-blue-700 dark:text-blue-300">
+                <dd class="truncate text-right font-semibold tabular-nums text-primary">
                   {{ stats.currentDownload.toFixed(2) }} Mbps
                 </dd>
               </div>
               <div class="flex min-w-0 items-baseline justify-between gap-2">
-                <dt class="shrink-0 font-medium text-green-700 dark:text-green-300" title="Current upload">
+                <dt class="shrink-0 font-medium text-success" title="Current upload">
                   Upload
                 </dt>
-                <dd class="truncate text-right font-semibold tabular-nums text-red-700 dark:text-red-300">
+                <dd class="truncate text-right font-semibold tabular-nums text-success">
                   {{ stats.currentUpload.toFixed(2) }} Mbps
                 </dd>
               </div>
               <div class="flex min-w-0 items-baseline justify-between gap-2">
-                <dt class="shrink-0 font-medium text-amber-700 dark:text-amber-300" title="Interface speed">
+                <dt class="shrink-0 font-medium text-warning" title="Interface speed">
                   Speed
                 </dt>
                 <dd class="truncate text-right font-semibold tabular-nums text-toned">
@@ -421,7 +421,7 @@ onBeforeUnmount(() => {
                 </dd>
               </div>
               <div class="flex min-w-0 items-baseline justify-between gap-2">
-                <dt class="shrink-0 font-medium text-violet-700 dark:text-violet-300" title="IP address">
+                <dt class="shrink-0 font-medium text-toned" title="IP address">
                   IP
                 </dt>
                 <dd class="truncate text-right font-semibold text-toned" :title="stats.ip">
@@ -429,18 +429,18 @@ onBeforeUnmount(() => {
                 </dd>
               </div>
               <div class="flex min-w-0 items-baseline justify-between gap-2">
-                <dt class="shrink-0 font-medium text-blue-700 dark:text-blue-300" title="Peak download">
+                <dt class="shrink-0 font-medium text-primary" title="Peak download">
                   Peak down
                 </dt>
-                <dd class="truncate text-right font-semibold tabular-nums text-blue-700 dark:text-blue-400">
+                <dd class="truncate text-right font-semibold tabular-nums text-primary">
                   {{ stats.maxDownload.toFixed(2) }} Mbps
                 </dd>
               </div>
               <div class="flex min-w-0 items-baseline justify-between gap-2">
-                <dt class="shrink-0 font-medium text-green-700 dark:text-green-300" title="Peak upload">
+                <dt class="shrink-0 font-medium text-success" title="Peak upload">
                   Peak up
                 </dt>
-                <dd class="truncate text-right font-semibold tabular-nums text-red-700 dark:text-red-400">
+                <dd class="truncate text-right font-semibold tabular-nums text-success">
                   {{ stats.maxUpload.toFixed(2) }} Mbps
                 </dd>
               </div>

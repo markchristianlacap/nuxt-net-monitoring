@@ -11,12 +11,12 @@ const items = computed<NavigationMenuItem[]>(() => {
   return [
     ...(features?.bandwidth
       ? [
-          { label: 'Bandwidth Results', to: '/bandwidths', active: route.path === '/bandwidths' },
+          { label: 'Bandwidth', to: '/bandwidths', active: route.path === '/bandwidths' },
         ]
       : []),
     ...(features?.speedtest
       ? [
-          { label: 'Speedtest Results', to: '/speedtest-results', active: route.path === '/speedtest-results' },
+          { label: 'Speed Tests', to: '/speedtest-results', active: route.path === '/speedtest-results' },
         ]
       : []),
     {
@@ -30,7 +30,7 @@ const items = computed<NavigationMenuItem[]>(() => {
 
 <template>
   <div>
-    <UHeader title="Nuxt Net Monitoring" class="border-b border-default bg-default/95">
+    <UHeader title="Nuxt Net Monitoring">
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />
         <UColorModeSelect size="sm" aria-label="Color theme" />

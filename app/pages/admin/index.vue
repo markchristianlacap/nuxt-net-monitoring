@@ -114,11 +114,11 @@ async function signOut() {
 <template>
   <div class="mx-auto max-w-4xl space-y-6">
     <UPageHeader
-      title="Monitoring settings"
+      title="Monitoring Settings"
       description="Choose which monitoring features run and configure their sources."
     >
       <template #links>
-        <UButton variant="outline" class="self-start sm:self-auto" @click="signOut">
+                <UButton color="neutral" variant="outline" class="self-start sm:self-auto" @click="signOut">
           Sign out
         </UButton>
       </template>
@@ -129,7 +129,7 @@ async function signOut() {
         <template #header>
           <div>
             <h2 class="font-semibold">
-              SNMP bandwidth monitoring
+              Bandwidth Monitoring
             </h2>
             <p class="text-sm text-muted">
               Collect interface throughput from supported firewalls.
@@ -150,7 +150,7 @@ async function signOut() {
               <h3 class="font-medium">
                 Device {{ index + 1 }}
               </h3>
-              <UButton type="button" color="error" variant="ghost" @click="removeDevice(index)">
+              <UButton type="button" color="neutral" variant="ghost" @click="removeDevice(index)">
                 Remove
               </UButton>
             </div>
@@ -169,7 +169,7 @@ async function signOut() {
               </UFormField>
             </div>
           </div>
-          <UButton type="button" variant="outline" @click="addDevice">
+          <UButton type="button" color="neutral" variant="outline" @click="addDevice">
             Add SNMP device
           </UButton>
         </div>
@@ -179,7 +179,7 @@ async function signOut() {
         <template #header>
           <div>
             <h2 class="font-semibold">
-              Speed tests
+              Speed Tests
             </h2>
             <p class="text-sm text-muted">
               Run scheduled internet speed tests and save the results.

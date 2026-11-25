@@ -60,7 +60,7 @@ const columns: TableColumn<any>[] = [
 
 <template>
   <div class="space-y-6">
-    <UPageHeader title="Speedtest Results Log">
+    <UPageHeader title="Speed Test Results">
       <template #links>
         <CommonResultsFilters
           v-model:start="query.start"

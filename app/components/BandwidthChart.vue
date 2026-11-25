@@ -196,9 +196,14 @@ const option = computed<ECOption>(() => {
 <template>
   <UCard class="mb-4">
     <template #header>
-      <h3 class="text-lg font-semibold text-highlighted">
-        Bandwidth Summary
-      </h3>
+      <div>
+        <h3 class="text-lg font-semibold text-highlighted">
+          Bandwidth Summary
+        </h3>
+        <p class="mt-0.5 text-xs text-muted">
+          Download and upload throughput over the selected period.
+        </p>
+      </div>
     </template>
     <VChart :option="option" autoresize :style="{ height: '350px' }" />
   </UCard>

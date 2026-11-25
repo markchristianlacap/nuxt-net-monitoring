@@ -28,10 +28,10 @@ watch(tabs, (availableTabs) => {
 <template>
   <div class="space-y-6">
     <UPageHeader
-      title="Network overview"
+      title="Network Overview"
       description="Live bandwidth and internet performance from your monitored infrastructure."
     />
-    <div v-if="tabs.length > 1" class="border-b border-default">
+    <div v-if="tabs.length > 1" class="flex justify-center">
       <u-radio-group
         v-model="tab"
         variant="table"
@@ -39,7 +39,7 @@ watch(tabs, (availableTabs) => {
         :items="tabs"
         label-key="label"
         value-key="value"
-        class="-mb-px"
+        class="justify-center"
       />
     </div>
     <div>

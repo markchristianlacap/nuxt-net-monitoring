@@ -187,12 +187,12 @@ async function stopTest() {
             <span
               class="size-2 rounded-full"
               :class="{
-                'animate-pulse bg-amber-500': currentTest.phase === 'starting' || currentTest.phase === 'ping',
-                'animate-pulse bg-blue-600 dark:bg-blue-400': currentTest.phase === 'download',
-                'animate-pulse bg-green-600 dark:bg-green-400': currentTest.phase === 'upload',
-                'bg-green-600 dark:bg-green-400': currentTest.phase === 'complete',
-                'bg-red-600 dark:bg-red-400': currentTest.phase === 'error',
-                'bg-neutral-500': currentTest.phase === 'cancelled',
+                'animate-pulse bg-warning': currentTest.phase === 'starting' || currentTest.phase === 'ping',
+                'animate-pulse bg-primary': currentTest.phase === 'download',
+                'animate-pulse bg-success': currentTest.phase === 'upload',
+                'bg-success': currentTest.phase === 'complete',
+                'bg-error': currentTest.phase === 'error',
+                'bg-neutral': currentTest.phase === 'cancelled',
               }"
             />
             <p class="font-medium text-highlighted">
@@ -221,23 +221,23 @@ async function stopTest() {
 
         <dl class="grid grid-cols-2 gap-x-5 gap-y-3 text-sm">
           <div>
-            <dt class="font-medium text-blue-700 dark:text-blue-300">
+            <dt class="font-medium text-primary">
               Download
             </dt>
-            <dd class="mt-0.5 font-semibold tabular-nums text-blue-700 dark:text-blue-300">
+            <dd class="mt-0.5 font-semibold tabular-nums text-primary">
               {{ currentTest.downloadMbps === null ? '—' : `${currentTest.downloadMbps.toFixed(2)} Mbps` }}
             </dd>
           </div>
           <div>
-            <dt class="font-medium text-green-700 dark:text-green-300">
+            <dt class="font-medium text-success">
               Upload
             </dt>
-            <dd class="mt-0.5 font-semibold tabular-nums text-green-700 dark:text-green-300">
+            <dd class="mt-0.5 font-semibold tabular-nums text-success">
               {{ currentTest.uploadMbps === null ? '—' : `${currentTest.uploadMbps.toFixed(2)} Mbps` }}
             </dd>
           </div>
           <div>
-            <dt class="font-medium text-amber-700 dark:text-amber-300">
+            <dt class="font-medium text-warning">
               Latency
             </dt>
             <dd class="mt-0.5 font-semibold tabular-nums text-default">
@@ -245,7 +245,7 @@ async function stopTest() {
             </dd>
           </div>
           <div>
-            <dt class="font-medium text-violet-700 dark:text-violet-300">
+            <dt class="font-medium text-toned">
               Provider
             </dt>
             <dd class="mt-0.5 truncate font-medium text-default" :title="currentTest.isp ?? undefined">
@@ -284,7 +284,7 @@ async function stopTest() {
           </p>
         </div>
         <div>
-          <p class="text-sm font-medium text-amber-700 dark:text-amber-300">
+          <p class="text-sm font-medium text-warning">
             Last test attempt
           </p>
           <div v-if="status.lastAttempt" class="mt-1 flex flex-wrap items-center gap-2">
@@ -302,7 +302,7 @@ async function stopTest() {
       </div>
 
       <div>
-        <p class="text-sm font-medium text-violet-700 dark:text-violet-300">
+        <p class="text-sm font-medium text-toned">
           Run order
         </p>
         <ol class="mt-2 flex flex-wrap gap-2">

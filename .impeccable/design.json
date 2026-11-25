@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-25T00:00:00.000Z",
+  "title": "Design System: Nuxt Net Monitoring",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Primary", "canonical": "var(--ui-primary)" },
+      "success": { "role": "secondary", "displayName": "Success", "canonical": "var(--ui-success)" },
+      "warning": { "role": "tertiary", "displayName": "Warning", "canonical": "var(--ui-warning)" },
+      "error": { "role": "tertiary", "displayName": "Error", "canonical": "var(--ui-error)" }
+    },
+    "typographyMeta": {
+      "body": { "displayName": "Inter Operational", "purpose": "Compact interface copy and monitoring detail." }
+    },
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "2xl", "value": "1536px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "A compact primary action using Nuxt UI's semantic primary color.",
+      "html": "<button class=\"ds-button-primary\" type=\"button\">Save settings</button>",
+      "css": ".ds-button-primary { background: var(--ui-primary); color: var(--ui-text-inverted); border: 0; border-radius: 8px; padding: 8px 12px; font: 500 14px/21px Inter, system-ui, sans-serif; cursor: pointer; } .ds-button-primary:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Evidence Tile",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "A compact chart or monitoring record with a subtitle that explains its scope.",
+      "html": "<section class=\"ds-evidence-tile\"><h3>Bandwidth Summary</h3><p>Download and upload throughput over the selected period.</p></section>",
+      "css": ".ds-evidence-tile { background: var(--ui-bg); color: var(--ui-text); border: 1px solid var(--ui-border); border-radius: 8px; padding: 12px; } .ds-evidence-tile h3 { margin: 0; font: 600 18px/27px Inter, system-ui, sans-serif; } .ds-evidence-tile p { margin: 2px 0 0; color: var(--ui-text-muted); font: 400 12px/18px Inter, system-ui, sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Clear Network Evidence",
+    "overview": "Nuxt Net Monitoring is a focused operational workspace for understanding network behavior. The interface uses Nuxt UI's default semantic palette as its source of truth so light and dark themes remain coherent, accessible, and easy to maintain.\n\nThe design is compact and evidence-first. Neutral surfaces establish hierarchy, primary color identifies interaction, and measurement colors explain download, upload, latency, warning, success, and error states.",
+    "keyCharacteristics": [
+      "Nuxt UI default semantic colors",
+      "Compact headings, cards, and tables",
+      "Clear state communication beyond color alone",
+      "Responsive layouts that preserve readable data"
+    ],
+    "rules": [
+      { "name": "The Semantic Palette Rule", "body": "Use Nuxt UI tokens for interface surfaces and controls. Hard-coded colors are allowed only for measurement series whose meaning is documented above.", "section": "colors" },
+      { "name": "The Evidence-First Type Rule", "body": "Use weight and scale to clarify the next useful fact, not to inflate the interface.", "section": "typography" },
+      { "name": "The Flat-by-Default Rule", "body": "Borders and tonal surfaces establish hierarchy before shadows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Nuxt UI semantic tokens for all shared interface colors.",
+      "Do preserve light/dark mode contrast for labels, alerts, controls, and navigation.",
+      "Do keep cards compact and subtitle-led.",
+      "Do use Nuxt UI semantic colors consistently and explain their meaning.",
+      "Do preserve existing routes, workflows, filters, tables, and monitoring semantics."
+    ],
+    "donts": [
+      "Don't add custom colors to the shared shell or measurement system.",
+      "Don't use semantic colors as general-purpose decoration.",
+      "Don't hide a meaningful state behind color alone.",
+      "Don't inflate page titles or cards with excess whitespace.",
+      "Don't use neon glow, glassmorphism, or terminal styling as visual shorthand."
+    ]
+  }
+}

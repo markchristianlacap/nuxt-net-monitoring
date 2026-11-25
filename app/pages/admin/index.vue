@@ -129,56 +129,6 @@ async function signOut() {
         <template #header>
           <div>
             <h2 class="font-semibold">
-              Bandwidth Monitoring
-            </h2>
-            <p class="text-sm text-muted">
-              Collect interface throughput from supported firewalls.
-            </p>
-          </div>
-        </template>
-        <div class="space-y-5">
-          <UAlert
-            color="warning"
-            variant="subtle"
-            icon="i-lucide-info"
-            title="pfSense and OPNsense only"
-            description="SNMP bandwidth monitoring currently supports pfSense and OPNsense firewalls only."
-          />
-          <USwitch v-model="settings.features.bandwidth" label="Enable bandwidth monitoring" />
-          <div v-for="(device, index) in devices" :key="index" class="space-y-4 rounded-lg border border-default p-4">
-            <div class="flex items-center justify-between">
-              <h3 class="font-medium">
-                Device {{ index + 1 }}
-              </h3>
-              <UButton type="button" color="neutral" variant="ghost" @click="removeDevice(index)">
-                Remove
-              </UButton>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <UFormField label="Host">
-                <UInput v-model="device.host" placeholder="192.168.1.1" class="w-full" />
-              </UFormField>
-              <UFormField label="Display name">
-                <UInput v-model="device.displayName" placeholder="Main router" class="w-full" />
-              </UFormField>
-              <UFormField label="SNMP community" :help="device.communityConfigured ? 'Leave blank to keep the current value.' : 'Required to connect to this device.'">
-                <UInput v-model="device.community" type="password" autocomplete="new-password" class="w-full" />
-              </UFormField>
-              <UFormField label="Interfaces" help="Comma-separated; leave blank to monitor all interfaces.">
-                <UInput v-model="device.interfacesText" placeholder="wan, lan" class="w-full" />
-              </UFormField>
-            </div>
-          </div>
-          <UButton type="button" color="neutral" variant="outline" @click="addDevice">
-            Add SNMP device
-          </UButton>
-        </div>
-      </UCard>
-
-      <UCard>
-        <template #header>
-          <div>
-            <h2 class="font-semibold">
               Speed Tests
             </h2>
             <p class="text-sm text-muted">
@@ -223,6 +173,56 @@ async function signOut() {
               class="w-full sm:max-w-md"
             />
           </UFormField>
+        </div>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <div>
+            <h2 class="font-semibold">
+              Bandwidth Monitoring
+            </h2>
+            <p class="text-sm text-muted">
+              Collect interface throughput from supported firewalls.
+            </p>
+          </div>
+        </template>
+        <div class="space-y-5">
+          <UAlert
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-info"
+            title="pfSense and OPNsense only"
+            description="SNMP bandwidth monitoring currently supports pfSense and OPNsense firewalls only."
+          />
+          <USwitch v-model="settings.features.bandwidth" label="Enable bandwidth monitoring" />
+          <div v-for="(device, index) in devices" :key="index" class="space-y-4 rounded-lg border border-default p-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-medium">
+                Device {{ index + 1 }}
+              </h3>
+              <UButton type="button" color="neutral" variant="ghost" @click="removeDevice(index)">
+                Remove
+              </UButton>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <UFormField label="Host">
+                <UInput v-model="device.host" placeholder="192.168.1.1" class="w-full" />
+              </UFormField>
+              <UFormField label="Display name">
+                <UInput v-model="device.displayName" placeholder="Main router" class="w-full" />
+              </UFormField>
+              <UFormField label="SNMP community" :help="device.communityConfigured ? 'Leave blank to keep the current value.' : 'Required to connect to this device.'">
+                <UInput v-model="device.community" type="password" autocomplete="new-password" class="w-full" />
+              </UFormField>
+              <UFormField label="Interfaces" help="Comma-separated; leave blank to monitor all interfaces.">
+                <UInput v-model="device.interfacesText" placeholder="wan, lan" class="w-full" />
+              </UFormField>
+            </div>
+          </div>
+          <UButton type="button" color="neutral" variant="outline" @click="addDevice">
+            Add SNMP device
+          </UButton>
         </div>
       </UCard>
 

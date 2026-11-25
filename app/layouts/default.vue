@@ -9,14 +9,14 @@ const { data: featureData } = await useFetch<{ features: { bandwidth: boolean, s
 const items = computed<NavigationMenuItem[]>(() => {
   const features = featureData.value?.features
   return [
-    ...(features?.bandwidth
-      ? [
-          { label: 'Bandwidth', to: '/bandwidths', active: route.path === '/bandwidths' },
-        ]
-      : []),
     ...(features?.speedtest
       ? [
           { label: 'Speed Tests', to: '/speedtest-results', active: route.path === '/speedtest-results' },
+        ]
+      : []),
+    ...(features?.bandwidth
+      ? [
+          { label: 'Bandwidth', to: '/bandwidths', active: route.path === '/bandwidths' },
         ]
       : []),
     {

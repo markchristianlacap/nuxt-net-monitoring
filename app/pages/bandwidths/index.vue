@@ -98,7 +98,6 @@ const columns: TableColumn<any>[] = [
         :data="tableData"
         :columns="columns"
         class="min-w-[600px]"
-        :class="TABLE_CLASSES"
       />
     </div>
 

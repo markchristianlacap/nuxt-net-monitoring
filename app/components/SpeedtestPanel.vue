@@ -95,7 +95,7 @@ async function stopTest() {
 <template>
   <UCard>
     <template #header>
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 class="font-semibold text-highlighted">
             Speedtest
@@ -103,7 +103,7 @@ async function stopTest() {
           <p class="mt-1 text-sm text-muted">
             Manual and scheduled tests share one live run.
           </p>
-          <div class="mt-3 flex flex-wrap gap-2">
+          <div class="mt-2 flex flex-wrap gap-2">
             <UBadge v-if="status?.running" color="success" variant="subtle" icon="i-lucide-loader-circle" class="animate-pulse">
               Running
             </UBadge>
@@ -221,7 +221,7 @@ async function stopTest() {
 
         <dl class="grid grid-cols-2 gap-x-5 gap-y-3 text-sm">
           <div>
-            <dt class="text-muted">
+            <dt class="font-medium text-blue-700 dark:text-blue-300">
               Download
             </dt>
             <dd class="mt-0.5 font-semibold tabular-nums text-blue-700 dark:text-blue-300">
@@ -229,7 +229,7 @@ async function stopTest() {
             </dd>
           </div>
           <div>
-            <dt class="text-muted">
+            <dt class="font-medium text-green-700 dark:text-green-300">
               Upload
             </dt>
             <dd class="mt-0.5 font-semibold tabular-nums text-green-700 dark:text-green-300">
@@ -237,7 +237,7 @@ async function stopTest() {
             </dd>
           </div>
           <div>
-            <dt class="text-muted">
+            <dt class="font-medium text-amber-700 dark:text-amber-300">
               Latency
             </dt>
             <dd class="mt-0.5 font-semibold tabular-nums text-default">
@@ -245,7 +245,7 @@ async function stopTest() {
             </dd>
           </div>
           <div>
-            <dt class="text-muted">
+            <dt class="font-medium text-violet-700 dark:text-violet-300">
               Provider
             </dt>
             <dd class="mt-0.5 truncate font-medium text-default" :title="currentTest.isp ?? undefined">
@@ -253,7 +253,7 @@ async function stopTest() {
             </dd>
           </div>
           <div v-if="currentTest.publicIp" class="col-span-2 min-w-0">
-            <dt class="text-muted">
+            <dt class="font-medium text-primary">
               Public IP
             </dt>
             <dd class="mt-0.5 break-all font-medium text-default">
@@ -276,7 +276,7 @@ async function stopTest() {
 
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
-          <p class="text-sm text-muted">
+          <p class="text-sm font-medium text-primary">
             Next run
           </p>
           <p class="mt-1 font-medium text-default">
@@ -284,7 +284,7 @@ async function stopTest() {
           </p>
         </div>
         <div>
-          <p class="text-sm text-muted">
+          <p class="text-sm font-medium text-amber-700 dark:text-amber-300">
             Last test attempt
           </p>
           <div v-if="status.lastAttempt" class="mt-1 flex flex-wrap items-center gap-2">
@@ -302,7 +302,7 @@ async function stopTest() {
       </div>
 
       <div>
-        <p class="text-sm text-muted">
+        <p class="text-sm font-medium text-violet-700 dark:text-violet-300">
           Run order
         </p>
         <ol class="mt-2 flex flex-wrap gap-2">

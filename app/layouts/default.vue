@@ -40,7 +40,7 @@ const items = computed<NavigationMenuItem[]>(() => {
       </template>
     </UHeader>
     <UMain>
-      <UContainer class="py-8 sm:py-12">
+      <UContainer class="py-6 sm:py-8">
         <slot />
       </UContainer>
     </UMain>

@@ -14,7 +14,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="grid w-full grid-cols-1 gap-3 sm:flex sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">
+  <div class="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-row sm:flex-wrap sm:items-end">
     <slot name="filter" />
     <CommonDateRange
       :start="props.start"

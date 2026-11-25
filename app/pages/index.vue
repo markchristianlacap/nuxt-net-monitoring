@@ -26,7 +26,7 @@ watch(tabs, (availableTabs) => {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-6">
     <UPageHeader
       title="Network overview"
       description="Live bandwidth and internet performance from your monitored infrastructure."

@@ -134,11 +134,18 @@ async function signOut() {
               SNMP bandwidth monitoring
             </h2>
             <p class="text-sm text-muted">
-              Collect interface throughput from SNMP-enabled devices.
+              Collect interface throughput from supported firewalls.
             </p>
           </div>
         </template>
         <div class="space-y-5">
+          <UAlert
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-info"
+            title="pfSense and OPNsense only"
+            description="SNMP bandwidth monitoring currently supports pfSense and OPNsense firewalls only."
+          />
           <USwitch v-model="settings.features.bandwidth" label="Enable bandwidth monitoring" />
           <div v-for="(device, index) in devices" :key="index" class="space-y-4 rounded-lg border border-default p-4">
             <div class="flex items-center justify-between">

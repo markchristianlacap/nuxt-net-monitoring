@@ -1,35 +1,7 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
-
 const title = 'Nuxt Net Monitoring'
 const description = 'Nuxt Net Monitoring - Real-time network bandwidth and speed-test monitoring'
 
-const route = useRoute()
-const isAuthPage = computed(() => ['/login', '/setup'].includes(route.path))
-const { data: featureData } = await useFetch<{ features: { bandwidth: boolean, speedtest: boolean } }>('/api/features', {
-  key: 'app-features',
-})
-
-const items = computed<NavigationMenuItem[]>(() => {
-  const features = featureData.value?.features
-  return [
-    ...(features?.bandwidth
-      ? [
-          { label: 'Bandwidth Results', to: '/bandwidths', active: route.path === '/bandwidths' },
-        ]
-      : []),
-    ...(features?.speedtest
-      ? [
-          { label: 'Speedtest Results', to: '/speedtest-results', active: route.path === '/speedtest-results' },
-        ]
-      : []),
-    {
-      label: 'Settings',
-      to: '/admin',
-      active: route.path.startsWith('/admin'),
-    },
-  ]
-})
 useSeoMeta({
   title,
   description,
@@ -48,22 +20,8 @@ useHead({
 
 <template>
   <UApp>
-    <UHeader :title="title" :toggle="!isAuthPage">
-      <template #title>
-        <BrandLogo :title="title" />
-      </template>
-      <template v-if="!isAuthPage" #right>
-        <UNavigationMenu :items="items" class="hidden md:block" />
-        <UColorModeSelect size="sm" aria-label="Color theme" />
-      </template>
-      <template v-if="!isAuthPage" #body>
-        <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
-      </template>
-    </UHeader>
-    <UMain>
-      <UContainer class="py-6 sm:py-8">
-        <NuxtPage />
-      </UContainer>
-    </UMain>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </UApp>
 </template>

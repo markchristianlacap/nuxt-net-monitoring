@@ -93,16 +93,13 @@ async function stopTest() {
 </script>
 
 <template>
-  <UCard class="monitor-surface rounded-xl">
+  <UCard>
     <template #header>
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-gauge" class="size-5 text-primary" aria-hidden="true" />
-            <h2 class="font-semibold text-highlighted">
-              Speed-test console
-            </h2>
-          </div>
+          <h2 class="font-semibold text-highlighted">
+            Speedtest
+          </h2>
           <p class="mt-1 text-sm text-muted">
             Manual and scheduled tests share one live run.
           </p>

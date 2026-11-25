@@ -60,8 +60,8 @@ const columns: TableColumn<any>[] = [
 
 <template>
   <div class="space-y-6">
-    <CommonPageHeader title="Speedtest Results Log">
-      <template #actions>
+    <UPageHeader title="Speedtest Results Log">
+      <template #links>
         <CommonResultsFilters
           v-model:start="query.start"
           v-model:end="query.end"
@@ -73,7 +73,7 @@ const columns: TableColumn<any>[] = [
           </template>
         </CommonResultsFilters>
       </template>
-    </CommonPageHeader>
+    </UPageHeader>
 
     <SpeedtestChart :start="query.start" :end="query.end" :network-interface="query.networkInterface" />
 

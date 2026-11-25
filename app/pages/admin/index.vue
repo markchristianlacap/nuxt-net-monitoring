@@ -113,19 +113,19 @@ async function signOut() {
 
 <template>
   <div class="mx-auto max-w-4xl space-y-6">
-    <CommonPageHeader
+    <UPageHeader
       title="Monitoring settings"
       description="Choose which monitoring features run and configure their sources."
     >
-      <template #actions>
+      <template #links>
         <UButton variant="outline" class="self-start sm:self-auto" @click="signOut">
           Sign out
         </UButton>
       </template>
-    </CommonPageHeader>
+    </UPageHeader>
 
     <form class="space-y-6 pb-8" @submit.prevent="saveSettings">
-      <UCard class="monitor-surface rounded-xl">
+      <UCard>
         <template #header>
           <div>
             <h2 class="font-semibold">
@@ -175,7 +175,7 @@ async function signOut() {
         </div>
       </UCard>
 
-      <UCard class="monitor-surface rounded-xl">
+      <UCard>
         <template #header>
           <div>
             <h2 class="font-semibold">

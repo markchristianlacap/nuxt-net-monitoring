@@ -29,11 +29,8 @@ const items = computed<NavigationMenuItem[]>(() => {
 </script>
 
 <template>
-  <div class="monitor-canvas min-h-screen">
-    <UHeader title="Nuxt Net Monitoring" class="border-b border-default bg-default">
-      <template #title>
-        <BrandLogo title="Nuxt Net Monitoring" />
-      </template>
+  <div>
+    <UHeader title="Nuxt Net Monitoring">
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />
         <UColorModeSelect size="sm" aria-label="Color theme" />

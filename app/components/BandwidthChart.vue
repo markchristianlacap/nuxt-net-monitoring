@@ -194,20 +194,12 @@ const option = computed<ECOption>(() => {
 </script>
 
 <template>
-  <div class="monitor-surface mb-5 overflow-hidden rounded-xl">
-    <div class="flex items-center justify-between border-b border-default px-4 py-3">
-      <div>
-        <p class="monitor-label">
-          Historical throughput
-        </p>
-        <h3 class="mt-1 text-lg font-semibold text-highlighted">
-          Bandwidth summary
-        </h3>
-      </div>
-      <UIcon name="i-lucide-activity" class="size-5 text-primary" aria-hidden="true" />
-    </div>
-    <div class="p-4">
-      <VChart :option="option" autoresize :style="{ height: '350px' }" />
-    </div>
-  </div>
+  <UCard class="mb-4">
+    <template #header>
+      <h3 class="text-lg font-semibold text-highlighted">
+        Bandwidth Summary
+      </h3>
+    </template>
+    <VChart :option="option" autoresize :style="{ height: '350px' }" />
+  </UCard>
 </template>

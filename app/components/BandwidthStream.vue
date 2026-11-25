@@ -326,19 +326,16 @@ onBeforeUnmount(() => {
 <template>
   <section class="space-y-6">
     <header class="space-y-1">
-      <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-activity" class="size-5 text-primary" aria-hidden="true" />
-        <h2 class="text-xl font-semibold tracking-tight text-highlighted sm:text-2xl">
-          Bandwidth monitor
-        </h2>
-      </div>
+      <h2 class="text-xl font-semibold tracking-tight text-highlighted sm:text-2xl">
+        Bandwidth Monitor
+      </h2>
       <p class="text-sm text-muted">
         Live throughput monitoring · {{ summary.routers }} {{ summary.routers === 1 ? 'router' : 'routers' }} · {{ summary.interfaces }} {{ summary.interfaces === 1 ? 'interface' : 'interfaces' }}
       </p>
     </header>
     <!-- Router Cards -->
     <div v-if="routers.length > 0" class="grid grid-cols-1 gap-4 2xl:grid-cols-2">
-      <UCard v-for="router in routers" :key="router.host" class="monitor-surface h-full rounded-xl">
+      <UCard v-for="router in routers" :key="router.host" class="h-full">
         <template #header>
           <div class="flex min-w-0 items-start justify-between gap-3">
             <div class="min-w-0">

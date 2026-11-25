@@ -43,7 +43,7 @@ async function createAdmin() {
 
 <template>
   <div class="mx-auto w-full max-w-md space-y-6 py-8 sm:py-12">
-    <CommonPageHeader
+    <UPageHeader
       title="Set up your administrator account"
       description="Create the first admin account. Keep this app on a trusted network until setup is complete."
     />

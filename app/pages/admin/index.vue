@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { MIN_SPEEDTEST_FREQUENCY_SECONDS } from '#shared/types/settings'
-
 definePageMeta({ middleware: 'auth' })
 
 interface AdminSettings extends AppSettings {

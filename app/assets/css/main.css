@@ -4,21 +4,3 @@
 @theme static {
   --font-sans: 'Inter', system-ui, sans-serif;
 }
-
-@layer base {
-  :root {
-    --ui-radius: 0.65rem;
-  }
-
-  body {
-    @apply bg-default text-default antialiased;
-  }
-
-  ::selection {
-    @apply bg-primary/20 text-highlighted;
-  }
-
-  :focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
-  }
-}

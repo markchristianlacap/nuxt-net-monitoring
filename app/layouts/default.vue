@@ -30,23 +30,34 @@ const items = computed<NavigationMenuItem[]>(() => {
 
 <template>
   <UApp>
+    <a href="#main-content" class="skip-link">
+      Skip to main content
+    </a>
     <UHeader>
       <template #title>
-        <div class="flex items-center space-x-2">
-          <span class="text-primary  text-2xl">Nuxt</span>
-          <span class="font-normal">Net Monitor</span>
+        <div class="flex items-center gap-2.5">
+          <span class="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-inverted shadow-sm" aria-hidden="true">
+            N
+          </span>
+          <span class="text-base font-semibold tracking-tight text-highlighted sm:text-lg">
+            Nuxt Net Monitor
+          </span>
         </div>
       </template>
       <template #right>
-        <UNavigationMenu :items="items" class="hidden md:block" />
+        <nav aria-label="Primary navigation" class="hidden md:block">
+          <UNavigationMenu :items="items" />
+        </nav>
         <UColorModeSelect size="sm" aria-label="Color theme" />
       </template>
       <template #body>
-        <UNavigationMenu :items="items" orientation="vertical" />
+        <nav aria-label="Mobile navigation">
+          <UNavigationMenu :items="items" orientation="vertical" />
+        </nav>
       </template>
     </UHeader>
-    <UMain>
-      <UContainer>
+    <UMain id="main-content" class="app-main">
+      <UContainer class="py-6 sm:py-8 lg:py-10">
         <slot />
       </UContainer>
     </UMain>

@@ -77,7 +77,12 @@ const columns: TableColumn<any>[] = [
 
     <SpeedtestChart :start="query.start" :end="query.end" :network-interface="query.networkInterface" />
 
-    <div class="max-w-full overflow-x-auto">
+    <div
+      class="table-region max-w-full overflow-x-auto"
+      tabindex="0"
+      role="region"
+      aria-label="Speed test result history"
+    >
       <u-table
         :data="data?.data"
         :columns="columns"

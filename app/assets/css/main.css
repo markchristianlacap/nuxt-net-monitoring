@@ -1,2 +1,50 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+:root {
+  scrollbar-gutter: stable;
+}
+
+body {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ui-bg) 92%, var(--ui-primary) 8%) 0, var(--ui-bg) 22rem);
+}
+
+.app-main {
+  min-block-size: calc(100dvh - 4rem);
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  background: var(--ui-bg);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ui-text-highlighted);
+  box-shadow: 0 0 0 2px var(--ui-primary);
+  transition: transform 160ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: none;
+}
+
+.table-region:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 3px;
+}
+
+.empty-state {
+  padding-block: 3rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
+}

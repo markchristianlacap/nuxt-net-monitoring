@@ -26,7 +26,18 @@ watch(tabs, (availableTabs) => {
 </script>
 
 <template>
-  <div>
+  <div class="space-y-6">
+    <UPageHeader
+      title="Network overview"
+      description="A live view of bandwidth, connectivity, and speed-test activity across your infrastructure."
+    >
+      <template #links>
+        <UBadge color="success" variant="subtle" icon="i-lucide-radio-tower">
+          Live monitoring
+        </UBadge>
+      </template>
+    </UPageHeader>
+
     <div v-if="tabs.length > 1" class="flex justify-center my-6">
       <u-radio-group
         v-model="tab"
@@ -41,8 +52,14 @@ watch(tabs, (availableTabs) => {
     <div>
       <BandwidthStream v-if="tab === 'bandwidths' && data?.features.bandwidth" />
       <SpeedtestPanel v-if="tab === 'speedtest' && data?.features.speedtest" />
-      <UCard v-if="!tabs.length" class="text-center mt-6">
-        <p>No monitoring features are enabled.</p>
+      <UCard v-if="!tabs.length" class="empty-state text-center">
+        <UIcon name="i-lucide-gauge" class="mx-auto mb-3 size-8 text-muted" aria-hidden="true" />
+        <h2 class="font-semibold text-highlighted">
+          Monitoring is not configured
+        </h2>
+        <p class="mx-auto mt-1 max-w-md text-sm text-muted">
+          Enable a monitoring source to start collecting network telemetry.
+        </p>
         <UButton class="mt-4" to="/admin">
           Configure monitoring
         </UButton>

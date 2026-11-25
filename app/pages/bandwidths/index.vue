@@ -93,7 +93,12 @@ const columns: TableColumn<any>[] = [
 
     <BandwidthChart :start="query.start" :end="query.end" :host="query.host" />
 
-    <div class="max-w-full overflow-x-auto">
+    <div
+      class="table-region max-w-full overflow-x-auto"
+      tabindex="0"
+      role="region"
+      aria-label="Bandwidth measurement history"
+    >
       <u-table
         :data="tableData"
         :columns="columns"

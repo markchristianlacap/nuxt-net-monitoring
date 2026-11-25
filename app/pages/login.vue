@@ -44,31 +44,52 @@ async function signIn() {
       <div class="relative">
         <BrandLogo title="Nuxt Net Monitoring" />
         <h1 class="mt-16 max-w-md text-4xl font-semibold leading-tight tracking-tight text-white">
-          See the signal behind your network.
+          One clear view of your network performance.
         </h1>
         <p class="mt-5 max-w-sm text-base leading-7 text-slate-300">
-          A focused control room for bandwidth trends, device health, and internet speed tests.
+          Monitor interface throughput, review speed-test results, and check device reachability from one focused console.
         </p>
       </div>
 
-      <div class="relative mt-16 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-        <div class="mb-4 flex items-center justify-between text-xs font-medium text-slate-300">
-          <span>Network activity</span>
-          <span class="inline-flex items-center gap-1.5 text-green-300"><span class="size-1.5 rounded-full bg-green-400" /> Live</span>
+      <div class="relative mt-16 space-y-3" aria-label="Monitoring features">
+        <div class="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-400/10 text-green-300">
+            <UIcon name="i-lucide-activity" class="size-5" />
+          </div>
+          <div>
+            <p class="text-sm font-medium text-white">
+              Bandwidth monitoring
+            </p>
+            <p class="mt-0.5 text-xs text-slate-400">
+              SNMP interface throughput
+            </p>
+          </div>
         </div>
-        <svg class="h-24 w-full" viewBox="0 0 420 96" fill="none" role="img" aria-label="Network activity line visualization">
-          <path d="M0 64h38l12-20 14 36 18-56 18 40h30l14-18 17 10 18-30 20 52 16-28 18 14h35l16-18 14 10 15-24 19 42 17-28 18 18h38" stroke="#00DC82" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M0 64h38l12-20 14 36 18-56 18 40h30l14-18 17 10 18-30 20 52 16-28 18 14h35l16-18 14 10 15-24 19 42 17-28 18 18h38V96H0V64Z" fill="url(#activity-fill)" opacity=".18" />
-          <defs>
-            <linearGradient id="activity-fill" x1="210" y1="8" x2="210" y2="96" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#00DC82" />
-              <stop offset="1" stop-color="#00DC82" stop-opacity="0" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <div class="mt-3 flex items-center justify-between border-t border-white/10 pt-3 text-xs text-slate-400">
-          <span>SNMP interface throughput</span>
-          <span>Last 60 sec</span>
+        <div class="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-400/10 text-green-300">
+            <UIcon name="i-lucide-gauge" class="size-5" />
+          </div>
+          <div>
+            <p class="text-sm font-medium text-white">
+              Speed-test results
+            </p>
+            <p class="mt-0.5 text-xs text-slate-400">
+              Scheduled tests and history
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-400/10 text-green-300">
+            <UIcon name="i-lucide-router" class="size-5" />
+          </div>
+          <div>
+            <p class="text-sm font-medium text-white">
+              Device status
+            </p>
+            <p class="mt-0.5 text-xs text-slate-400">
+              Reachability at a glance
+            </p>
+          </div>
         </div>
       </div>
     </section>

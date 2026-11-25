@@ -26,12 +26,8 @@ watch(tabs, (availableTabs) => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <UPageHeader
-      title="Network Overview"
-      description="Live bandwidth and internet performance from your monitored infrastructure."
-    />
-    <div v-if="tabs.length > 1" class="flex justify-center">
+  <div>
+    <div v-if="tabs.length > 1" class="flex justify-center my-6">
       <u-radio-group
         v-model="tab"
         variant="table"

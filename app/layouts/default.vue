@@ -29,20 +29,26 @@ const items = computed<NavigationMenuItem[]>(() => {
 </script>
 
 <template>
-  <div>
-    <UHeader title="Nuxt Net Monitoring">
+  <UApp>
+    <UHeader>
+      <template #title>
+        <div class="flex items-center space-x-2">
+          <span class="text-primary  text-2xl">Nuxt</span>
+          <span class="font-normal">Net Monitor</span>
+        </div>
+      </template>
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />
         <UColorModeSelect size="sm" aria-label="Color theme" />
       </template>
       <template #body>
-        <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
+        <UNavigationMenu :items="items" orientation="vertical" />
       </template>
     </UHeader>
     <UMain>
-      <UContainer class="py-6 sm:py-8">
+      <UContainer>
         <slot />
       </UContainer>
     </UMain>
-  </div>
+  </UApp>
 </template>

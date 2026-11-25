@@ -112,13 +112,13 @@ async function signOut() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl space-y-6">
+  <div class="space-y-6">
     <UPageHeader
       title="Monitoring Settings"
       description="Choose which monitoring features run and configure their sources."
     >
       <template #links>
-                <UButton color="neutral" variant="outline" class="self-start sm:self-auto" @click="signOut">
+        <UButton color="error" variant="outline" class="self-start sm:self-auto" @click="signOut">
           Sign out
         </UButton>
       </template>

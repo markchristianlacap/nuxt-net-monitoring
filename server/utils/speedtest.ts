@@ -355,7 +355,10 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
       if (!output.trim())
         return reject(new Error('No output from speedtest'))
       try {
-        resolve(JSON.parse(output) as SpeedtestServer[])
+        const serverList = JSON.parse(output) as { servers?: unknown } | null
+        if (!serverList || !Array.isArray(serverList.servers))
+          return reject(new Error('Invalid server list response from Speedtest CLI'))
+        resolve(serverList.servers as SpeedtestServer[])
       }
       catch (err) {
         reject(err)

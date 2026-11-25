@@ -88,10 +88,10 @@ async function signIn() {
         <UCard class="mt-8">
           <form class="space-y-5" @submit.prevent="signIn">
             <UFormField label="Username">
-              <UInput v-model="username" autocomplete="username" required class="w-full" />
+              <UInput v-model="username" autocomplete="username" placeholder="Enter your username" required class="w-full" />
             </UFormField>
             <UFormField label="Password">
-              <UInput v-model="password" type="password" autocomplete="current-password" required class="w-full" />
+              <UInput v-model="password" type="password" autocomplete="current-password" placeholder="Enter your password" required class="w-full" />
             </UFormField>
             <p v-if="errorMessage" class="text-sm text-error" role="alert">
               {{ errorMessage }}

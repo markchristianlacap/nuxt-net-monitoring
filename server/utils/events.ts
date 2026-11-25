@@ -1,7 +1,6 @@
 import { EventEmitter } from 'node:events'
 
 interface AppEvents {
-  'ping:update': PingResult
   'bandwidth:update': BandwidthResult
   'bandwidth:device-status': DeviceStatus
 }

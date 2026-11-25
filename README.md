@@ -6,7 +6,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat\&logo=postgresql\&logoColor=white)](https://www.postgresql.org/)
 [![Speedtest CLI](https://img.shields.io/badge/Speedtest%20CLI-2C3E50?style=flat\&logo=Speedtest%20CLI\&logoColor=white)](https://www.speedtest.net/apps/cli)
 
-A **real-time network monitoring system** built with Nuxt.js that continuously monitors network performance. Track ping latency, SNMP bandwidth from network devices (e.g., pfSense, OPNsense), and run internet speed tests with live visualizations and historical data storage.
+A **real-time network monitoring system** built with Nuxt.js that continuously monitors network performance. Track SNMP bandwidth from network devices (e.g., pfSense, OPNsense), and run internet speed tests with live visualizations and historical data storage.
 
 ## 📋 Table of Contents
 
@@ -17,7 +17,6 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 - [Usage](#-usage)
 - [Configuration](#-configuration)
   - [SNMP Device and Interface Configuration](#snmp-device-and-interface-configuration)
-  - [Multiple Ping Hosts](#multiple-ping-hosts)
 - [Tech Stack](#️-tech-stack)
 - [Architecture](#️-architecture)
   - [How It Works](#how-it-works)
@@ -32,7 +31,6 @@ A **real-time network monitoring system** built with Nuxt.js that continuously m
 ## 🎯 Features
 
 ### Real-Time Monitoring
-* **Ping Monitoring**: Optional continuous ping monitoring with 1-second intervals. Configure hosts in the dashboard. Each host runs in its own process. Live data is streamed via SSE and 60-second averages are saved to the database
 * **Bandwidth Monitoring**: Optional real-time SNMP monitoring of network interface traffic. Configure devices and interfaces in the dashboard. The app auto-discovers interface details, monitors 64-bit counters, and saves 60-second averages
 * **Live Streaming**: Server-sent events (SSE) for real-time data updates without page refresh
 
@@ -145,7 +143,7 @@ For development or custom setups, you can install and run the application manual
 
 #### Prerequisites
 1. Node.js (v18+), pnpm (v10.18.3+), PostgreSQL (v12+)
-2. `ping`, SNMP access, and/or Ookla Speedtest CLI only for the features you enable
+2. SNMP access and/or Ookla Speedtest CLI only for the features you enable
 
 #### Steps
 
@@ -220,35 +218,27 @@ The application will be available at `http://localhost:3000`
 
 ### Authentication
 
-On first launch, visit `/setup` to create the first administrator account. This route closes once the account is created. Keep the application private or on a trusted network until setup is complete. The password is stored as a hash in PostgreSQL; subsequent access uses `/login`. Configure monitoring features, ping hosts, SNMP devices, and speed-test schedules at `/admin` (**Monitoring settings**).
+On first launch, visit `/setup` to create the first administrator account. This route closes once the account is created. Keep the application private or on a trusted network until setup is complete. The password is stored as a hash in PostgreSQL; subsequent access uses `/login`. Configure monitoring features, SNMP devices, and speed-test schedules at `/admin` (**Monitoring settings**).
 
 ### Main Dashboard (`/`)
 
-The homepage displays real-time monitoring with three tabs:
+The homepage displays real-time monitoring with two tabs:
 
-1. **Ping Latency Tab**
-   - Live streaming ping data every second
-   - Monitor multiple hosts with color-coded visualization
-   - Real-time latency graphs and status indicators per host
-   - Summary statistics: total/online/offline hosts, average/peak latency
-   - 60-second averages stored in database
-
-2. **Bandwidth Tab**
+1. **Bandwidth Tab**
    - Live SNMP bandwidth monitoring every second
    - Monitor multiple interfaces with color-coded visualization
    - Individual interface metrics: upload/download speeds in Mbps
    - 60-second averages stored in database
 
-3. **Speedtest Tab**
+2. **Speedtest Tab**
    - Live phase, download/upload speeds, and latency for the scheduled test in progress
    - Scheduled interface, next run, and most recent result status
    - `/speedtest` redirects to this dashboard tab
 
 ### Historical Data
 
-1. **Ping Results** (`/pings`) - Historical ping data with CSV export
-2. **Bandwidth Results** (`/bandwidths`) - Historical bandwidth measurements with CSV export
-3. **Speed Test Results** (`/speedtest-results`) - Past speed test history with CSV export
+1. **Bandwidth Results** (`/bandwidths`) - Historical bandwidth measurements with CSV export
+2. **Speed Test Results** (`/speedtest-results`) - Past speed test history with CSV export
 
 ---
 
@@ -289,12 +279,6 @@ snmpwalk -v2c -c your-community-string your-host-ip 1.3.6.1.2.1.31.1.1.1.1
 
 The application automatically handles 64-bit counter values, converts to Mbps, maintains separate tracking per device/interface pair, and provides color-coded visualization. Interfaces with the same name on different devices remain distinct.
 
-### Multiple Ping Hosts
-
-Enable ping monitoring in **Monitoring settings** (`/admin`) and enter one hostname or IP address per line.
-
-Features: Independent monitoring per host, color-coded visualization, individual statistics, overall summary with total/online/offline hosts.
-
 ### Speed Test Frequency
 
 Enable scheduled speed tests in **Monitoring settings** (`/admin`), choose to run them every 1 hour, 3 hours, 12 hours, or 7 days, or enter a custom frequency from 1 hour to 7 days. Optionally select one or more local interfaces for scheduled runs; tests run one at a time in selection order. The live test page also lets you select an interface for each run. Available interfaces are those visible to the app process; in Docker, this usually means the container's interfaces, not every host adapter.
@@ -320,12 +304,11 @@ The speed test will automatically run at the specified interval. You can still t
 * **Runtime**: Nuxt Nitro server (Node.js)
 * **Database**: PostgreSQL with Drizzle ORM
 * **SNMP Library**: net-snmp for device communication
-* **Protocols**: ICMP Ping, SNMP v2c, session-based admin authentication
+* **Protocols**: SNMP v2c, session-based admin authentication
 
 ### External Dependencies
 * **Speedtest CLI**: Ookla Speedtest CLI with retry logic
 * **SNMP**: SNMP-enabled network device (e.g., pfSense, OPNsense router)
-* **System Commands**: Native `ping` command
 ---
 
 ## 🏗️ Architecture
@@ -334,19 +317,9 @@ The speed test will automatically run at the specified interval. You can still t
 
 #### Background Processes
 
-The application has three optional background monitoring processes via Nitro plugins. Each starts only when enabled in dashboard settings:
+The application has two optional background monitoring processes via Nitro plugins. Each starts only when enabled in dashboard settings:
 
-1. **Ping Monitor** (`server/plugins/ping.server.ts`)
-   - Spawns independent `ping` processes for each configured host when ping monitoring is enabled
-   - Loads hosts from PostgreSQL settings and applies dashboard changes while running
-   - Each host runs in its own child process with separate stdout monitoring
-   - Parses latency from ping output using regex pattern matching (`time=([\d.]+) ms`)
-   - Streams real-time data via events system and SSE to frontend
-   - Collects latency readings in memory arrays per host
-   - Calculates and stores 60-second averages in PostgreSQL `pings` table
-   - Handles ping process errors and restart logic
-
-2. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
+1. **Bandwidth Monitor** (`server/plugins/bandwidth.server.ts`)
    - Uses precise timing helper (`runEverySecond`) for consistent 1-second intervals
    - Auto-discovers and caches interface information for 30 seconds
    - Monitors interfaces configured for each enabled SNMP device in PostgreSQL settings
@@ -357,7 +330,7 @@ The application has three optional background monitoring processes via Nitro plu
    - Streams real-time bandwidth data via events to frontend
    - Stores 60-second averages in `bandwidths` table with host, display name, and interface identification
 
-3. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
+2. **Speed Test Scheduler** (`server/plugins/speedtest.server.ts`)
    - Runs Ookla Speedtest CLI at configurable intervals using `runEveryInterval` timing helper
    - Runs only when enabled; frequency is loaded from PostgreSQL settings (default: 3600 seconds/1 hour)
    - Executes `speedtest -f jsonl --accept-license` command
@@ -371,7 +344,6 @@ The application has three optional background monitoring processes via Nitro plu
 - **Server-Sent Events (SSE)**: Efficient live data streaming using Nuxt's event system
 - **Event-driven Architecture**: Monitoring data and shared speed-test status are broadcast to connected clients
 - **Stream Endpoints**:
-  - `/api/pings/stream` - Live ping data stream for all monitored hosts (1-second updates)
   - `/api/bandwidths/stream` - Live bandwidth stream for all monitored interfaces (1-second updates)
   - `/api/speedtest` (POST) - Starts a manual test; returns `202` or `409` if another test is running
   - `/api/speedtest/stop` (POST) - Cancels an active manual test
@@ -384,12 +356,10 @@ The application has three optional background monitoring processes via Nitro plu
 The application uses a two-tier approach for optimal performance:
 
 **Real-Time Collection** (Every 1 second):
-- Ping latency measurements for each configured host
 - SNMP bandwidth readings for each configured interface
 - Streamed to frontend via SSE for live visualization with real-time updates
 
 **Database Storage** (Every 60 seconds):
-- Averaged ping latency over the past minute per host
 - Averaged bandwidth readings over the past minute per interface
 - Reduces database writes while maintaining data accuracy
 - Historical data remains accessible for analysis and export
@@ -401,7 +371,6 @@ This approach provides real-time monitoring responsiveness while efficiently man
 
 All data is stored in PostgreSQL using Drizzle ORM:
 
-- **pings**: `id`, `host`, `status`, `latency`, `timestamp`
 - **bandwidths**: `id`, `host`, `displayName`, `interface`, `inMbps`, `outMbps`, `timestamp`
 - **speedtest_results**: `id`, `download`, `upload`, `latency`, `isp`, `ip`, `url`, `timestamp`
 
@@ -469,7 +438,7 @@ nuxt-net-monitoring/
 │   ├── api/               # API endpoints with SSE streaming
 │   ├── db/                # Drizzle schema, client, and migrations
 │   ├── middleware/        # Server middleware (session authentication and feature gates)
-│   ├── plugins/           # Background processes (ping, bandwidth, speedtest)
+│   ├── plugins/           # Background processes (bandwidth, speedtest)
 │   └── utils/             # Utility functions (timing, SNMP, CSV export)
 ├── shared/                # Shared types and utilities between client/server
 │   ├── types/             # TypeScript interfaces and types
@@ -523,10 +492,6 @@ sudo apt-get install speedtest
 - Verify PostgreSQL is running and credentials are correct
 - Ensure database exists: `psql -U postgres -l`
 - Run migrations: `pnpm run db:migrate`
-
-**Ping Not Working**
-- Check target host is reachable and `ping` command is available
-- Some systems require elevated privileges for ICMP
 
 ---
 

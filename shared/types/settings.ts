@@ -10,12 +10,8 @@ export interface SnmpDeviceConfig {
 
 export interface AppSettings {
   features: {
-    ping: boolean
     bandwidth: boolean
     speedtest: boolean
-  }
-  ping: {
-    hosts: string[]
   }
   snmp: {
     devices: SnmpDeviceConfig[]
@@ -28,12 +24,8 @@ export interface AppSettings {
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   features: {
-    ping: false,
     bandwidth: false,
     speedtest: false,
-  },
-  ping: {
-    hosts: [],
   },
   snmp: {
     devices: [],

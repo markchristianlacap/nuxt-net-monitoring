@@ -14,8 +14,7 @@ const errorMessage = ref('')
 const { data } = await useFetch<{ settings: AdminSettings }>('/api/admin/settings')
 const { data: speedtestInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/admin/speedtest-interfaces')
 const settings = reactive<AppSettings>(data.value?.settings ?? {
-  features: { ping: false, bandwidth: false, speedtest: false },
-  ping: { hosts: [] },
+  features: { bandwidth: false, speedtest: false },
   snmp: { devices: [] },
   speedtest: { frequencySeconds: 3600, localInterfaceNames: [] },
 })
@@ -42,7 +41,6 @@ const selectedSpeedtestFrequency = computed<number | 'custom'>({
       settings.speedtest.frequencySeconds = value
   },
 })
-const pingHostsText = ref(settings.ping.hosts.join('\n'))
 const scheduledInterfaces = ref([...settings.speedtest.localInterfaceNames])
 const scheduledInterfaceItems = computed(() => [
   ...(speedtestInterfaces.value ?? []).map(item => ({
@@ -86,9 +84,6 @@ async function saveSettings() {
           speedtest: {
             ...settings.speedtest,
             localInterfaceNames: scheduledInterfaces.value,
-          },
-          ping: {
-            hosts: pingHostsText.value.split('\n'),
           },
           snmp: {
             devices: devices.value.map(device => ({
@@ -222,25 +217,6 @@ async function signOut() {
               placeholder="System default (no interfaces selected)"
               class="w-full sm:max-w-md"
             />
-          </UFormField>
-        </div>
-      </UCard>
-
-      <UCard>
-        <template #header>
-          <div>
-            <h2 class="font-semibold">
-              Ping monitoring
-            </h2>
-            <p class="text-sm text-muted">
-              Check hosts continuously and save one-minute averages.
-            </p>
-          </div>
-        </template>
-        <div class="space-y-4">
-          <USwitch v-model="settings.features.ping" label="Enable ping monitoring" />
-          <UFormField label="Hosts" help="Enter one hostname or IP address per line.">
-            <UTextarea v-model="pingHostsText" :rows="4" class="w-full" placeholder="1.1.1.1&#10;example.com" />
           </UFormField>
         </div>
       </UCard>

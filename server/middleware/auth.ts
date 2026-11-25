@@ -9,12 +9,10 @@ const PUBLIC_PATHS = new Set([
 ])
 
 const FEATURE_PATHS = [
-  { prefix: '/api/pings', feature: 'ping' },
   { prefix: '/api/bandwidths', feature: 'bandwidth' },
   { prefix: '/api/interfaces', feature: 'bandwidth' },
   { prefix: '/api/speedtest', feature: 'speedtest' },
   { prefix: '/api/speedtest-results', feature: 'speedtest' },
-  { prefix: '/pings', feature: 'ping' },
   { prefix: '/bandwidths', feature: 'bandwidth' },
   { prefix: '/speedtest', feature: 'speedtest' },
   { prefix: '/speedtest-results', feature: 'speedtest' },

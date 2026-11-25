@@ -2,11 +2,11 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const title = 'Nuxt Net Monitoring'
-const description = 'Nuxt Net Monitoring - Real-time Latency Monitor, PfSense, and Bandwidth Monitor'
+const description = 'Nuxt Net Monitoring - Real-time network bandwidth and speed-test monitoring'
 
 const route = useRoute()
 const isAuthPage = computed(() => ['/login', '/setup'].includes(route.path))
-const { data: featureData } = await useFetch<{ features: { ping: boolean, bandwidth: boolean, speedtest: boolean } }>('/api/features', {
+const { data: featureData } = await useFetch<{ features: { bandwidth: boolean, speedtest: boolean } }>('/api/features', {
   key: 'app-features',
 })
 
@@ -21,11 +21,6 @@ const items = computed<NavigationMenuItem[]>(() => {
     ...(features?.speedtest
       ? [
           { label: 'Speedtest Results', to: '/speedtest-results', active: route.path === '/speedtest-results' },
-        ]
-      : []),
-    ...(features?.ping
-      ? [
-          { label: 'Ping Results', to: '/pings', active: route.path === '/pings' },
         ]
       : []),
     {

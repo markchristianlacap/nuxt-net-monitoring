@@ -68,12 +68,8 @@ export async function getAppSettings(): Promise<AppSettings> {
     ...structuredClone(DEFAULT_APP_SETTINGS),
     ...storedSettings,
     features: {
-      ...DEFAULT_APP_SETTINGS.features,
-      ...storedSettings.features,
-    },
-    ping: {
-      ...DEFAULT_APP_SETTINGS.ping,
-      ...storedSettings.ping,
+      bandwidth: storedSettings.features?.bandwidth ?? DEFAULT_APP_SETTINGS.features.bandwidth,
+      speedtest: storedSettings.features?.speedtest ?? DEFAULT_APP_SETTINGS.features.speedtest,
     },
     snmp: {
       ...DEFAULT_APP_SETTINGS.snmp,
@@ -103,18 +99,13 @@ function validateStringArray(value: unknown, label: string, maxLength: number): 
 }
 
 export function normalizeAppSettings(input: unknown, previous: AppSettings): AppSettings {
-  if (!isRecord(input) || !isRecord(input.features) || !isRecord(input.ping) || !isRecord(input.snmp) || !isRecord(input.speedtest)) {
+  if (!isRecord(input) || !isRecord(input.features) || !isRecord(input.snmp) || !isRecord(input.speedtest)) {
     throw createError({ statusCode: 400, statusMessage: 'Settings have an invalid structure' })
   }
 
   const features = input.features
-  if (![features.ping, features.bandwidth, features.speedtest].every(value => typeof value === 'boolean')) {
+  if (![features.bandwidth, features.speedtest].every(value => typeof value === 'boolean')) {
     throw createError({ statusCode: 400, statusMessage: 'Feature enabled values must be true or false' })
-  }
-
-  const pingHosts = validateStringArray(input.ping.hosts, 'Ping hosts', 128)
-  if (pingHosts.some(host => host.length > 253 || /\s/.test(host))) {
-    throw createError({ statusCode: 400, statusMessage: 'Ping hosts must be valid hostnames or IP addresses' })
   }
 
   if (!Array.isArray(input.snmp.devices) || input.snmp.devices.length > 32) {
@@ -181,20 +172,15 @@ export function normalizeAppSettings(input: unknown, previous: AppSettings): App
   if (typeof frequencySeconds !== 'number' || !Number.isInteger(frequencySeconds) || frequencySeconds < MIN_SPEEDTEST_FREQUENCY_SECONDS || frequencySeconds > 604800) {
     throw createError({ statusCode: 400, statusMessage: 'Speed-test frequency must be between 3600 and 604800 seconds' })
   }
-  if (features.ping && pingHosts.length === 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Add at least one ping host or disable ping monitoring' })
-  }
   if (features.bandwidth && (devices.length === 0 || devices.some(device => !device.community))) {
     throw createError({ statusCode: 400, statusMessage: 'Add an SNMP device with a community string or disable bandwidth monitoring' })
   }
 
   return {
     features: {
-      ping: features.ping as boolean,
       bandwidth: features.bandwidth as boolean,
       speedtest: features.speedtest as boolean,
     },
-    ping: { hosts: pingHosts },
     snmp: { devices },
     speedtest: {
       frequencySeconds,

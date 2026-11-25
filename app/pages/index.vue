@@ -1,13 +1,11 @@
 <script setup lang="ts">
 const route = useRoute()
-const tab = ref<'bandwidths' | 'speedtest' | 'pings'>(
+const tab = ref<'bandwidths' | 'speedtest'>(
   route.query.tab === 'speedtest'
     ? 'speedtest'
-    : route.query.tab === 'pings'
-      ? 'pings'
-      : 'bandwidths',
+    : 'bandwidths',
 )
-const { data } = await useFetch<{ features: { ping: boolean, bandwidth: boolean, speedtest: boolean } }>('/api/features')
+const { data } = await useFetch<{ features: { bandwidth: boolean, speedtest: boolean } }>('/api/features')
 const tabs = computed(() => [
   ...(data.value?.features.bandwidth
     ? [
@@ -19,16 +17,11 @@ const tabs = computed(() => [
         { label: 'Speedtest', value: 'speedtest' as const },
       ]
     : []),
-  ...(data.value?.features.ping
-    ? [
-        { label: 'Ping Latency', value: 'pings' as const },
-      ]
-    : []),
 ])
 
 watch(tabs, (availableTabs) => {
   if (!availableTabs.some(item => item.value === tab.value))
-    tab.value = availableTabs[0]?.value ?? 'pings'
+    tab.value = availableTabs[0]?.value ?? 'bandwidths'
 }, { immediate: true })
 </script>
 
@@ -45,7 +38,6 @@ watch(tabs, (availableTabs) => {
       />
     </div>
     <div>
-      <PingStream v-if="tab === 'pings' && data?.features.ping" />
       <BandwidthStream v-if="tab === 'bandwidths' && data?.features.bandwidth" />
       <SpeedtestPanel v-if="tab === 'speedtest' && data?.features.speedtest" />
       <UCard v-if="!tabs.length" class="text-center">

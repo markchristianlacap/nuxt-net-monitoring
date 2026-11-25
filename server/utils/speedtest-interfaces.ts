@@ -24,18 +24,6 @@ function findSpeedtestInterface(interfaceName: string) {
   return getAvailableSpeedtestInterfaces().find(networkInterface => networkInterface.name === interfaceName)
 }
 
-export function getSpeedtestInterfaceIpAddress(interfaceName: string | null): string | null {
-  if (!interfaceName)
-    return null
-
-  const networkInterface = findSpeedtestInterface(interfaceName)
-  if (!networkInterface) {
-    throw new Error(`Selected network interface "${interfaceName}" is not available to the application`)
-  }
-
-  return networkInterface.ipAddress
-}
-
 export function validateSpeedtestInterface(value: unknown): string | null {
   if (value === undefined || value === null || value === '')
     return null

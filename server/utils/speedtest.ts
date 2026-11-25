@@ -368,9 +368,8 @@ async function executeSpeedtest(
   onEvent?: (event: SpeedtestEvent) => void,
   signal?: AbortSignal,
 ): Promise<SpeedtestResult> {
-  const interfaceIpAddress = getSpeedtestInterfaceIpAddress(interfaceName)
-  const interfaceArgs = interfaceIpAddress
-    ? ['-i', interfaceIpAddress]
+  const interfaceArgs = interfaceName
+    ? ['-I', interfaceName]
     : []
 
   return retry(() => new Promise((resolve, reject) => {

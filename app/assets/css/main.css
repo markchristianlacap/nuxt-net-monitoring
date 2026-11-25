@@ -4,3 +4,29 @@
 @theme static {
   --font-sans: 'Inter', system-ui, sans-serif;
 }
+
+@layer base {
+  :root {
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  html {
+    @apply bg-default;
+  }
+
+  body {
+    @apply bg-default text-default antialiased;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-highlighted;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    caret-color: var(--color-primary-500);
+  }
+}

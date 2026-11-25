@@ -325,7 +325,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="space-y-6">
-    <header class="space-y-1">
+    <header class="space-y-2">
       <h2 class="text-xl font-semibold tracking-tight text-highlighted sm:text-2xl">
         Bandwidth Monitor
       </h2>
@@ -345,8 +345,8 @@ onBeforeUnmount(() => {
               <p v-if="router.displayName !== router.host" class="truncate text-xs text-muted">
                 {{ router.host }}
               </p>
-              <div v-if="router.gateways.length" class="mt-2 flex flex-wrap gap-1.5">
-                <span class="text-xs text-muted">Gateways:</span>
+              <div v-if="router.gateways.length" class="mt-3 flex flex-wrap items-center gap-1.5">
+                <span class="mr-0.5 text-xs font-medium text-muted">Gateways</span>
                 <span
                   v-for="gateway in router.gateways"
                   :key="gateway"
@@ -395,18 +395,18 @@ onBeforeUnmount(() => {
                 {{ stats.status }}
               </span>
             </div>
-            <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:grid-cols-3">
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
               <div class="flex min-w-0 items-baseline justify-between gap-2">
-                <dt class="shrink-0 text-muted" title="Download">
-                  Down
+                <dt class="shrink-0 text-muted" title="Current download">
+                  Download
                 </dt>
                 <dd class="truncate text-right font-semibold tabular-nums text-blue-700 dark:text-blue-300">
                   {{ stats.currentDownload.toFixed(2) }} Mbps
                 </dd>
               </div>
               <div class="flex min-w-0 items-baseline justify-between gap-2">
-                <dt class="shrink-0 text-muted" title="Upload">
-                  Up
+                <dt class="shrink-0 text-muted" title="Current upload">
+                  Upload
                 </dt>
                 <dd class="truncate text-right font-semibold tabular-nums text-red-700 dark:text-red-300">
                   {{ stats.currentUpload.toFixed(2) }} Mbps
@@ -430,7 +430,7 @@ onBeforeUnmount(() => {
               </div>
               <div class="flex min-w-0 items-baseline justify-between gap-2">
                 <dt class="shrink-0 text-muted" title="Peak download">
-                  Peak ↓
+                  Peak down
                 </dt>
                 <dd class="truncate text-right font-semibold tabular-nums text-blue-700 dark:text-blue-400">
                   {{ stats.maxDownload.toFixed(2) }} Mbps
@@ -438,7 +438,7 @@ onBeforeUnmount(() => {
               </div>
               <div class="flex min-w-0 items-baseline justify-between gap-2">
                 <dt class="shrink-0 text-muted" title="Peak upload">
-                  Peak ↑
+                  Peak up
                 </dt>
                 <dd class="truncate text-right font-semibold tabular-nums text-red-700 dark:text-red-400">
                   {{ stats.maxUpload.toFixed(2) }} Mbps

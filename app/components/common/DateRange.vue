@@ -47,7 +47,8 @@ watch(dateRange, () => {
       color="neutral"
       variant="subtle"
       icon="i-lucide-calendar"
-      class="w-full sm:w-auto justify-start"
+      aria-label="Filter by date range"
+      class="w-full justify-start sm:w-auto"
     >
       <template v-if="dateRange?.start">
         <template v-if="dateRange?.end">

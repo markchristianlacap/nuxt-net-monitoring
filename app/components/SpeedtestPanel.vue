@@ -95,7 +95,7 @@ async function stopTest() {
 <template>
   <UCard>
     <template #header>
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 class="font-semibold text-highlighted">
             Speedtest
@@ -103,7 +103,7 @@ async function stopTest() {
           <p class="mt-1 text-sm text-muted">
             Manual and scheduled tests share one live run.
           </p>
-          <div class="mt-2">
+          <div class="mt-3 flex flex-wrap gap-2">
             <UBadge v-if="status?.running" color="success" variant="subtle" icon="i-lucide-loader-circle" class="animate-pulse">
               Running
             </UBadge>
@@ -119,7 +119,7 @@ async function stopTest() {
           </div>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <UFormField label="Network interface">
+          <UFormField label="Test interface" class="min-w-0">
             <USelect
               v-model="selectedInterface"
               :items="interfaceItems"

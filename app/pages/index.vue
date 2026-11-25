@@ -26,8 +26,12 @@ watch(tabs, (availableTabs) => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div v-if="tabs.length > 1" class="flex justify-center sm:justify-start">
+  <div class="space-y-8">
+    <UPageHeader
+      title="Network overview"
+      description="Live bandwidth and internet performance from your monitored infrastructure."
+    />
+    <div v-if="tabs.length > 1" class="border-b border-default">
       <u-radio-group
         v-model="tab"
         variant="table"
@@ -35,6 +39,7 @@ watch(tabs, (availableTabs) => {
         :items="tabs"
         label-key="label"
         value-key="value"
+        class="-mb-px"
       />
     </div>
     <div>

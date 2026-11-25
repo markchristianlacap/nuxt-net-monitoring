@@ -30,7 +30,7 @@ const items = computed<NavigationMenuItem[]>(() => {
 
 <template>
   <div>
-    <UHeader title="Nuxt Net Monitoring">
+    <UHeader title="Nuxt Net Monitoring" class="border-b border-default bg-default/95">
       <template #right>
         <UNavigationMenu :items="items" class="hidden md:block" />
         <UColorModeSelect size="sm" aria-label="Color theme" />
@@ -40,7 +40,7 @@ const items = computed<NavigationMenuItem[]>(() => {
       </template>
     </UHeader>
     <UMain>
-      <UContainer class="py-8 sm:py-10">
+      <UContainer class="py-8 sm:py-12">
         <slot />
       </UContainer>
     </UMain>

@@ -1,5 +1,3 @@
-import { runScheduledSpeedtests, updateSpeedtestStatus } from '../utils/speedtest'
-
 export default defineNitroPlugin(async () => {
   let stopScheduledTest: (() => void) | undefined
   let generation = 0

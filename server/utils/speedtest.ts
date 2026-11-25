@@ -1,8 +1,6 @@
 import { spawn } from 'node:child_process'
-import { toMbps } from '../../shared/utils/converter'
 import { db } from '../db'
 import { speedtestResults } from '../db/schema/speedtest-results'
-import { getSpeedtestInterfaceIpAddress } from './speedtest-interfaces'
 
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000

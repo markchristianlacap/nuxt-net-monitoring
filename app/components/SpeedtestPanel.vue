@@ -4,12 +4,35 @@ const requestError = ref('')
 const requesting = ref(false)
 const stopping = ref(false)
 const selectedInterface = ref(SYSTEM_DEFAULT_INTERFACE_VALUE)
+const AUTOMATIC_SERVER_VALUE = 'automatic'
+const selectedServerId = ref<string>(AUTOMATIC_SERVER_VALUE)
 const { data: availableInterfaces } = await useFetch<Array<{ name: string, ipAddress: string }>>('/api/speedtest/interfaces')
 const interfaceItems = computed(() => [
   { label: 'System default', value: SYSTEM_DEFAULT_INTERFACE_VALUE },
   ...(availableInterfaces.value ?? []).map(item => ({
     label: `${item.name} · ${item.ipAddress}`,
     value: item.name,
+  })),
+])
+const {
+  data: availableServers,
+  status: serversStatus,
+  error: serversError,
+  execute: fetchServers,
+} = await useLazyFetch<SpeedtestServer[]>('/api/speedtest/servers', {
+  immediate: false,
+  default: () => [],
+})
+const serverItems = computed(() => [
+  {
+    label: 'Automatic (nearest server)',
+    value: AUTOMATIC_SERVER_VALUE,
+    description: 'Let Speedtest choose the best server',
+  },
+  ...(availableServers.value ?? []).map(server => ({
+    label: server.name,
+    value: String(server.id),
+    description: `${server.location}, ${server.country} · ${server.host}`,
   })),
 ])
 const currentTest = computed(() => status.value?.currentTest ?? null)
@@ -41,6 +64,11 @@ function formatDate(value: string | null) {
   }).format(new Date(value))
 }
 
+async function loadServers(open: boolean) {
+  if (open && serversStatus.value !== 'pending' && serversStatus.value !== 'success')
+    await fetchServers()
+}
+
 async function startTest() {
   if (isRunning.value || requesting.value)
     return
@@ -55,6 +83,9 @@ async function startTest() {
         interfaceName: selectedInterface.value === SYSTEM_DEFAULT_INTERFACE_VALUE
           ? null
           : selectedInterface.value,
+        serverId: selectedServerId.value === AUTOMATIC_SERVER_VALUE
+          ? null
+          : Number(selectedServerId.value),
       },
     })
   }
@@ -128,6 +159,19 @@ async function stopTest() {
               :disabled="isRunning || requesting"
             />
           </UFormField>
+          <UFormField label="Test server" description="Choose a server or use automatic selection." class="min-w-0">
+            <USelectMenu
+              v-model="selectedServerId"
+              value-key="value"
+              :items="serverItems"
+              :filter-fields="['label', 'description']"
+              :loading="serversStatus === 'pending'"
+              aria-label="Speedtest server for manual test"
+              class="w-full sm:min-w-64"
+              :disabled="isRunning || requesting"
+              @update:open="loadServers"
+            />
+          </UFormField>
           <UButton
             v-if="status?.running && status.source === 'manual' && currentTest?.phase !== 'complete'"
             color="error"
@@ -151,6 +195,10 @@ async function stopTest() {
         </div>
       </div>
     </template>
+
+    <p v-if="serversError" class="mb-4 text-sm text-warning" role="status">
+      The server list could not be loaded. Automatic server selection is still available.
+    </p>
 
     <p v-if="requestError" class="mb-4 text-sm text-error" role="alert">
       {{ requestError }}

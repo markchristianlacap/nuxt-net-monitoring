@@ -121,6 +121,7 @@ async function runSingleSpeedtest(
   source: 'manual' | 'scheduled',
   index: number | null,
   signal?: AbortSignal,
+  serverId: number | null = null,
 ) {
   updateSpeedtestStatus({
     source,
@@ -130,7 +131,7 @@ async function runSingleSpeedtest(
   })
 
   try {
-    const result = await executeSpeedtest(interfaceName, (event) => {
+    const result = await executeSpeedtest(interfaceName, serverId, (event) => {
       const progress = progressFromEvent(status.currentTest ?? { ...emptyProgress }, event)
       updateSpeedtestStatus({
         currentInterface: event.interface?.name || status.currentInterface,
@@ -208,7 +209,7 @@ async function runSingleSpeedtest(
   }
 }
 
-export function startManualSpeedtest(interfaceName: string | null): boolean {
+export function startManualSpeedtest(interfaceName: string | null, serverId: number | null): boolean {
   if (status.running)
     return false
 
@@ -221,7 +222,7 @@ export function startManualSpeedtest(interfaceName: string | null): boolean {
     nextRunAt: status.nextRunAt,
   })
 
-  manualRunPromise = runSingleSpeedtest(interfaceName, 'manual', null, abortController.signal)
+  manualRunPromise = runSingleSpeedtest(interfaceName, 'manual', null, abortController.signal, serverId)
     .finally(() => {
       manualAbortController = null
       manualRunPromise = null
@@ -363,14 +364,41 @@ export async function getSpeedtestServers(): Promise<SpeedtestServer[]> {
   }))
 }
 
+export function validateSpeedtestServerId(value: unknown): number | null {
+  if (value === undefined || value === null || value === '')
+    return null
+
+  const serverId = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? Number(value)
+      : Number.NaN
+
+  if (!Number.isSafeInteger(serverId) || serverId <= 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Speedtest server ID must be a positive integer',
+    })
+  }
+
+  return serverId
+}
+
 async function executeSpeedtest(
   interfaceName: string | null = null,
+  serverId: number | null = null,
   onEvent?: (event: SpeedtestEvent) => void,
   signal?: AbortSignal,
 ): Promise<SpeedtestResult> {
   const interfaceArgs = interfaceName
     ? ['-I', interfaceName]
     : []
+  const serverArgs = serverId === null
+    ? []
+    : [
+        '-s',
+        String(serverId),
+      ]
 
   return retry(() => new Promise((resolve, reject) => {
     if (signal?.aborted)
@@ -378,6 +406,7 @@ async function executeSpeedtest(
 
     const process = spawn('speedtest', [
       ...interfaceArgs,
+      ...serverArgs,
       '-f',
       'jsonl',
       '--accept-license',

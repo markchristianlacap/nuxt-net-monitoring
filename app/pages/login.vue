@@ -13,7 +13,7 @@ if (authStatus.value?.setupRequired) {
   await navigateTo('/setup')
 }
 else if (authStatus.value?.authenticated) {
-  await navigateTo('/admin')
+  await navigateTo('/')
 }
 
 async function signIn() {
@@ -25,7 +25,7 @@ async function signIn() {
       body: { username: username.value, password: password.value },
       credentials: 'same-origin',
     })
-    await navigateTo('/admin')
+    await navigateTo('/')
   }
   catch (error: any) {
     errorMessage.value = error.data?.statusMessage ?? 'Unable to sign in.'

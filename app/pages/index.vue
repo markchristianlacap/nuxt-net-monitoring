@@ -41,7 +41,7 @@ watch(tabs, (availableTabs) => {
     <div>
       <BandwidthStream v-if="tab === 'bandwidths' && data?.features.bandwidth" />
       <SpeedtestPanel v-if="tab === 'speedtest' && data?.features.speedtest" />
-      <UCard v-if="!tabs.length" class="text-center">
+      <UCard v-if="!tabs.length" class="text-center mt-6">
         <p>No monitoring features are enabled.</p>
         <UButton class="mt-4" to="/admin">
           Configure monitoring

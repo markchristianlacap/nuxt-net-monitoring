@@ -203,10 +203,20 @@ const option = computed<ECOption>(() => {
 </script>
 
 <template>
-  <div class="mb-4 rounded-xl border border-default bg-elevated p-4 shadow-sm">
-    <h3 class="mb-3 text-lg font-semibold text-highlighted">
-      Speedtest Results Summary
-    </h3>
-    <VChart :option="option" autoresize :style="{ height: '350px' }" />
+  <div class="monitor-surface mb-5 overflow-hidden rounded-xl">
+    <div class="flex items-center justify-between border-b border-default px-4 py-3">
+      <div>
+        <p class="monitor-label">
+          Historical performance
+        </p>
+        <h3 class="mt-1 text-lg font-semibold text-highlighted">
+          Speed-test summary
+        </h3>
+      </div>
+      <UIcon name="i-lucide-gauge" class="size-5 text-primary" aria-hidden="true" />
+    </div>
+    <div class="p-4">
+      <VChart :option="option" autoresize :style="{ height: '350px' }" />
+    </div>
   </div>
 </template>

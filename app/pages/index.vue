@@ -26,7 +26,7 @@ watch(tabs, (availableTabs) => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8">
     <div v-if="tabs.length > 1" class="flex justify-center sm:justify-start">
       <u-radio-group
         v-model="tab"
@@ -37,10 +37,10 @@ watch(tabs, (availableTabs) => {
         value-key="value"
       />
     </div>
-    <div>
+    <div class="min-w-0">
       <BandwidthStream v-if="tab === 'bandwidths' && data?.features.bandwidth" />
       <SpeedtestPanel v-if="tab === 'speedtest' && data?.features.speedtest" />
-      <UCard v-if="!tabs.length" class="text-center">
+      <UCard v-if="!tabs.length" class="monitor-surface rounded-xl text-center">
         <p>No monitoring features are enabled.</p>
         <UButton class="mt-4" to="/admin">
           Configure monitoring

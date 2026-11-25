@@ -1,7 +1,7 @@
 /**
  * Shared styling constants for data tables
  */
-export const TABLE_CLASSES = 'overflow-hidden rounded-2xl border border-default bg-elevated'
+export const TABLE_CLASSES = 'monitor-surface overflow-hidden rounded-xl'
 
 /**
  * Common date formatting options for timestamps

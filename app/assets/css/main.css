@@ -16,3 +16,46 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+:root {
+  --monitor-ink: #0f172a;
+  --monitor-signal: #00dc82;
+  --monitor-signal-soft: rgba(0, 220, 130, 0.12);
+}
+
+html {
+  background: var(--ui-bg);
+}
+
+body {
+  min-width: 320px;
+  background: var(--ui-bg);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--monitor-signal) 28%, transparent);
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--monitor-signal);
+  outline-offset: 3px;
+}
+
+.monitor-canvas {
+  background-color: var(--ui-bg-muted);
+}
+
+.monitor-surface {
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-elevated);
+  box-shadow: 0 12px 30px -24px rgb(15 23 42 / 45%);
+}
+
+.monitor-label {
+  color: var(--ui-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}

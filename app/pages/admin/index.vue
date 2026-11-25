@@ -125,7 +125,7 @@ async function signOut() {
     </CommonPageHeader>
 
     <form class="space-y-6 pb-8" @submit.prevent="saveSettings">
-      <UCard>
+      <UCard class="monitor-surface rounded-xl">
         <template #header>
           <div>
             <h2 class="font-semibold">
@@ -175,7 +175,7 @@ async function signOut() {
         </div>
       </UCard>
 
-      <UCard>
+      <UCard class="monitor-surface rounded-xl">
         <template #header>
           <div>
             <h2 class="font-semibold">

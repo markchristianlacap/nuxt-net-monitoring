@@ -29,8 +29,8 @@ const items = computed<NavigationMenuItem[]>(() => {
 </script>
 
 <template>
-  <div>
-    <UHeader title="Nuxt Net Monitoring">
+  <div class="monitor-canvas min-h-screen">
+    <UHeader title="Nuxt Net Monitoring" class="border-b border-default bg-default">
       <template #title>
         <BrandLogo title="Nuxt Net Monitoring" />
       </template>
@@ -43,7 +43,7 @@ const items = computed<NavigationMenuItem[]>(() => {
       </template>
     </UHeader>
     <UMain>
-      <UContainer class="py-6 sm:py-8">
+      <UContainer class="py-8 sm:py-10">
         <slot />
       </UContainer>
     </UMain>

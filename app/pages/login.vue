@@ -39,7 +39,6 @@ async function signIn() {
 <template>
   <div class="mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-default bg-default shadow-xl shadow-slate-950/5 lg:grid-cols-[1.05fr_0.95fr] dark:shadow-black/20">
     <section class="relative hidden overflow-hidden bg-slate-950 px-8 py-10 text-white lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12" aria-label="Network monitoring overview">
-      <div class="pointer-events-none absolute inset-0 opacity-60 [background-image:linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] [background-size:32px_32px]" />
       <div class="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-green-400/10 blur-3xl" />
       <div class="relative">
         <BrandLogo title="Nuxt Net Monitoring" />
